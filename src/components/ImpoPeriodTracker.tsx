@@ -9,7 +9,7 @@ import {
 import confetti from "canvas-confetti";
 import { UserProfile, ImpoPeriodSettings, ImpoDailyLog, CycleGoalMode } from "../types";
 import { 
-  calculateCycleStatus, predictFutureCycles, calculateBiorhythm, 
+  calculateCycleStatus, predictFutureCycles, calculateBiorhythm, daysBetween,
   CycleStatusResult, PredictedCycle, BiorhythmResult 
 } from "../utils/impoCycleEngine";
 import { 
@@ -83,6 +83,22 @@ const getPhaseStyle = (phase: string) => {
         badge: 'bg-rose-100 text-rose-800',
         icon: '🩸',
         shortLabel: 'پریود'
+      };
+    case 'due':
+      return {
+        cardBg: 'bg-rose-50 text-rose-900 border-rose-200',
+        selectedBg: 'bg-gradient-to-b from-rose-500 to-pink-500 text-white border-rose-500',
+        badge: 'bg-rose-100 text-rose-800',
+        icon: '⏳',
+        shortLabel: 'موعد'
+      };
+    case 'delayed':
+      return {
+        cardBg: 'bg-red-50 text-red-900 border-red-200',
+        selectedBg: 'bg-gradient-to-b from-red-500 to-rose-600 text-white border-red-600',
+        badge: 'bg-red-100 text-red-800',
+        icon: '⚠️',
+        shortLabel: 'تاخیر'
       };
     case 'ovulation':
       return {
@@ -326,13 +342,15 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
       // Entire current cycle mapped to actual calendar days
       const lastStart = new Date(settings.lastPeriodStartDate + 'T00:00:00');
       const now = new Date();
-      const diffDays = Math.floor((now.getTime() - lastStart.getTime()) / 86400000);
+      const diffDays = daysBetween(settings.lastPeriodStartDate, now);
       const cycleLen = cycleStatus.cycleLength || 28;
       const cycleIdx = diffDays >= 0 ? Math.floor(diffDays / cycleLen) : 0;
-      const cycleStartTime = lastStart.getTime() + cycleIdx * cycleLen * 86400000;
+      const cycleStartDate = new Date(lastStart);
+      cycleStartDate.setDate(cycleStartDate.getDate() + cycleIdx * cycleLen);
 
       for (let i = 0; i < cycleLen; i++) {
-        const d = new Date(cycleStartTime + i * 86400000);
+        const d = new Date(cycleStartDate);
+        d.setDate(d.getDate() + i);
         const iso = toGregorianIsoString(d);
         const [jy, jm, jd] = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
         const weekday = JALALI_WEEKDAYS[(d.getDay() + 1) % 7];
@@ -410,9 +428,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
     // Check if moving average can be computed with previous start date
     let newCycleLength = settings.cycleLength;
     if (settings.lastPeriodStartDate && settings.lastPeriodStartDate !== todayStr) {
-      const prevDate = new Date(settings.lastPeriodStartDate + 'T00:00:00');
-      const curDate = new Date();
-      const actualDiff = Math.floor((curDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+      const actualDiff = daysBetween(settings.lastPeriodStartDate, new Date());
       if (actualDiff >= 18 && actualDiff <= 45) {
         newCycleLength = Math.round((settings.cycleLength * 0.4) + (actualDiff * 0.6));
       }
@@ -974,53 +990,61 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
 
                     {/* Center Typography (Exact Impo Style) */}
                     <div className="absolute flex flex-col items-center justify-center text-center p-4 z-10 pointer-events-none">
-                      {partnerRole === 'male' ? (
-                        cycleStatus.isDelayed ? (
-                          <>
-                            <span className="text-xs font-black text-red-500 animate-pulse">تاخیر پریود پارتنر</span>
-                            <span className="text-4xl font-black text-red-600 mt-0.5">
-                              {toPersianDigits(cycleStatus.delayedDays)}
-                            </span>
-                            <span className="text-xs font-black text-slate-500 mt-0.5">روز تاخیر</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[11px] font-black text-indigo-500">روز چرخه پارتنر</span>
-                            <span className="text-4xl font-black text-slate-800 tracking-tight mt-0.5">
-                              {toPersianDigits(cycleStatus.currentCycleDay)}
-                            </span>
-                            <span className="text-[11px] font-black text-slate-500 mt-0.5">
-                              از {toPersianDigits(safeCycleLength)} روز
-                            </span>
-                          </>
-                        )
+                      {cycleStatus.diffDays >= 90 ? (
+                        <>
+                          <span className="text-xs font-black text-amber-600">عدم قاعدگی طولانی</span>
+                          <span className="text-lg font-black text-slate-800 mt-1">مشورت با پزشک</span>
+                          <span className="text-[10px] font-bold text-slate-500 mt-0.5">بیش از ۹۰ روز</span>
+                        </>
+                      ) : cycleStatus.diffDays >= 45 ? (
+                        <>
+                          <span className="text-xs font-black text-rose-500">پایان دوره انتظار</span>
+                          <span className="text-lg font-black text-slate-800 mt-1">ثبت پریود جدید</span>
+                          <span className="text-[10px] font-bold text-slate-500 mt-0.5">{toPersianDigits(cycleStatus.diffDays)} روز از شروع قبلی</span>
+                        </>
+                      ) : cycleStatus.phase === 'due' ? (
+                        <>
+                          <span className="text-xs font-black text-rose-500 animate-pulse">
+                            {partnerRole === 'male' ? 'موعد پریود پارتنر' : 'موعد پریود'}
+                          </span>
+                          <span className="text-3xl font-black text-rose-600 mt-0.5">امروز</span>
+                          <span className="text-[10px] font-bold text-slate-500 mt-0.5">زمان مورد انتظار</span>
+                        </>
+                      ) : cycleStatus.isDelayed ? (
+                        <>
+                          <span className="text-xs font-black text-red-500 animate-pulse">
+                            {partnerRole === 'male' ? 'تاخیر پریود پارتنر' : 'تاخیر پریود'}
+                          </span>
+                          <span className="text-4xl font-black text-red-600 mt-0.5">
+                            {toPersianDigits(cycleStatus.delayedDays)}
+                          </span>
+                          <span className="text-xs font-black text-slate-500 mt-0.5">روز تاخیر</span>
+                        </>
                       ) : (
-                        cycleStatus.isDelayed ? (
-                          <>
-                            <span className="text-xs font-black text-red-500 animate-pulse">تاخیر پریود</span>
-                            <span className="text-4xl font-black text-red-600 mt-0.5">
-                              {toPersianDigits(cycleStatus.delayedDays)}
-                            </span>
-                            <span className="text-xs font-black text-slate-500 mt-0.5">روز تاخیر</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[11px] font-black text-slate-400">روز چرخه</span>
-                            <span className="text-4xl font-black text-slate-800 tracking-tight mt-0.5">
-                              {toPersianDigits(cycleStatus.currentCycleDay)}
-                            </span>
-                            <span className="text-[11px] font-black text-slate-500 mt-0.5">
-                              از {toPersianDigits(safeCycleLength)} روز
-                            </span>
-                          </>
-                        )
+                        <>
+                          <span className="text-[11px] font-black text-slate-400">
+                            {partnerRole === 'male' ? 'روز چرخه پارتنر' : 'روز چرخه'}
+                          </span>
+                          <span className="text-4xl font-black text-slate-800 tracking-tight mt-0.5">
+                            {toPersianDigits(cycleStatus.currentCycleDay)}
+                          </span>
+                          <span className="text-[11px] font-black text-slate-500 mt-0.5">
+                            از {toPersianDigits(safeCycleLength)} روز
+                          </span>
+                        </>
                       )}
 
                       <div className="mt-2.5 flex items-center gap-1 text-[10px] font-black text-rose-500 bg-white/90 px-2.5 py-0.5 rounded-full shadow-xs border border-rose-100">
                         <span>
-                          {partnerRole === 'male'
-                            ? (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا موعد بعدی پارتنر` : 'موعد پریود پارتنر')
-                            : (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا پریود بعدی` : 'موعد پریود')
+                          {cycleStatus.phase === 'due'
+                            ? (partnerRole === 'male' ? 'امروز موعد پریود پارتنر است' : 'امروز موعد مورد انتظار است')
+                            : cycleStatus.diffDays >= 90
+                            ? 'نیاز به بررسی توسط پزشک'
+                            : cycleStatus.diffDays >= 45
+                            ? 'پیشنهاد ثبت چرخه جدید'
+                            : partnerRole === 'male'
+                            ? (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا موعد بعدی پارتنر` : `${toPersianDigits(cycleStatus.delayedDays)} روز تاخیر`)
+                            : (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا پریود بعدی` : `${toPersianDigits(cycleStatus.delayedDays)} روز تاخیر`)
                           }
                         </span>
                       </div>
@@ -1267,34 +1291,92 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
 
               {/* Right: Detailed Status Cards & Insights (Differentiated by Role) */}
               <div className="lg:col-span-6 space-y-4 text-right">
-                {partnerRole === 'male' ? (
-                  /* ================= MALE COMPANION VIEW ================= */
+                {cycleStatus.diffDays >= 90 ? (
+                  /* ================= 90+ DAYS CEILING: ONLY DOCTOR MESSAGE ================= */
+                  <div className="bg-amber-50/90 border-2 border-amber-300 rounded-3xl p-6 text-right shadow-sm space-y-3">
+                    <div className="flex items-center gap-2.5 text-amber-900 font-black text-base">
+                      <span className="text-2xl">🩺</span>
+                      <span>پیام سلامت: ضرورت مشورت با پزشک</span>
+                    </div>
+                    <p className="text-sm text-amber-900 font-bold leading-relaxed">
+                      اگر بیش از ۳ ماه پریود نشده‌اید یا بارداری رد شده است، با پزشک مشورت کنید.
+                    </p>
+                    <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                      طولانی شدن عدم قاعدگی نیازمند بررسی دقیق هورمونی و سونوگرافی توسط متخصص زنان است.
+                    </p>
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleQuickGotPeriodToday}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
+                      >
+                        در صورت شروع پریود، همین حالا ثبتش کن 🩸
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <>
-                    {/* Companion Status Card */}
-                    <div className="bg-white/85 p-5 rounded-3xl border border-indigo-100 shadow-sm space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-indigo-600" />
-                          وضعیت جسمی و روحی پارتنر در روز {toPersianDigits(cycleStatus.currentCycleDay)} چرخه
-                        </h3>
-                        <span className="text-[11px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
-                          {cycleStatus.phaseTitle}
-                        </span>
+                    {cycleStatus.diffDays >= 45 && (
+                      /* ================= 45-89 DAYS CEILING CARD ================= */
+                      <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 rounded-3xl p-5 text-right shadow-sm space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <h4 className="text-sm font-black text-rose-900 flex items-center gap-1.5">
+                              <CalendarIcon className="w-4 h-4 text-rose-600" />
+                              پریودت شروع شده؟ همین حالا ثبتش کن
+                            </h4>
+                            <p className="text-[11px] text-rose-700 font-medium mt-1">
+                              {toPersianDigits(cycleStatus.diffDays)} روز از موعد شروع قبلی سپری شده است.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleQuickGotPeriodToday}
+                            className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer self-start sm:self-auto shrink-0"
+                          >
+                            ثبت پریود امروز 🩸
+                          </button>
+                        </div>
+                        <div className="pt-2 border-t border-rose-200/60">
+                          <p className="text-xs text-slate-700 font-bold leading-relaxed">
+                            اگر بیش از ۳ ماه پریود نشده‌اید یا بارداری رد شده است، با پزشک مشورت کنید.
+                          </p>
+                        </div>
                       </div>
+                    )}
 
-                      <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                        {cycleStatus.phase === 'period' ? (
-                          "بدن پارتنر شما در حال خونریزی ماهانه است. احساس گرفتگی‌های عضلانی شکم و کمر، افت آهن و خستگی در این روزها شایع است. او بیش از هر چیز به استراحت، گرم نگه داشتن بدن و حمایت بدون قید و شرط شما نیاز دارد."
-                        ) : cycleStatus.phase === 'pms' ? (
-                          "پارتنر شما در روزهای حساس PMS (پیش‌قاعدگی) قرار دارد. به دلیل تغییرات هورمونی، احساس دل‌نازکی، کم‌حوصلگی ناگهانی یا اضطراب کاملاً طبیعی است. درک و آرامش شما در این روزها معجزه می‌کند."
-                        ) : cycleStatus.phase === 'ovulation' ? (
-                          "پارتنر شما در اوج روز تخمک‌گذاری و شادابی این ماه است. زمان طلایی برای خلق لحظات شیرین، شام دونفره و ابراز عشق عمیق."
-                        ) : cycleStatus.phase === 'fertile' ? (
-                          "پارتنر شما در پنجره باروری قرار دارد. سطح انرژی بدنی او رو به اوج است."
-                        ) : (
-                          "پارتنر شما در فاز پرانرژی و باانگیزه قرار دارد. زمان عالی برای ورزش، پیاده‌روی دونفره و تفریحات مشترک."
-                        )}
-                      </p>
+                    {partnerRole === 'male' ? (
+                      /* ================= MALE COMPANION VIEW ================= */
+                      <>
+                        {/* Companion Status Card */}
+                        <div className="bg-white/85 p-5 rounded-3xl border border-indigo-100 shadow-sm space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-indigo-600" />
+                              وضعیت جسمی و روحی پارتنر در روز {toPersianDigits(cycleStatus.currentCycleDay)} چرخه
+                            </h3>
+                            <span className="text-[11px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                              {cycleStatus.phaseTitle}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                            {cycleStatus.phase === 'period' ? (
+                              "بدن پارتنر شما در حال خونریزی ماهانه است. احساس گرفتگی‌های عضلانی شکم و کمر، افت آهن و خستگی در این روزها شایع است. او بیش از هر چیز به استراحت، گرم نگه داشتن بدن و حمایت بدون قید و شرط شما نیاز دارد."
+                            ) : cycleStatus.phase === 'due' ? (
+                              "امروز موعد مورد انتظار برای شروع پریود پارتنر شماست. ممکن است علائمی از خستگی، حساسیت عاطفی یا گرفتگی داشته باشد. با آرامش و محبت، فضایی آرام برای او مهیا کنید."
+                            ) : cycleStatus.phase === 'delayed' ? (
+                              `پریود پارتنر شما ${toPersianDigits(cycleStatus.delayedDays)} روز به تاخیر افتاده است. استرس و نوسانات هورمونی شایع‌ترین علل هستند. آرامش‌بخش‌ترین تکیه‌گاه او باشید.`
+                            ) : cycleStatus.phase === 'pms' ? (
+                              "پارتنر شما در روزهای حساس PMS (پیش‌قاعدگی) قرار دارد. به دلیل تغییرات هورمونی، احساس دل‌نازکی، کم‌حوصلگی ناگهانی یا اضطراب کاملاً طبیعی است. درک و آرامش شما در این روزها معجزه می‌کند."
+                            ) : cycleStatus.phase === 'ovulation' ? (
+                              "پارتنر شما در اوج روز تخمک‌گذاری و شادابی این ماه است. زمان طلایی برای خلق لحظات شیرین، شام دونفره و ابراز عشق عمیق."
+                            ) : cycleStatus.phase === 'fertile' ? (
+                              "پارتنر شما در پنجره باروری قرار دارد. سطح انرژی بدنی او رو به اوج است."
+                            ) : (
+                              "پارتنر شما در فاز پرانرژی و باانگیزه قرار دارد. زمان عالی برای ورزش، پیاده‌روی دونفره و تفریحات مشترک."
+                            )}
+                          </p>
 
                       <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
                         <div className="bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/60">
@@ -1450,6 +1532,8 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
                     </div>
                   </>
                 )}
+                </>
+              )}
               </div>
             </div>
           </div>
@@ -1563,9 +1647,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
                   const isToday = cellIso === toGregorianIsoString(new Date());
 
                   // Cycle calculations for this specific date
-                  const diffFromStart = Math.floor(
-                    (cellDate.getTime() - new Date(settings.lastPeriodStartDate + 'T00:00:00').getTime()) / 86400000
-                  );
+                  const diffFromStart = daysBetween(settings.lastPeriodStartDate, cellDate);
                   
                   let cellCycleDay = 0;
                   if (diffFromStart >= 0) {
@@ -1674,10 +1756,24 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">
-                    دوره {toPersianDigits(p.cycleIndex)} آینده
+                    {p.cycleIndex === 1 && p.isDelayed ? "دوره جاری (دارای تاخیر)" : `دوره ${toPersianDigits(p.cycleIndex)} آینده`}
                   </span>
-                  <span className="text-[11px] font-black text-slate-500">
-                    {p.daysUntilStart > 0 ? `${toPersianDigits(p.daysUntilStart)} روز دیگر` : 'نزدیک'}
+                  <span className="text-[11px] font-black">
+                    {p.isDelayed ? (
+                      <span className="text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                        {toPersianDigits(p.delayedDays)} روز تاخیر ⚠️
+                      </span>
+                    ) : p.daysUntilStart === 0 ? (
+                      <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
+                        امروز (موعد پریود)
+                      </span>
+                    ) : p.daysUntilStart > 0 ? (
+                      <span className="text-slate-500">
+                        {toPersianDigits(p.daysUntilStart)} روز دیگر
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">نزدیک</span>
+                    )}
                   </span>
                 </div>
 

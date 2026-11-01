@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
+    "test": "vitest run",
     "build": "node scripts/build.mjs",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
@@ -42,6 +43,7 @@
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.3"
+    "vite": "^6.2.3",
+    "vitest": "^4.1.12"
   }
 }

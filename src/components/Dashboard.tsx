@@ -2618,6 +2618,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       cellClass = "bg-rose-500/[0.08] border-rose-300/40 text-rose-950 hover:bg-rose-500/[0.14]";
                       pillClass = "bg-rose-400";
                       phaseLabel = `روز ${toPersianDigits(phaseInfo.currentCycleDay)} قاعدگی 🩸`;
+                    } else if (phaseInfo.phase === "due") {
+                      cellClass = "bg-rose-500/[0.12] border-rose-400/50 text-rose-950 hover:bg-rose-500/[0.18]";
+                      pillClass = "bg-rose-500";
+                      phaseLabel = "موعد مورد انتظار پریود ⏳";
+                    } else if (phaseInfo.phase === "delayed") {
+                      cellClass = "bg-red-500/[0.08] border-red-300/40 text-red-950 hover:bg-red-500/[0.14]";
+                      pillClass = "bg-red-400";
+                      phaseLabel = `تاخیر در پریود (${toPersianDigits(phaseInfo.delayedDays)} روز) ⚠️`;
                     } else if (phaseInfo.phase === "pms") {
                       cellClass = "bg-purple-500/[0.06] border-purple-300/40 text-purple-950 hover:bg-purple-500/[0.14]";
                       pillClass = "bg-purple-400";

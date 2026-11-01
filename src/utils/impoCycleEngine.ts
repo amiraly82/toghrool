@@ -8,6 +8,7 @@ export type CyclePhaseType =
   | 'ovulation'
   | 'luteal'
   | 'pms'
+  | 'due'
   | 'delayed';
 
 export interface CycleStatusResult {
@@ -41,17 +42,33 @@ export interface CycleStatusResult {
   nutritionTip: string;
 }
 
+/**
+ * Calculates calendar day difference (b - a) normalized to UTC midnight.
+ * Guarantees no 1-day off errors during Daylight Saving Time (DST) switches (e.g. March 29 / October 31).
+ */
+export function daysBetween(a: Date | string, b: Date | string): number {
+  const toUtc = (input: Date | string): number => {
+    if (typeof input === 'string') {
+      const parts = input.split('T')[0].split('-').map(Number);
+      if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+        return Date.UTC(parts[0], parts[1] - 1, parts[2]);
+      }
+    }
+    const d = typeof input === 'string' ? new Date(input) : input;
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  };
+
+  const utcA = toUtc(a);
+  const utcB = toUtc(b);
+  return Math.round((utcB - utcA) / 86400000);
+}
+
 export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date = new Date()): CycleStatusResult {
   const cycleLength = Math.max(20, Math.min(60, settings.cycleLength || 28));
   const periodLength = Math.max(2, Math.min(15, settings.periodLength || 5));
   const goalMode: CycleGoalMode = settings.goalMode || 'track';
 
-  const lastStart = new Date(settings.lastPeriodStartDate + 'T00:00:00');
-  const d1 = new Date(lastStart.getFullYear(), lastStart.getMonth(), lastStart.getDate());
-  const d2 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-  const diffTime = d2.getTime() - d1.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = daysBetween(settings.lastPeriodStartDate, today);
 
   // Ovulation & Fertile window calculations (Clinical Standard: 14 days before next period)
   const ovulationDay = Math.max(periodLength + 2, cycleLength - 14);
@@ -63,36 +80,49 @@ export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date =
   let isDelayed = false;
   let delayedDays = 0;
   let daysUntilNextPeriod = 0;
+  let phase: CyclePhaseType = 'follicular';
 
   if (diffDays < 0) {
+    // lastPeriodStartDate is in the future
     currentCycleDay = 1;
+    isDelayed = false;
+    delayedDays = 0;
     daysUntilNextPeriod = Math.abs(diffDays);
-  } else if (diffDays >= cycleLength) {
+    phase = 'follicular';
+  } else if (diffDays === cycleLength) {
+    // 1) Off-by-one fix: Due date (no red warning, no pregnancy test suggestion)
+    currentCycleDay = cycleLength + 1;
+    isDelayed = false;
+    delayedDays = 0;
+    daysUntilNextPeriod = 0;
+    phase = 'due';
+  } else if (diffDays > cycleLength) {
+    // 1) Delayed: diffDays > cycleLength with delayedDays = diffDays - cycleLength
     isDelayed = true;
-    delayedDays = diffDays - cycleLength + 1;
+    delayedDays = diffDays - cycleLength;
     currentCycleDay = diffDays + 1;
     daysUntilNextPeriod = 0;
-  } else {
-    currentCycleDay = diffDays + 1;
-    daysUntilNextPeriod = cycleLength - diffDays;
-  }
-
-  // Determine current phase
-  let phase: CyclePhaseType = 'follicular';
-  if (isDelayed) {
     phase = 'delayed';
-  } else if (currentCycleDay <= periodLength) {
-    phase = 'period';
-  } else if (currentCycleDay === ovulationDay) {
-    phase = 'ovulation';
-  } else if (currentCycleDay >= fertileStartDay && currentCycleDay <= fertileEndDay) {
-    phase = 'fertile';
-  } else if (currentCycleDay >= pmsStartDay) {
-    phase = 'pms';
-  } else if (currentCycleDay > fertileEndDay) {
-    phase = 'luteal';
   } else {
-    phase = 'follicular';
+    // Normal active cycle: 0 <= diffDays < cycleLength
+    currentCycleDay = diffDays + 1;
+    delayedDays = 0;
+    isDelayed = false;
+    daysUntilNextPeriod = cycleLength - diffDays;
+
+    if (currentCycleDay <= periodLength) {
+      phase = 'period';
+    } else if (currentCycleDay === ovulationDay) {
+      phase = 'ovulation';
+    } else if (currentCycleDay >= fertileStartDay && currentCycleDay <= fertileEndDay) {
+      phase = 'fertile';
+    } else if (currentCycleDay >= pmsStartDay) {
+      phase = 'pms';
+    } else if (currentCycleDay > fertileEndDay) {
+      phase = 'luteal';
+    } else {
+      phase = 'follicular';
+    }
   }
 
   // Phase Title, Subtitle, Colors and Descriptions
@@ -114,12 +144,55 @@ export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date =
   };
 
   switch (phase) {
-    case 'delayed':
-      phaseTitle = `تاخیر در قاعدگی (${toPersianDigits(delayedDays)} روز تاخیر) ⚠️`;
+    case 'due':
+      phaseTitle = "امروز زمان مورد انتظار پریود است ⏳";
       phaseSubtitle = goalMode === 'pregnancy'
-        ? "فرصت طلایی برای انجام تست بارداری (بیبی‌چک)"
-        : "قاعدگی شما به تاخیر افتاده است";
-      stageDescription = "تاریخ سررسید پریود شما سپری شده است. نوسانات هورمونی، تغییرات وزنی، استرس یا بارداری می‌توانند علت این تاخیر باشند. در صورت داشتن رابطه، امروز زمان ایده‌آلی برای تست بیبی‌چک است.";
+        ? "روز موعد مورد انتظار قاعدگی"
+        : "امروز موعد آغاز پریود شماست";
+      stageDescription = "امروز روز موعد و پیش‌بینی‌شده برای آغاز دوره قاعدگی شماست. دیواره رحم در آستانه چرخه جدید قرار دارد. به نشانه‌های بدنتان توجه کنید و آرامش داشته باشید.";
+      stageColor = {
+        primary: "#F43F5E",
+        light: "rgba(244, 63, 94, 0.12)",
+        border: "rgba(244, 63, 94, 0.35)",
+        gradient: "from-rose-500 to-pink-500",
+        badgeBg: "bg-rose-50 text-rose-700 border-rose-200",
+        text: "text-rose-600"
+      };
+      chanceOfPregnancy = "بسیار کم";
+      selfCareTip = "پدهای بهداشتی را در دسترس داشته باشید، لباس‌های راحت بپوشید و نوشیدنی‌های گرم میل کنید.";
+      partnerTip = "امروز روز موعد پریود همسرتان است؛ با همدلی و فراهم کردن محیطی آرام در کنار او باشید.";
+      nutritionTip = "نوشیدن آب گرم و چای بابونه یا زنجبیل به آرامش عضلات رحم کمک می‌کند.";
+      break;
+
+    case 'delayed':
+      if (diffDays >= 90) {
+        // 2) Ceiling: 90+ days -> only doctor consult message
+        phaseTitle = "نیاز به مشورت با پزشک 🩺";
+        phaseSubtitle = "بیش از ۳ ماه عدم قاعدگی";
+        stageDescription = "اگر بیش از ۳ ماه پریود نشده‌اید یا بارداری رد شده است، با پزشک مشورت کنید.";
+        chanceOfPregnancy = "نیاز به بررسی تخصصی";
+      } else if (diffDays >= 45) {
+        // 2) Ceiling: 45-89 days -> new period registration prompt + doctor message
+        phaseTitle = "ثبت شروع پریود جدید 🌸";
+        phaseSubtitle = "پریودت شروع شده؟ همین حالا ثبتش کن";
+        stageDescription = "اگر بیش از ۳ ماه پریود نشده‌اید یا بارداری رد شده است، با پزشک مشورت کنید.";
+        chanceOfPregnancy = "اگر احتمال بارداری هست، بررسی تست بیبی‌چک پیشنهاد می‌شود";
+      } else {
+        phaseTitle = `تاخیر در قاعدگی (${toPersianDigits(delayedDays)} روز تاخیر) ⚠️`;
+        if (delayedDays >= 2) {
+          // Suggest pregnancy test only from 2 days delay with suggestive tone
+          phaseSubtitle = goalMode === 'pregnancy'
+            ? "اگر احتمال بارداری هست، بررسی تست بیبی‌چک پیشنهاد می‌شود"
+            : `${toPersianDigits(delayedDays)} روز از موعد گذشته است`;
+          stageDescription = "تاریخ سررسید پریود شما سپری شده است. نوسانات هورمونی، تغییرات وزنی یا استرس می‌توانند علت تاخیر باشند. اگر احتمال بارداری هست، بررسی تست بیبی‌چک پیشنهاد می‌شود.";
+          chanceOfPregnancy = "اگر احتمال بارداری هست، بررسی تست بیبی‌چک پیشنهاد می‌شود";
+        } else {
+          // 1 day delay (no pregnancy test suggestion)
+          phaseSubtitle = "۱ روز از موعد مورد انتظار گذشته است";
+          stageDescription = "یک روز تاخیر در چرخه قاعدگی کاملاً متداول و طبیعی است و اغلب ناشی از استرس روزمره، کم‌خوابی یا تغییرات فصلی است. نیازی به نگرانی نیست.";
+          chanceOfPregnancy = "کم";
+        }
+      }
       stageColor = {
         primary: "#EF4444",
         light: "rgba(239, 68, 68, 0.12)",
@@ -128,7 +201,6 @@ export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date =
         badgeBg: "bg-red-50 text-red-700 border-red-200",
         text: "text-red-600"
       };
-      chanceOfPregnancy = "نیاز به بررسی تست بارداری";
       selfCareTip = "آرامش خود را حفظ کنید و استرس را کاهش دهید. خواب منظم و نوشیدن دم‌نوش‌های آرام‌بخش توصیه می‌شود.";
       partnerTip = "با آرامش و بدون استرس در کنار او باشید. احساس اطمینان خاطر بهترین کمک شما در این روزهاست.";
       nutritionTip = "آب فراوان بنوشید و از مصرف بیش از حد قهوه و ادویه‌های تند خودداری کنید.";
@@ -281,39 +353,41 @@ export interface PredictedCycle {
   startDateIso: string;
   startDatePersian: string;
   daysUntilStart: number;
+  isDelayed: boolean;
+  delayedDays: number;
   ovulationDateIso: string;
   ovulationDatePersian: string;
   fertileWindowStartPersian: string;
   fertileWindowEndPersian: string;
 }
 
+/**
+ * Predicts subsequent cycle starts advancing predictably from the base expected period.
+ * 3) If delayed, next expected period = lastStart + cycleLength (with label 'X روز تاخیر') and future cycles advance from there.
+ */
 export function predictFutureCycles(settings: ImpoPeriodSettings, count: number = 3): PredictedCycle[] {
   const cycleLength = Math.max(20, Math.min(60, settings.cycleLength || 28));
   const periodLength = Math.max(2, Math.min(15, settings.periodLength || 5));
-  const lastStart = new Date(settings.lastPeriodStartDate + 'T00:00:00');
-  const today = new Date();
-  const d2 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const lastStartIso = settings.lastPeriodStartDate;
+  if (!lastStartIso) return [];
 
+  const today = new Date();
   const ovulationOffset = Math.max(periodLength + 2, cycleLength - 14);
 
   const predictions: PredictedCycle[] = [];
-
-  // Calculate base next cycle start
-  const diffDays = Math.floor((d2.getTime() - lastStart.getTime()) / (1000 * 60 * 60 * 24));
-  let baseNextStartDays = 0;
-  if (diffDays >= 0) {
-    const passedCycles = Math.floor(diffDays / cycleLength) + 1;
-    baseNextStartDays = passedCycles * cycleLength;
-  } else {
-    baseNextStartDays = 0;
-  }
+  const [startY, startM, startD] = lastStartIso.split('T')[0].split('-').map(Number);
 
   for (let i = 0; i < count; i++) {
-    const cycleStart = new Date(lastStart);
-    cycleStart.setDate(cycleStart.getDate() + baseNextStartDays + (i * cycleLength));
+    // Next expected periods start at:
+    // Cycle 1: lastStart + 1 * cycleLength (even if in the past / delayed)
+    // Cycle 2: lastStart + 2 * cycleLength
+    // Cycle 3: lastStart + 3 * cycleLength
+    const cycleStart = new Date(startY, startM - 1, startD + ((i + 1) * cycleLength));
+    const startIso = toGregorianIsoString(cycleStart);
 
     const ovDate = new Date(cycleStart);
     ovDate.setDate(ovDate.getDate() + ovulationOffset - 1);
+    const ovIso = toGregorianIsoString(ovDate);
 
     const fertileStart = new Date(ovDate);
     fertileStart.setDate(fertileStart.getDate() - 5);
@@ -321,16 +395,17 @@ export function predictFutureCycles(settings: ImpoPeriodSettings, count: number 
     const fertileEnd = new Date(ovDate);
     fertileEnd.setDate(fertileEnd.getDate() + 1);
 
-    const daysUntilStart = Math.ceil((cycleStart.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
-
-    const startIso = toGregorianIsoString(cycleStart);
-    const ovIso = toGregorianIsoString(ovDate);
+    const daysUntilStart = daysBetween(today, cycleStart);
+    const isDelayed = daysUntilStart < 0;
+    const delayedDays = isDelayed ? Math.abs(daysUntilStart) : 0;
 
     predictions.push({
       cycleIndex: i + 1,
       startDateIso: startIso,
       startDatePersian: formatPersianDate(startIso),
       daysUntilStart,
+      isDelayed,
+      delayedDays,
       ovulationDateIso: ovIso,
       ovulationDatePersian: formatPersianDate(ovIso),
       fertileWindowStartPersian: formatPersianDate(toGregorianIsoString(fertileStart), false),
@@ -352,10 +427,7 @@ export interface BiorhythmResult {
 export function calculateBiorhythm(birthDateStr?: string, targetDate: Date = new Date()): BiorhythmResult | null {
   if (!birthDateStr) return null;
   try {
-    const bDate = new Date(birthDateStr + 'T00:00:00');
-    const tDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-    const diffTime = tDate.getTime() - bDate.getTime();
-    const daysAlive = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const daysAlive = daysBetween(birthDateStr, targetDate);
     if (daysAlive <= 0) return null;
 
     // Standard biological rhythm formulas (Sine curves)
