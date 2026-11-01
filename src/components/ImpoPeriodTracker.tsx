@@ -10,7 +10,8 @@ import confetti from "canvas-confetti";
 import { UserProfile, ImpoPeriodSettings, ImpoDailyLog, CycleGoalMode } from "../types";
 import { 
   calculateCycleStatus, predictFutureCycles, calculateBiorhythm, daysBetween,
-  CycleStatusResult, PredictedCycle, BiorhythmResult 
+  extractCycleHistory, estimateCycleLength, predictCycle, formatDateRangePersian,
+  CycleStatusResult, PredictedCycle, BiorhythmResult, CyclePredictionResult 
 } from "../utils/impoCycleEngine";
 import { 
   formatPersianDate, toPersianDigits, gregorianToJalali, jalaliToGregorian, 
@@ -279,10 +280,20 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
     };
   }, [userProfile.uid, userProfile.coupleId]);
 
-  // Cycle Calculations based on engine
+  // 1) History extraction: builds consecutive intervals from period start logs & settings
+  const cycleHistory = useMemo(() => {
+    return extractCycleHistory(logs, settings);
+  }, [logs, settings]);
+
+  // 2 & 3) Honest Bayesian prediction result (next start, ovulation, fertile window ranges)
+  const cyclePrediction: CyclePredictionResult = useMemo(() => {
+    return predictCycle(cycleHistory, logs, new Date(), settings, 2);
+  }, [cycleHistory, logs, settings]);
+
+  // Cycle Calculations based on engine (incorporates Bayesian estimated cycle length)
   const cycleStatus: CycleStatusResult = useMemo(() => {
-    return calculateCycleStatus(settings, new Date());
-  }, [settings]);
+    return calculateCycleStatus(settings, new Date(), Math.round(cyclePrediction.estimatedCycleLength));
+  }, [settings, cyclePrediction.estimatedCycleLength]);
 
   // Calendar Strip State (for viewMode === 'flat')
   const [stripSelectedDate, setStripSelectedDate] = useState<string>(toGregorianIsoString(new Date()));
@@ -373,10 +384,10 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
     return results;
   }, [settings, stripWeekOffset, stripMode, stripSelectedDate, cycleStatus.cycleLength, logs]);
 
-  // Future cycle predictions
+  // Future cycle predictions (honest ranges for next 2 cycles)
   const predictions: PredictedCycle[] = useMemo(() => {
-    return predictFutureCycles(settings, 3);
-  }, [settings]);
+    return predictFutureCycles(settings, 2, logs);
+  }, [settings, logs]);
 
   // Biorhythm result
   const biorhythm: BiorhythmResult | null = useMemo(() => {
@@ -425,19 +436,11 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
       origin: { y: 0.6 }
     });
 
-    // Check if moving average can be computed with previous start date
-    let newCycleLength = settings.cycleLength;
-    if (settings.lastPeriodStartDate && settings.lastPeriodStartDate !== todayStr) {
-      const actualDiff = daysBetween(settings.lastPeriodStartDate, new Date());
-      if (actualDiff >= 18 && actualDiff <= 45) {
-        newCycleLength = Math.round((settings.cycleLength * 0.4) + (actualDiff * 0.6));
-      }
-    }
-
+    // 5) Remove old moving average: settings.cycleLength is retained solely as the initial prior.
+    // Recording period start automatically updates history and recomputes Bayesian estimates.
     const updatedSettings: ImpoPeriodSettings = {
       ...settings,
-      lastPeriodStartDate: todayStr,
-      cycleLength: newCycleLength
+      lastPeriodStartDate: todayStr
     };
 
     setSettings(updatedSettings);
@@ -1738,68 +1741,118 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
       {/* ----------------------------------------------------------------- */}
       {activeSubTab === 'predictions' && (
         <div className="glass-card rounded-3xl p-6 border border-white/60 bg-white/70 space-y-6 text-right">
-          <div>
-            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-rose-500" />
-              پیش‌بینی دقیق دوره‌های آتی قاعدگی و باروری
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              بر اساس مدل بیولوژیک و دوره {toPersianDigits(safeCycleLength)} روزه شما، تاریخ‌های ۳ دوره بعدی به صورت زیر برآورد شده‌اند:
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {predictions.map((p) => (
-              <div 
-                key={p.cycleIndex} 
-                className="bg-white p-5 rounded-2xl border border-pink-100 shadow-sm relative overflow-hidden space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">
-                    {p.cycleIndex === 1 && p.isDelayed ? "دوره جاری (دارای تاخیر)" : `دوره ${toPersianDigits(p.cycleIndex)} آینده`}
-                  </span>
-                  <span className="text-[11px] font-black">
-                    {p.isDelayed ? (
-                      <span className="text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
-                        {toPersianDigits(p.delayedDays)} روز تاخیر ⚠️
-                      </span>
-                    ) : p.daysUntilStart === 0 ? (
-                      <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
-                        امروز (موعد پریود)
-                      </span>
-                    ) : p.daysUntilStart > 0 ? (
-                      <span className="text-slate-500">
-                        {toPersianDigits(p.daysUntilStart)} روز دیگر
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">نزدیک</span>
-                    )}
-                  </span>
+          {cyclePrediction.isPregnant ? (
+            /* 4) Positive Pregnancy Banner */
+            <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 border-2 border-purple-200 rounded-3xl p-6 text-right shadow-sm space-y-3">
+              <div className="flex items-center gap-2.5 text-purple-900 font-black text-base">
+                <span className="text-2xl">🌸🤰</span>
+                <span>تبریک و وضعیت بارداری</span>
+              </div>
+              <p className="text-sm text-purple-900 font-bold leading-relaxed">
+                {cyclePrediction.pregnancyMessage || "تست بارداری مثبت ثبت شده است. پیش‌بینی دوره‌های قاعدگی بعدی متوقف شد."}
+              </p>
+              <p className="text-xs text-purple-800 font-medium leading-relaxed">
+                جهت آغاز مراقبت‌های دوران بارداری و تعیین سن دقیق بارداری با پزشک متخصص مشورت نمایید.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-pink-100">
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-rose-500" />
+                    پیش‌بینی دوره‌های آتی قاعدگی و باروری (بر مبنای بازه)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {cyclePrediction.confidence === 'low'
+                      ? "دقت برآورد اولیه است؛ بعد از ثبت چند چرخه‌ی دیگر دقیق‌تر می‌شود."
+                      : cyclePrediction.confidence === 'medium'
+                      ? "برآورد با دقت متوسط بر اساس تاریخچه چرخه‌های قبلی شما."
+                      : "برآورد با دقت بالا بر اساس نظم منظم چرخه‌های ثبت‌شده شما."}
+                  </p>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400 font-bold">شروع پریود:</span>
-                    <span className="font-black text-slate-800">{p.startDatePersian}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400 font-bold">روز تخمک‌گذاری:</span>
-                    <span className="font-black text-fuchsia-600">{p.ovulationDatePersian}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400 font-bold">پنجره باروری:</span>
-                    <span className="font-black text-purple-600">{p.fertileWindowStartPersian} الی {p.fertileWindowEndPersian}</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400">
-                  مناسب برای برنامه‌ریزی سفر، تفریح و زمان‌بندی بارداری 🌸
+                <div className="self-start sm:self-auto shrink-0">
+                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full border ${
+                    cyclePrediction.confidence === 'high'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : cyclePrediction.confidence === 'medium'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                  }`}>
+                    {cyclePrediction.confidence === 'high' ? 'دقت بالا 🎯' : cyclePrediction.confidence === 'medium' ? 'دقت متوسط 📊' : 'برآورد اولیه ⏳'}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {cyclePrediction.hasOvulationPeakSignal && (
+                <div className="bg-purple-50/90 border border-purple-200 text-purple-900 p-3 rounded-2xl text-xs font-bold flex items-center gap-2">
+                  <span>🎯</span>
+                  <span>کیت تخمک‌گذاری با نتیجه پیک (LH Peak) ثبت شده است؛ تاریخ تخمک‌گذاری و پریود بعدی بر این اساس دقیق‌سازی شدند.</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {predictions.map((p) => (
+                  <div 
+                    key={p.cycleIndex} 
+                    className="bg-white p-5 rounded-2xl border border-pink-100 shadow-sm relative overflow-hidden space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">
+                        {p.cycleIndex === 1 && p.isDelayed ? "دوره جاری (دارای تاخیر)" : `دوره ${toPersianDigits(p.cycleIndex)} آینده`}
+                      </span>
+                      <span className="text-[11px] font-black">
+                        {p.isDelayed ? (
+                          <span className="text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                            {toPersianDigits(p.delayedDays)} روز تاخیر ⚠️
+                          </span>
+                        ) : p.daysUntilStart === 0 ? (
+                          <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
+                            امروز (موعد پریود)
+                          </span>
+                        ) : p.daysUntilStart > 0 ? (
+                          <span className="text-slate-500">
+                            {toPersianDigits(p.daysUntilStart)} روز دیگر
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">نزدیک</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400 font-bold">بازه شروع پریود:</span>
+                        <span className="font-black text-slate-800 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                          {p.startDateRangePersian || p.startDatePersian}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400 font-bold">بازه تخمک‌گذاری:</span>
+                        <span className="font-black text-fuchsia-600 bg-fuchsia-50 px-2 py-0.5 rounded-md border border-fuchsia-100">
+                          {p.ovulationDateRangePersian || p.ovulationDatePersian}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400 font-bold">پنجره باروری:</span>
+                        <span className="font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+                          {p.fertileWindowStartPersian} الی {p.fertileWindowEndPersian}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400">
+                      {p.cycleIndex === 1
+                        ? "بازه اطمینان ۸۰٪ بیزی بر اساس پراکندگی دوره‌های قبلی 🌸"
+                        : "بازه دوره ۲ با ضریب √۲ جهت لحاظ افزایش عدم قطعیت آینده 🌸"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 

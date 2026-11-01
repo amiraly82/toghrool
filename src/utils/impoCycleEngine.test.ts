@@ -2,9 +2,14 @@ import { describe, it, expect } from "vitest";
 import { 
   calculateCycleStatus, 
   daysBetween, 
-  predictFutureCycles 
+  predictFutureCycles,
+  extractCycleHistory,
+  estimateCycleLength,
+  predictCycle,
+  formatDateRangePersian,
+  CycleHistoryItem
 } from "./impoCycleEngine";
-import { ImpoPeriodSettings } from "../types";
+import { ImpoPeriodSettings, ImpoDailyLog } from "../types";
 
 describe("impoCycleEngine - daysBetween helper & DST handling", () => {
   it("calculates exact calendar day differences regardless of time or timezone offset", () => {
@@ -190,5 +195,193 @@ describe("impoCycleEngine - predictFutureCycles when delayed", () => {
     expect(predictions[1].startDateIso).toBe("2026-05-27");
     // Cycle 3: 2026-04-01 + 84 days = 2026-06-24
     expect(predictions[2].startDateIso).toBe("2026-06-24");
+  });
+});
+
+describe("impoCycleEngine - extractCycleHistory & outlier filtering", () => {
+  it("builds history from consecutive period starts and excludes bounds and MAD outliers from estimation while keeping them in history", () => {
+    // Consecutive start dates:
+    // 2026-01-01 -> 2026-01-29 (28d)
+    // 2026-01-29 -> 2026-02-26 (28d)
+    // 2026-02-26 -> 2026-03-27 (29d)
+    // 2026-03-27 -> 2026-05-11 (45d -> MAD outlier)
+    // 2026-05-11 -> 2026-05-24 (13d -> out_of_bounds)
+    // 2026-05-24 -> 2026-06-21 (28d)
+    const logs: ImpoDailyLog[] = [
+      { id: "1", date: "2026-01-01", isPeriodDay: true, isPeriodStart: true, loggedByUid: "u1", loggedByName: "N", createdAt: "" },
+      { id: "2", date: "2026-01-29", isPeriodDay: true, isPeriodStart: true, loggedByUid: "u1", loggedByName: "N", createdAt: "" },
+      { id: "3", date: "2026-02-26", isPeriodDay: true, isPeriodStart: true, loggedByUid: "u1", loggedByName: "N", createdAt: "" },
+      { id: "4", date: "2026-03-27", isPeriodDay: true, isPeriodStart: true, loggedByUid: "u1", loggedByName: "N", createdAt: "" },
+      { id: "5", date: "2026-05-11", isPeriodDay: true, isPeriodStart: true, loggedByUid: "u1", loggedByName: "N", createdAt: "" },
+      { id: "6", date: "2026-05-24", isPeriodDay: true, isPeriodStart: true, loggedByUid: "u1", loggedByName: "N", createdAt: "" },
+      { id: "7", date: "2026-06-21", isPeriodDay: true, isPeriodStart: true, loggedByUid: "u1", loggedByName: "N", createdAt: "" }
+    ];
+
+    const history = extractCycleHistory(logs);
+    expect(history).toHaveLength(6);
+
+    expect(history[0].lengthDays).toBe(28);
+    expect(history[0].isValid).toBe(true);
+
+    expect(history[1].lengthDays).toBe(28);
+    expect(history[1].isValid).toBe(true);
+
+    expect(history[2].lengthDays).toBe(29);
+    expect(history[2].isValid).toBe(true);
+
+    // 45 days is > 3 MAD outlier from 28
+    expect(history[3].lengthDays).toBe(45);
+    expect(history[3].isValid).toBe(false);
+    expect(history[3].exclusionReason).toBe("mad_outlier");
+
+    // 13 days is < 18 out_of_bounds
+    expect(history[4].lengthDays).toBe(13);
+    expect(history[4].isValid).toBe(false);
+    expect(history[4].exclusionReason).toBe("out_of_bounds");
+
+    expect(history[5].lengthDays).toBe(28);
+    expect(history[5].isValid).toBe(true);
+  });
+});
+
+describe("impoCycleEngine - estimateCycleLength with scarce data (n=0, 1, 2)", () => {
+  it("n=0: falls back to user prior with low confidence", () => {
+    const history: CycleHistoryItem[] = [];
+    const est = estimateCycleLength(history, 30);
+
+    expect(est.nCycles).toBe(0);
+    expect(est.mean).toBe(30);
+    expect(est.sd).toBe(3.5);
+    expect(est.confidence).toBe("low");
+  });
+
+  it("n=1: performs Bayesian shrinkage to prior (weight=2), keeps low confidence", () => {
+    const history: CycleHistoryItem[] = [
+      { cycleIndex: 1, startDate: "2026-01-01", endDate: "2026-02-02", lengthDays: 32, isValid: true }
+    ];
+    // Prior: mu0 = 28, sigma0 = 3.5. n = 1, obs = 32.
+    // muEst = (2*28 + 1*32) / 3 = 88 / 3 ~= 29.333
+    const est = estimateCycleLength(history, 28);
+
+    expect(est.nCycles).toBe(1);
+    expect(est.mean).toBeCloseTo(29.333, 2);
+    expect(est.sd).toBe(3.5);
+    expect(est.confidence).toBe("low");
+  });
+
+  it("n=2: incorporates observed variance and shrinkage, keeps low confidence", () => {
+    const history: CycleHistoryItem[] = [
+      { cycleIndex: 1, startDate: "2026-01-01", endDate: "2026-01-31", lengthDays: 30, isValid: true },
+      { cycleIndex: 2, startDate: "2026-01-31", endDate: "2026-03-04", lengthDays: 32, isValid: true }
+    ];
+    // Observed median = 31. Observed SD = sqrt(( (30-31)^2 + (32-31)^2 ) / 1) = sqrt(2) ~= 1.4142
+    // muEst = (2*28 + 2*31) / 4 = 118 / 4 = 29.5
+    // sigmaEst = (2*3.5 + 2*1.4142) / 4 ~= (7 + 2.8284) / 4 ~= 2.457
+    const est = estimateCycleLength(history, 28);
+
+    expect(est.nCycles).toBe(2);
+    expect(est.mean).toBeCloseTo(29.5, 1);
+    expect(est.sd).toBeCloseTo(2.457, 2);
+    expect(est.confidence).toBe("low");
+  });
+
+  it("n=4: confidence advances to medium", () => {
+    const history: CycleHistoryItem[] = [
+      { cycleIndex: 1, startDate: "2026-01-01", endDate: "2026-01-29", lengthDays: 28, isValid: true },
+      { cycleIndex: 2, startDate: "2026-01-29", endDate: "2026-02-26", lengthDays: 28, isValid: true },
+      { cycleIndex: 3, startDate: "2026-02-26", endDate: "2026-03-27", lengthDays: 29, isValid: true },
+      { cycleIndex: 4, startDate: "2026-03-27", endDate: "2026-04-24", lengthDays: 28, isValid: true }
+    ];
+    const est = estimateCycleLength(history, 28);
+
+    expect(est.nCycles).toBe(4);
+    expect(est.confidence).toBe("medium");
+  });
+
+  it("n=6 with low SD: confidence advances to high", () => {
+    const history: CycleHistoryItem[] = [
+      { cycleIndex: 1, startDate: "2026-01-01", endDate: "2026-01-29", lengthDays: 28, isValid: true },
+      { cycleIndex: 2, startDate: "2026-01-29", endDate: "2026-02-26", lengthDays: 28, isValid: true },
+      { cycleIndex: 3, startDate: "2026-02-26", endDate: "2026-03-27", lengthDays: 29, isValid: true },
+      { cycleIndex: 4, startDate: "2026-03-27", endDate: "2026-04-24", lengthDays: 28, isValid: true },
+      { cycleIndex: 5, startDate: "2026-04-24", endDate: "2026-05-22", lengthDays: 28, isValid: true },
+      { cycleIndex: 6, startDate: "2026-05-22", endDate: "2026-06-19", lengthDays: 28, isValid: true }
+    ];
+    const est = estimateCycleLength(history, 28);
+
+    expect(est.nCycles).toBe(6);
+    expect(est.confidence).toBe("high");
+    expect(est.sd).toBeLessThanOrEqual(2.5);
+  });
+});
+
+describe("impoCycleEngine - predictCycle signals", () => {
+  it("handles ovulationTestResult === 'positive_peak' to pin-point ovulation and period", () => {
+    const settings: ImpoPeriodSettings = {
+      cycleLength: 28,
+      periodLength: 5,
+      lastPeriodStartDate: "2026-05-01"
+    };
+    const logs: ImpoDailyLog[] = [
+      {
+        id: "log_peak",
+        date: "2026-05-14",
+        isPeriodDay: false,
+        ovulationTestResult: "positive_peak",
+        loggedByUid: "u1",
+        loggedByName: "N",
+        createdAt: ""
+      }
+    ];
+
+    const result = predictCycle([], logs, new Date("2026-05-15"), settings);
+
+    expect(result.hasOvulationPeakSignal).toBe(true);
+    // Peak on 2026-05-14 -> Ovulation is 2026-05-15 (day after peak)
+    expect(result.ovulation.median).toBe("2026-05-15");
+    // Next period = Ovulation (2026-05-15) + 13 days = 2026-05-28
+    expect(result.nextStart.median).toBe("2026-05-28");
+    // Fertile window covers 5 days before ovulation up to 1 day after
+    expect(result.fertileWindow.start).toBe("2026-05-10");
+    expect(result.fertileWindow.end).toBe("2026-05-16");
+  });
+
+  it("handles pregnancyTestResult === 'positive' by stopping period prediction and returning banner", () => {
+    const settings: ImpoPeriodSettings = {
+      cycleLength: 28,
+      periodLength: 5,
+      lastPeriodStartDate: "2026-05-01"
+    };
+    const logs: ImpoDailyLog[] = [
+      {
+        id: "log_preg",
+        date: "2026-05-25",
+        isPeriodDay: false,
+        pregnancyTestResult: "positive",
+        loggedByUid: "u1",
+        loggedByName: "N",
+        createdAt: ""
+      }
+    ];
+
+    const result = predictCycle([], logs, new Date("2026-05-26"), settings);
+
+    expect(result.isPregnant).toBe(true);
+    expect(result.pregnancyMessage).toContain("تبریک! تست بارداری مثبت ثبت شده است");
+    expect(result.cycles).toHaveLength(0);
+  });
+});
+
+describe("impoCycleEngine - formatDateRangePersian", () => {
+  it("formats dates in the same month as 'حدوداً X تا Y [ماه]'", () => {
+    // 2026-11-01 is 10 Aban, 2026-11-04 is 13 Aban
+    const text = formatDateRangePersian("2026-11-01", "2026-11-04");
+    expect(text).toBe("حدوداً ۱۰ تا ۱۳ آبان");
+  });
+
+  it("formats dates spanning month boundaries as 'حدوداً X [ماه۱] تا Y [ماه۲]'", () => {
+    // 2026-10-20 is 28 Mehr, 2026-10-24 is 2 Aban
+    const text = formatDateRangePersian("2026-10-20", "2026-10-24");
+    expect(text).toBe("حدوداً ۲۸ مهر تا ۲ آبان");
   });
 });

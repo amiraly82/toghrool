@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "test": "vitest run",
+    "backtest": "tsx scripts/backtest.ts",
     "build": "node scripts/build.mjs",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",

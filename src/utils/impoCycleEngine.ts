@@ -1,5 +1,5 @@
-import { ImpoPeriodSettings, CycleGoalMode } from "../types";
-import { formatPersianDate, toPersianDigits, toGregorianIsoString } from "./jalali";
+import { ImpoPeriodSettings, CycleGoalMode, ImpoDailyLog } from "../types";
+import { formatPersianDate, toPersianDigits, toGregorianIsoString, gregorianToJalali, JALALI_MONTHS } from "./jalali";
 
 export type CyclePhaseType = 
   | 'period'
@@ -42,6 +42,90 @@ export interface CycleStatusResult {
   nutritionTip: string;
 }
 
+export interface CycleHistoryItem {
+  cycleIndex: number;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD (start of next cycle)
+  lengthDays: number;
+  isValid: boolean;
+  exclusionReason?: 'out_of_bounds' | 'mad_outlier';
+}
+
+export interface CycleLengthEstimate {
+  mean: number;
+  median: number;
+  sd: number;
+  nCycles: number;
+  confidence: 'low' | 'medium' | 'high';
+}
+
+export interface DateInterval {
+  median: string; // YYYY-MM-DD
+  lo80: string; // YYYY-MM-DD
+  hi80: string; // YYYY-MM-DD
+  rangePersian?: string;
+}
+
+export interface CyclePredictionItem {
+  cycleIndex: number;
+  nextStart: DateInterval;
+  ovulation: DateInterval;
+  fertileWindow: {
+    start: string; // YYYY-MM-DD
+    end: string; // YYYY-MM-DD
+    rangePersian?: string;
+  };
+  daysUntilStart: number;
+  isDelayed: boolean;
+  delayedDays: number;
+}
+
+export interface CyclePredictionResult {
+  nextStart: DateInterval;
+  ovulation: DateInterval;
+  fertileWindow: {
+    start: string;
+    end: string;
+    rangePersian?: string;
+  };
+  nCycles: number;
+  confidence: 'low' | 'medium' | 'high';
+  estimatedCycleLength: number;
+  estimatedCycleSd: number;
+  isPregnant: boolean;
+  pregnancyMessage?: string;
+  hasOvulationPeakSignal?: boolean;
+  ovulationPeakDate?: string;
+  isFertileDischargeObserved?: boolean;
+  cycles: CyclePredictionItem[];
+}
+
+export interface PredictedCycle {
+  cycleIndex: number;
+  startDateIso: string;
+  startDatePersian: string;
+  startDateRangePersian?: string;
+  lo80Iso?: string;
+  hi80Iso?: string;
+  daysUntilStart: number;
+  isDelayed: boolean;
+  delayedDays: number;
+  ovulationDateIso: string;
+  ovulationDatePersian: string;
+  ovulationDateRangePersian?: string;
+  fertileWindowStartPersian: string;
+  fertileWindowEndPersian: string;
+  confidence?: 'low' | 'medium' | 'high';
+}
+
+export interface BiorhythmResult {
+  physical: number; // -100 to 100
+  emotional: number;
+  intellectual: number;
+  daysAlive: number;
+  summary: string;
+}
+
 /**
  * Calculates calendar day difference (b - a) normalized to UTC midnight.
  * Guarantees no 1-day off errors during Daylight Saving Time (DST) switches (e.g. March 29 / October 31).
@@ -63,8 +147,507 @@ export function daysBetween(a: Date | string, b: Date | string): number {
   return Math.round((utcB - utcA) / 86400000);
 }
 
-export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date = new Date()): CycleStatusResult {
-  const cycleLength = Math.max(20, Math.min(60, settings.cycleLength || 28));
+/**
+ * Adds integer days to an ISO YYYY-MM-DD date string using UTC arithmetic.
+ */
+export function addDays(dateIso: string, days: number): string {
+  const parts = dateIso.split('T')[0].split('-').map(Number);
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + days));
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Calculates statistical median of a numeric array.
+ */
+export function calculateMedian(numbers: number[]): number {
+  if (numbers.length === 0) return 0;
+  const sorted = [...numbers].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+
+/**
+ * Calculates Median Absolute Deviation (MAD).
+ */
+export function calculateMad(numbers: number[], median?: number): number {
+  if (numbers.length === 0) return 0;
+  const med = median !== undefined ? median : calculateMedian(numbers);
+  const deviations = numbers.map(x => Math.abs(x - med));
+  return calculateMedian(deviations);
+}
+
+/**
+ * Formats a Persian date range string cleanly (e.g. "حدوداً ۱۱ تا ۱۴ آبان").
+ */
+export function formatDateRangePersian(startIso: string, endIso: string): string {
+  if (!startIso) return "";
+  if (!endIso || startIso === endIso) {
+    return formatPersianDate(startIso, false);
+  }
+
+  const [gy1, gm1, gd1] = startIso.split('T')[0].split('-').map(Number);
+  const [gy2, gm2, gd2] = endIso.split('T')[0].split('-').map(Number);
+
+  if (isNaN(gy1) || isNaN(gm1) || isNaN(gd1) || isNaN(gy2) || isNaN(gm2) || isNaN(gd2)) {
+    return `${startIso} تا ${endIso}`;
+  }
+
+  const [jy1, jm1, jd1] = gregorianToJalali(gy1, gm1, gd1);
+  const [jy2, jm2, jd2] = gregorianToJalali(gy2, gm2, gd2);
+
+  if (jy1 === jy2 && jm1 === jm2 && jd1 === jd2) {
+    return `${toPersianDigits(jd1)} ${JALALI_MONTHS[jm1 - 1]}`;
+  }
+
+  if (jy1 === jy2 && jm1 === jm2) {
+    return `حدوداً ${toPersianDigits(jd1)} تا ${toPersianDigits(jd2)} ${JALALI_MONTHS[jm1 - 1]}`;
+  }
+
+  if (jy1 === jy2) {
+    return `حدوداً ${toPersianDigits(jd1)} ${JALALI_MONTHS[jm1 - 1]} تا ${toPersianDigits(jd2)} ${JALALI_MONTHS[jm2 - 1]}`;
+  }
+
+  return `حدوداً ${toPersianDigits(jd1)} ${JALALI_MONTHS[jm1 - 1]} ${toPersianDigits(jy1)} تا ${toPersianDigits(jd2)} ${JALALI_MONTHS[jm2 - 1]} ${toPersianDigits(jy2)}`;
+}
+
+/**
+ * 1) History: Builds consecutive start intervals from logs with isPeriodStart=true and settings.cycleHistory.
+ * Excludes cycles outside [18, 60] days or > 3 MAD from median from estimation while keeping them in history.
+ */
+export function extractCycleHistory(
+  logs: ImpoDailyLog[] = [],
+  settings?: ImpoPeriodSettings
+): CycleHistoryItem[] {
+  const dateSet = new Set<string>();
+
+  for (const log of logs) {
+    if (log.isPeriodStart && log.date) {
+      dateSet.add(log.date.split('T')[0]);
+    }
+  }
+
+  if (settings?.cycleHistory) {
+    for (const h of settings.cycleHistory) {
+      if (h.startDate) {
+        dateSet.add(h.startDate.split('T')[0]);
+      }
+    }
+  }
+
+  if (settings?.lastPeriodStartDate) {
+    dateSet.add(settings.lastPeriodStartDate.split('T')[0]);
+  }
+
+  const sortedDates = Array.from(dateSet).sort((a, b) => a.localeCompare(b));
+
+  // Deduplicate start dates closer than 10 days (prevent double clicks/accidental multi-starts)
+  const dedupedDates: string[] = [];
+  for (const d of sortedDates) {
+    if (dedupedDates.length === 0) {
+      dedupedDates.push(d);
+    } else {
+      const prev = dedupedDates[dedupedDates.length - 1];
+      if (daysBetween(prev, d) >= 10) {
+        dedupedDates.push(d);
+      }
+    }
+  }
+
+  const rawIntervals: Array<{ startDate: string; endDate: string; lengthDays: number }> = [];
+  for (let i = 0; i < dedupedDates.length - 1; i++) {
+    const s = dedupedDates[i];
+    const e = dedupedDates[i + 1];
+    rawIntervals.push({
+      startDate: s,
+      endDate: e,
+      lengthDays: daysBetween(s, e)
+    });
+  }
+
+  // Fallback for pre-configured history items with explicit cycleLength
+  if (rawIntervals.length === 0 && settings?.cycleHistory && settings.cycleHistory.length > 0) {
+    for (const h of settings.cycleHistory) {
+      if (h.cycleLength && h.cycleLength > 0) {
+        const s = h.startDate || '2026-01-01';
+        const e = addDays(s, h.cycleLength);
+        rawIntervals.push({
+          startDate: s,
+          endDate: e,
+          lengthDays: h.cycleLength
+        });
+      }
+    }
+  }
+
+  if (rawIntervals.length === 0) {
+    return [];
+  }
+
+  // Filter bounded lengths within [18, 60] for outlier calculation
+  const boundedLengths = rawIntervals
+    .filter(it => it.lengthDays >= 18 && it.lengthDays <= 60)
+    .map(it => it.lengthDays);
+
+  const medianBounded = boundedLengths.length > 0 ? calculateMedian(boundedLengths) : 28;
+  const madBounded = boundedLengths.length > 0 ? calculateMad(boundedLengths, medianBounded) : 0;
+  // Use effective minimum threshold of 3 days to prevent zero-scale breakdown on identical cycle records
+  const madThreshold = Math.max(3 * madBounded, 3.0);
+
+  return rawIntervals.map((item, idx) => {
+    let isValid = true;
+    let exclusionReason: 'out_of_bounds' | 'mad_outlier' | undefined;
+
+    if (item.lengthDays < 18 || item.lengthDays > 60) {
+      isValid = false;
+      exclusionReason = 'out_of_bounds';
+    } else if (boundedLengths.length >= 3 && Math.abs(item.lengthDays - medianBounded) > madThreshold) {
+      isValid = false;
+      exclusionReason = 'mad_outlier';
+    }
+
+    return {
+      cycleIndex: idx + 1,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      lengthDays: item.lengthDays,
+      isValid,
+      exclusionReason
+    };
+  });
+}
+
+/**
+ * 2) Cycle Length Estimation:
+ * Median of up to last 6 valid cycles + Bayesian shrinkage to population prior (mu0=28, sigma0=3.5, w0=2).
+ * Standard deviation estimated with identical shrinkage.
+ */
+export function estimateCycleLength(
+  history: CycleHistoryItem[],
+  initialPriorMean: number = 28
+): CycleLengthEstimate {
+  const mu0 = initialPriorMean > 0 ? initialPriorMean : 28;
+  const sigma0 = 3.5;
+  const w0 = 2;
+
+  const validCycles = history.filter(h => h.isValid);
+  const recent = validCycles.slice(-6);
+  const n = recent.length;
+
+  if (n === 0) {
+    return {
+      mean: mu0,
+      median: mu0,
+      sd: sigma0,
+      nCycles: 0,
+      confidence: 'low'
+    };
+  }
+
+  const lengths = recent.map(r => r.lengthDays);
+  const mObs = calculateMedian(lengths);
+
+  let sObs = sigma0;
+  if (n >= 2) {
+    const meanObs = lengths.reduce((acc, v) => acc + v, 0) / n;
+    const variance = lengths.reduce((acc, v) => acc + Math.pow(v - meanObs, 2), 0) / (n - 1);
+    sObs = Math.sqrt(variance);
+  }
+
+  const muEst = (w0 * mu0 + n * mObs) / (w0 + n);
+  const sigmaEst = Math.max(1.0, (w0 * sigma0 + n * sObs) / (w0 + n));
+
+  let confidence: 'low' | 'medium' | 'high' = 'low';
+  if (n >= 6) {
+    confidence = sigmaEst <= 2.5 ? 'high' : 'medium';
+  } else if (n >= 3) {
+    confidence = 'medium';
+  } else {
+    confidence = 'low';
+  }
+
+  return {
+    mean: muEst,
+    median: muEst,
+    sd: sigmaEst,
+    nCycles: n,
+    confidence
+  };
+}
+
+/**
+ * 3 & 4) predictCycle:
+ * Predicts nextStart {median, lo80, hi80}, ovulation {median, lo80, hi80}, fertileWindow {start, end}.
+ * Luteal phase default 13 +- 2 days. Ovulation variance = max(1.0, sigma_cycle^2 - 4).
+ * For k-th future cycle, widens interval with sqrt(k). Shows next 2 cycles.
+ * Handles recorded signals: ovulation peak, clear discharge, positive pregnancy test.
+ */
+export function predictCycle(
+  history: CycleHistoryItem[],
+  logs: ImpoDailyLog[] = [],
+  today: Date = new Date(),
+  settings?: ImpoPeriodSettings,
+  count: number = 2
+): CyclePredictionResult {
+  const userPrior = settings?.cycleLength && settings.cycleLength >= 18 && settings.cycleLength <= 60 
+    ? settings.cycleLength 
+    : 28;
+
+  const estimate = estimateCycleLength(history, userPrior);
+  const todayIso = toGregorianIsoString(today);
+
+  // Determine latest known period start date
+  let latestStartIso = settings?.lastPeriodStartDate;
+  if (!latestStartIso) {
+    const startLogs = logs.filter(l => l.isPeriodStart).map(l => l.date.split('T')[0]).sort();
+    if (startLogs.length > 0) {
+      latestStartIso = startLogs[startLogs.length - 1];
+    } else {
+      latestStartIso = todayIso;
+    }
+  }
+
+  // Filter logs in current cycle (on or after latest period start date)
+  const currentCycleLogs = logs.filter(l => l.date >= latestStartIso);
+
+  // 4) Check for recorded positive pregnancy test
+  const hasPositivePregnancy = currentCycleLogs.some(l => l.pregnancyTestResult === 'positive');
+  if (hasPositivePregnancy) {
+    return {
+      nextStart: { median: todayIso, lo80: todayIso, hi80: todayIso },
+      ovulation: { median: todayIso, lo80: todayIso, hi80: todayIso },
+      fertileWindow: { start: todayIso, end: todayIso },
+      nCycles: estimate.nCycles,
+      confidence: estimate.confidence,
+      estimatedCycleLength: estimate.mean,
+      estimatedCycleSd: estimate.sd,
+      isPregnant: true,
+      pregnancyMessage: "تبریک! تست بارداری مثبت ثبت شده است 🌸🤰 پیش‌بینی دوره‌های قاعدگی متوقف شد. برای مراقبت‌های بارداری با پزشک مشورت کنید.",
+      cycles: []
+    };
+  }
+
+  // 4) Check for ovulation test peak signal
+  const peakLogs = currentCycleLogs
+    .filter(l => l.ovulationTestResult === 'positive_peak')
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const peakLog = peakLogs.length > 0 ? peakLogs[0] : null;
+
+  // 4) Supporting sign: clear discharge
+  const isFertileDischargeObserved = currentCycleLogs.some(l => l.discharge === 'clear');
+
+  const z80 = 1.28155; // 80% coverage multiplier for normal distribution
+  const cycles: CyclePredictionItem[] = [];
+
+  if (peakLog) {
+    // Ovulation is the day after peak; Next period = ovulation + 13
+    const ovMedianIso = addDays(peakLog.date, 1);
+    const ovLoIso = ovMedianIso;
+    const ovHiIso = addDays(ovMedianIso, 1);
+
+    const nextStartMedianIso = addDays(ovMedianIso, 13);
+    const lutealSd = 2.0;
+    const nextStartHalfWidth = Math.round(z80 * lutealSd);
+    const nextStartLoIso = addDays(nextStartMedianIso, -nextStartHalfWidth);
+    const nextStartHiIso = addDays(nextStartMedianIso, nextStartHalfWidth);
+
+    const fertileStartIso = addDays(ovMedianIso, -5);
+    const fertileEndIso = addDays(ovMedianIso, 1);
+
+    const daysUntilStart = daysBetween(todayIso, nextStartMedianIso);
+    const isDelayed = daysUntilStart < 0;
+    const delayedDays = isDelayed ? Math.abs(daysUntilStart) : 0;
+
+    const cycle1: CyclePredictionItem = {
+      cycleIndex: 1,
+      nextStart: {
+        median: nextStartMedianIso,
+        lo80: nextStartLoIso,
+        hi80: nextStartHiIso,
+        rangePersian: formatDateRangePersian(nextStartLoIso, nextStartHiIso)
+      },
+      ovulation: {
+        median: ovMedianIso,
+        lo80: ovLoIso,
+        hi80: ovHiIso,
+        rangePersian: formatDateRangePersian(ovLoIso, ovHiIso)
+      },
+      fertileWindow: {
+        start: fertileStartIso,
+        end: fertileEndIso,
+        rangePersian: formatDateRangePersian(fertileStartIso, fertileEndIso)
+      },
+      daysUntilStart,
+      isDelayed,
+      delayedDays
+    };
+    cycles.push(cycle1);
+
+    // Subsequent cycles advance from Cycle 1's median with standard Bayesian shrinkage & sqrt(k)
+    for (let k = 2; k <= count; k++) {
+      const sigmaK = estimate.sd * Math.sqrt(k);
+      const cycleKStartMedianIso = addDays(nextStartMedianIso, Math.round((k - 1) * estimate.mean));
+      const cycleKStartHw = Math.round(z80 * sigmaK);
+      const cycleKStartLoIso = addDays(cycleKStartMedianIso, -cycleKStartHw);
+      const cycleKStartHiIso = addDays(cycleKStartMedianIso, cycleKStartHw);
+
+      const cycleKOvMedianIso = addDays(cycleKStartMedianIso, -13);
+      const cycleKOvVar = Math.max(1.0, Math.pow(sigmaK, 2) - 4);
+      const cycleKOvHw = Math.round(z80 * Math.sqrt(cycleKOvVar));
+      const cycleKOvLoIso = addDays(cycleKOvMedianIso, -cycleKOvHw);
+      const cycleKOvHiIso = addDays(cycleKOvMedianIso, cycleKOvHw);
+
+      const cycleKFertileStart = addDays(cycleKOvLoIso, -5);
+      const cycleKFertileEnd = addDays(cycleKOvHiIso, 1);
+
+      const daysUntilStartK = daysBetween(todayIso, cycleKStartMedianIso);
+
+      cycles.push({
+        cycleIndex: k,
+        nextStart: {
+          median: cycleKStartMedianIso,
+          lo80: cycleKStartLoIso,
+          hi80: cycleKStartHiIso,
+          rangePersian: formatDateRangePersian(cycleKStartLoIso, cycleKStartHiIso)
+        },
+        ovulation: {
+          median: cycleKOvMedianIso,
+          lo80: cycleKOvLoIso,
+          hi80: cycleKOvHiIso,
+          rangePersian: formatDateRangePersian(cycleKOvLoIso, cycleKOvHiIso)
+        },
+        fertileWindow: {
+          start: cycleKFertileStart,
+          end: cycleKFertileEnd,
+          rangePersian: formatDateRangePersian(cycleKFertileStart, cycleKFertileEnd)
+        },
+        daysUntilStart: daysUntilStartK,
+        isDelayed: daysUntilStartK < 0,
+        delayedDays: daysUntilStartK < 0 ? Math.abs(daysUntilStartK) : 0
+      });
+    }
+  } else {
+    // Normal Bayesian prediction for future cycles with sqrt(k) widening
+    for (let k = 1; k <= count; k++) {
+      const sigmaK = estimate.sd * Math.sqrt(k);
+      const daysOffset = Math.round(k * estimate.mean);
+      const nextStartMedianIso = addDays(latestStartIso, daysOffset);
+
+      const nextStartHw = Math.round(z80 * sigmaK);
+      const nextStartLoIso = addDays(nextStartMedianIso, -nextStartHw);
+      const nextStartHiIso = addDays(nextStartMedianIso, nextStartHw);
+
+      // Ovulation: median = nextStart - 13 days
+      const ovMedianIso = addDays(nextStartMedianIso, -13);
+      // Variance formula: sigma_ov^2 = max(1.0, sigma_k^2 - 4)
+      const ovVar = Math.max(1.0, Math.pow(sigmaK, 2) - 4);
+      const ovSd = Math.sqrt(ovVar);
+      const ovHw = Math.round(z80 * ovSd);
+      const ovLoIso = addDays(ovMedianIso, -ovHw);
+      const ovHiIso = addDays(ovMedianIso, ovHw);
+
+      // Fertile window covers 5 days before ovulation up to 1 day after
+      const fertileStartIso = addDays(ovLoIso, -5);
+      const fertileEndIso = addDays(ovHiIso, 1);
+
+      const daysUntilStart = daysBetween(todayIso, nextStartMedianIso);
+      const isDelayed = daysUntilStart < 0;
+      const delayedDays = isDelayed ? Math.abs(daysUntilStart) : 0;
+
+      cycles.push({
+        cycleIndex: k,
+        nextStart: {
+          median: nextStartMedianIso,
+          lo80: nextStartLoIso,
+          hi80: nextStartHiIso,
+          rangePersian: formatDateRangePersian(nextStartLoIso, nextStartHiIso)
+        },
+        ovulation: {
+          median: ovMedianIso,
+          lo80: ovLoIso,
+          hi80: ovHiIso,
+          rangePersian: formatDateRangePersian(ovLoIso, ovHiIso)
+        },
+        fertileWindow: {
+          start: fertileStartIso,
+          end: fertileEndIso,
+          rangePersian: formatDateRangePersian(fertileStartIso, fertileEndIso)
+        },
+        daysUntilStart,
+        isDelayed,
+        delayedDays
+      });
+    }
+  }
+
+  const primaryCycle = cycles[0];
+
+  return {
+    nextStart: primaryCycle.nextStart,
+    ovulation: primaryCycle.ovulation,
+    fertileWindow: primaryCycle.fertileWindow,
+    nCycles: estimate.nCycles,
+    confidence: estimate.confidence,
+    estimatedCycleLength: estimate.mean,
+    estimatedCycleSd: estimate.sd,
+    isPregnant: false,
+    hasOvulationPeakSignal: Boolean(peakLog),
+    ovulationPeakDate: peakLog ? peakLog.date : undefined,
+    isFertileDischargeObserved,
+    cycles
+  };
+}
+
+/**
+ * Predicts subsequent cycle starts advancing predictably from the base expected period.
+ * Returns only 2 future cycles formatted for display.
+ */
+export function predictFutureCycles(
+  settings: ImpoPeriodSettings,
+  count: number = 2,
+  logs: ImpoDailyLog[] = []
+): PredictedCycle[] {
+  const history = extractCycleHistory(logs, settings);
+  const prediction = predictCycle(history, logs, new Date(), settings, count);
+
+  if (prediction.isPregnant) {
+    return [];
+  }
+
+  return prediction.cycles.slice(0, count).map(c => ({
+    cycleIndex: c.cycleIndex,
+    startDateIso: c.nextStart.median,
+    startDatePersian: formatPersianDate(c.nextStart.median),
+    startDateRangePersian: c.nextStart.rangePersian,
+    lo80Iso: c.nextStart.lo80,
+    hi80Iso: c.nextStart.hi80,
+    daysUntilStart: c.daysUntilStart,
+    isDelayed: c.isDelayed,
+    delayedDays: c.delayedDays,
+    ovulationDateIso: c.ovulation.median,
+    ovulationDatePersian: formatPersianDate(c.ovulation.median),
+    ovulationDateRangePersian: c.ovulation.rangePersian,
+    fertileWindowStartPersian: formatPersianDate(c.fertileWindow.start, false),
+    fertileWindowEndPersian: formatPersianDate(c.fertileWindow.end, false),
+    confidence: prediction.confidence
+  }));
+}
+
+/**
+ * Calculates cycle status and current phase according to clinical standards.
+ */
+export function calculateCycleStatus(
+  settings: ImpoPeriodSettings,
+  today: Date = new Date(),
+  overrideCycleLength?: number
+): CycleStatusResult {
+  const effectiveLength = overrideCycleLength || settings.cycleLength || 28;
+  const cycleLength = Math.max(18, Math.min(60, effectiveLength));
   const periodLength = Math.max(2, Math.min(15, settings.periodLength || 5));
   const goalMode: CycleGoalMode = settings.goalMode || 'track';
 
@@ -83,28 +666,24 @@ export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date =
   let phase: CyclePhaseType = 'follicular';
 
   if (diffDays < 0) {
-    // lastPeriodStartDate is in the future
     currentCycleDay = 1;
     isDelayed = false;
     delayedDays = 0;
     daysUntilNextPeriod = Math.abs(diffDays);
     phase = 'follicular';
   } else if (diffDays === cycleLength) {
-    // 1) Off-by-one fix: Due date (no red warning, no pregnancy test suggestion)
     currentCycleDay = cycleLength + 1;
     isDelayed = false;
     delayedDays = 0;
     daysUntilNextPeriod = 0;
     phase = 'due';
   } else if (diffDays > cycleLength) {
-    // 1) Delayed: diffDays > cycleLength with delayedDays = diffDays - cycleLength
     isDelayed = true;
     delayedDays = diffDays - cycleLength;
     currentCycleDay = diffDays + 1;
     daysUntilNextPeriod = 0;
     phase = 'delayed';
   } else {
-    // Normal active cycle: 0 <= diffDays < cycleLength
     currentCycleDay = diffDays + 1;
     delayedDays = 0;
     isDelayed = false;
@@ -125,7 +704,6 @@ export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date =
     }
   }
 
-  // Phase Title, Subtitle, Colors and Descriptions
   let phaseTitle = "";
   let phaseSubtitle = "";
   let stageDescription = "";
@@ -166,13 +744,11 @@ export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date =
 
     case 'delayed':
       if (diffDays >= 90) {
-        // 2) Ceiling: 90+ days -> only doctor consult message
         phaseTitle = "نیاز به مشورت با پزشک 🩺";
         phaseSubtitle = "بیش از ۳ ماه عدم قاعدگی";
         stageDescription = "اگر بیش از ۳ ماه پریود نشده‌اید یا بارداری رد شده است، با پزشک مشورت کنید.";
         chanceOfPregnancy = "نیاز به بررسی تخصصی";
       } else if (diffDays >= 45) {
-        // 2) Ceiling: 45-89 days -> new period registration prompt + doctor message
         phaseTitle = "ثبت شروع پریود جدید 🌸";
         phaseSubtitle = "پریودت شروع شده؟ همین حالا ثبتش کن";
         stageDescription = "اگر بیش از ۳ ماه پریود نشده‌اید یا بارداری رد شده است، با پزشک مشورت کنید.";
@@ -180,14 +756,12 @@ export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date =
       } else {
         phaseTitle = `تاخیر در قاعدگی (${toPersianDigits(delayedDays)} روز تاخیر) ⚠️`;
         if (delayedDays >= 2) {
-          // Suggest pregnancy test only from 2 days delay with suggestive tone
           phaseSubtitle = goalMode === 'pregnancy'
             ? "اگر احتمال بارداری هست، بررسی تست بیبی‌چک پیشنهاد می‌شود"
             : `${toPersianDigits(delayedDays)} روز از موعد گذشته است`;
           stageDescription = "تاریخ سررسید پریود شما سپری شده است. نوسانات هورمونی، تغییرات وزنی یا استرس می‌توانند علت تاخیر باشند. اگر احتمال بارداری هست، بررسی تست بیبی‌چک پیشنهاد می‌شود.";
           chanceOfPregnancy = "اگر احتمال بارداری هست، بررسی تست بیبی‌چک پیشنهاد می‌شود";
         } else {
-          // 1 day delay (no pregnancy test suggestion)
           phaseSubtitle = "۱ روز از موعد مورد انتظار گذشته است";
           stageDescription = "یک روز تاخیر در چرخه قاعدگی کاملاً متداول و طبیعی است و اغلب ناشی از استرس روزمره، کم‌خوابی یا تغییرات فصلی است. نیازی به نگرانی نیست.";
           chanceOfPregnancy = "کم";
@@ -348,89 +922,12 @@ export function calculateCycleStatus(settings: ImpoPeriodSettings, today: Date =
   };
 }
 
-export interface PredictedCycle {
-  cycleIndex: number;
-  startDateIso: string;
-  startDatePersian: string;
-  daysUntilStart: number;
-  isDelayed: boolean;
-  delayedDays: number;
-  ovulationDateIso: string;
-  ovulationDatePersian: string;
-  fertileWindowStartPersian: string;
-  fertileWindowEndPersian: string;
-}
-
-/**
- * Predicts subsequent cycle starts advancing predictably from the base expected period.
- * 3) If delayed, next expected period = lastStart + cycleLength (with label 'X روز تاخیر') and future cycles advance from there.
- */
-export function predictFutureCycles(settings: ImpoPeriodSettings, count: number = 3): PredictedCycle[] {
-  const cycleLength = Math.max(20, Math.min(60, settings.cycleLength || 28));
-  const periodLength = Math.max(2, Math.min(15, settings.periodLength || 5));
-  const lastStartIso = settings.lastPeriodStartDate;
-  if (!lastStartIso) return [];
-
-  const today = new Date();
-  const ovulationOffset = Math.max(periodLength + 2, cycleLength - 14);
-
-  const predictions: PredictedCycle[] = [];
-  const [startY, startM, startD] = lastStartIso.split('T')[0].split('-').map(Number);
-
-  for (let i = 0; i < count; i++) {
-    // Next expected periods start at:
-    // Cycle 1: lastStart + 1 * cycleLength (even if in the past / delayed)
-    // Cycle 2: lastStart + 2 * cycleLength
-    // Cycle 3: lastStart + 3 * cycleLength
-    const cycleStart = new Date(startY, startM - 1, startD + ((i + 1) * cycleLength));
-    const startIso = toGregorianIsoString(cycleStart);
-
-    const ovDate = new Date(cycleStart);
-    ovDate.setDate(ovDate.getDate() + ovulationOffset - 1);
-    const ovIso = toGregorianIsoString(ovDate);
-
-    const fertileStart = new Date(ovDate);
-    fertileStart.setDate(fertileStart.getDate() - 5);
-
-    const fertileEnd = new Date(ovDate);
-    fertileEnd.setDate(fertileEnd.getDate() + 1);
-
-    const daysUntilStart = daysBetween(today, cycleStart);
-    const isDelayed = daysUntilStart < 0;
-    const delayedDays = isDelayed ? Math.abs(daysUntilStart) : 0;
-
-    predictions.push({
-      cycleIndex: i + 1,
-      startDateIso: startIso,
-      startDatePersian: formatPersianDate(startIso),
-      daysUntilStart,
-      isDelayed,
-      delayedDays,
-      ovulationDateIso: ovIso,
-      ovulationDatePersian: formatPersianDate(ovIso),
-      fertileWindowStartPersian: formatPersianDate(toGregorianIsoString(fertileStart), false),
-      fertileWindowEndPersian: formatPersianDate(toGregorianIsoString(fertileEnd), false)
-    });
-  }
-
-  return predictions;
-}
-
-export interface BiorhythmResult {
-  physical: number; // -100 to 100
-  emotional: number;
-  intellectual: number;
-  daysAlive: number;
-  summary: string;
-}
-
 export function calculateBiorhythm(birthDateStr?: string, targetDate: Date = new Date()): BiorhythmResult | null {
   if (!birthDateStr) return null;
   try {
     const daysAlive = daysBetween(birthDateStr, targetDate);
     if (daysAlive <= 0) return null;
 
-    // Standard biological rhythm formulas (Sine curves)
     const physical = Math.round(Math.sin((2 * Math.PI * daysAlive) / 23) * 100);
     const emotional = Math.round(Math.sin((2 * Math.PI * daysAlive) / 28) * 100);
     const intellectual = Math.round(Math.sin((2 * Math.PI * daysAlive) / 33) * 100);
