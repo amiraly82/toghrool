@@ -1,13 +1,13 @@
-# Apache .htaccess configuration for React SPA + PHP API on cPanel
+# Apache configuration for React SPA + Secure PHP API on cPanel
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Handle CORS OPTIONS Preflight
-  Header always set Access-Control-Allow-Origin "*"
-  Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
-  Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+  # Pass Authorization header to PHP (prevents cPanel/FastCGI stripping Authorization)
+  SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  SetEnvIfNoCase ^X-Auth-Token$ "(.+)" HTTP_X_AUTH_TOKEN=$1
 
   # Do not rewrite if requested file or directory exists physically
   RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -16,4 +16,25 @@
 
   # Redirect all other SPA routes to index.html
   RewriteRule ^ index.html [L]
+</IfModule>
+
+# Block direct access to sensitive configuration, credentials, SQL and env files
+<FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op]|env|git.*|md)$|config\.php|db_credentials\.php)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Strict CORS headers via Apache when Origin matches whitelist
+<IfModule mod_headers.c>
+  SetEnvIfNoCase Origin "^(https?://(toghrool\.ir|localhost(:[0-9]+)?)|capacitor://localhost)$" CORS_ALLOWED_ORIGIN=$0
+  Header set Access-Control-Allow-Origin "%{CORS_ALLOWED_ORIGIN}e" env=CORS_ALLOWED_ORIGIN
+  Header set Access-Control-Allow-Credentials "true" env=CORS_ALLOWED_ORIGIN
+  Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Auth-Token, X-Requested-With"
+  Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+  Header append Vary Origin
 </IfModule>

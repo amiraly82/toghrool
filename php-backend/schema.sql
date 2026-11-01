@@ -1,5 +1,5 @@
 -- SQL Schema for Couples Shared Wishlist App
--- Import this file into phpMyAdmin on your cPanel host
+-- Canonical Schema Definition
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -11,16 +11,52 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(255) NOT NULL,
   `displayName` varchar(255) NOT NULL,
   `coupleCode` varchar(32) NOT NULL,
+  `gender` varchar(16) DEFAULT NULL,
   `partnerEmail` varchar(255) DEFAULT NULL,
   `partnerUid` varchar(64) DEFAULT NULL,
   `coupleId` varchar(128) DEFAULT NULL,
   `passwordHash` varchar(255) NOT NULL,
-  `photoURL` text DEFAULT NULL,
+  `photoURL` longtext DEFAULT NULL,
   `isOnline` tinyint(1) DEFAULT 0,
   `lastActiveAt` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`uid`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `coupleCode` (`coupleCode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: auth_tokens
+CREATE TABLE IF NOT EXISTS `auth_tokens` (
+  `token_hash` CHAR(64) NOT NULL,
+  `uid` VARCHAR(64) NOT NULL,
+  `createdAt` DATETIME NOT NULL,
+  `expiresAt` DATETIME NOT NULL,
+  `lastUsedAt` DATETIME NOT NULL,
+  PRIMARY KEY (`token_hash`),
+  KEY `idx_uid` (`uid`),
+  KEY `idx_expires` (`expiresAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: rate_limits
+CREATE TABLE IF NOT EXISTS `rate_limits` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `rate_key` VARCHAR(128) NOT NULL,
+  `action` VARCHAR(32) NOT NULL,
+  `attempts` INT NOT NULL DEFAULT 1,
+  `first_attempt` DATETIME NOT NULL,
+  `last_attempt` DATETIME NOT NULL,
+  `blocked_until` DATETIME DEFAULT NULL,
+  UNIQUE KEY `uniq_key_action` (`rate_key`, `action`),
+  KEY `idx_blocked` (`blocked_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: user_uploads
+CREATE TABLE IF NOT EXISTS `user_uploads` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `uid` VARCHAR(64) NOT NULL,
+  `filename` VARCHAR(255) NOT NULL,
+  `file_size` INT NOT NULL,
+  `uploadedAt` DATETIME NOT NULL,
+  KEY `idx_uid_time` (`uid`, `uploadedAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table: couples
@@ -81,11 +117,65 @@ CREATE TABLE IF NOT EXISTS `memories` (
   `date` varchar(64) NOT NULL,
   `imageUrl` longtext DEFAULT NULL,
   `content` text NOT NULL,
+  `reactions` longtext DEFAULT NULL,
   `createdBy` varchar(64) NOT NULL,
   `createdByName` varchar(255) NOT NULL,
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `coupleId` (`coupleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: memory_comments
+CREATE TABLE IF NOT EXISTS `memory_comments` (
+  `id` varchar(64) NOT NULL,
+  `memoryId` varchar(64) NOT NULL,
+  `coupleId` varchar(128) NOT NULL,
+  `uid` varchar(64) NOT NULL,
+  `userName` varchar(255) NOT NULL,
+  `userPhoto` varchar(255) DEFAULT NULL,
+  `text` text NOT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_memory` (`memoryId`),
+  KEY `idx_couple` (`coupleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: couple_period_settings
+CREATE TABLE IF NOT EXISTS `couple_period_settings` (
+  `coupleId` varchar(128) NOT NULL,
+  `cycleLength` int(11) DEFAULT 28,
+  `periodLength` int(11) DEFAULT 5,
+  `lastPeriodStartDate` varchar(32) DEFAULT NULL,
+  `goalMode` varchar(32) DEFAULT 'track',
+  `birthDate` varchar(32) DEFAULT '2000-01-01',
+  `viewMode` varchar(32) DEFAULT 'circular',
+  `updatedBy` varchar(64) DEFAULT NULL,
+  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`coupleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: couple_period_logs
+CREATE TABLE IF NOT EXISTS `couple_period_logs` (
+  `id` varchar(64) NOT NULL,
+  `coupleId` varchar(128) NOT NULL,
+  `date` varchar(32) NOT NULL,
+  `isPeriodDay` tinyint(1) DEFAULT 0,
+  `isPeriodStart` tinyint(1) DEFAULT 0,
+  `flow` varchar(32) DEFAULT 'none',
+  `moods` json DEFAULT NULL,
+  `symptoms` json DEFAULT NULL,
+  `discharge` varchar(32) DEFAULT 'none',
+  `sex` varchar(32) DEFAULT 'none',
+  `ovulationTestResult` varchar(32) DEFAULT 'none',
+  `pregnancyTestResult` varchar(32) DEFAULT 'none',
+  `waterGlasses` int(11) DEFAULT 4,
+  `notes` text DEFAULT NULL,
+  `loggedByUid` varchar(64) DEFAULT NULL,
+  `loggedByName` varchar(255) DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_couple_date` (`coupleId`, `date`),
+  KEY `idx_couple` (`coupleId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table: user_period_settings
@@ -101,29 +191,6 @@ CREATE TABLE IF NOT EXISTS `user_period_settings` (
   `showPmsPredictions` tinyint(1) DEFAULT 1,
   `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Table: private_expenses
-CREATE TABLE IF NOT EXISTS `private_expenses` (
-  `id` varchar(64) NOT NULL,
-  `userId` varchar(64) NOT NULL,
-  `amount` decimal(15,2) NOT NULL,
-  `category` varchar(64) NOT NULL,
-  `description` text DEFAULT NULL,
-  `date` varchar(32) NOT NULL,
-  `type` varchar(16) NOT NULL DEFAULT 'expense',
-  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `userId` (`userId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Table: private_budgets
-CREATE TABLE IF NOT EXISTS `private_budgets` (
-  `userId` varchar(64) NOT NULL,
-  `budgets` json NOT NULL,
-  `monthlyIncomeGoal` decimal(15,2) DEFAULT 0.00,
-  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`userId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

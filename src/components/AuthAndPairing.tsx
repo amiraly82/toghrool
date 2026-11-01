@@ -20,7 +20,7 @@ import {
 } from "firebase/firestore";
 import { Heart, Key, Mail, User, ShieldAlert, Sparkles, LogOut, Copy, Check } from "lucide-react";
 import { UserProfile } from "../types";
-import { fetchFromPhpApi } from "../apiClient";
+import { fetchFromPhpApi, clearAuthSession } from "../apiClient";
 
 // Generates a random 6-character uppercase couple code
 const generateCoupleCode = (): string => {
@@ -582,7 +582,10 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
                 <span>وارد شده با: {userProfile.displayName}</span>
                 <button
                   onClick={async () => {
-                    localStorage.removeItem("custom_user_session");
+                    try {
+                      await fetchFromPhpApi('logout');
+                    } catch (e) {}
+                    clearAuthSession();
                     await signOut(auth);
                     window.location.reload();
                   }}

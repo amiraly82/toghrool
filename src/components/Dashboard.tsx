@@ -122,7 +122,7 @@ import {
 } from "firebase/firestore";
 import { WishlistItem, UserProfile, LinkPreview, Poke, Memory, MemoryComment, MemoryReaction, ImpoPeriodSettings } from "../types";
 import { calculateCycleStatus } from "../utils/impoCycleEngine";
-import { fetchFromPhpApi } from "../apiClient";
+import { fetchFromPhpApi, clearAuthSession } from "../apiClient";
 
 interface DashboardProps {
   userProfile: UserProfile;
@@ -2134,8 +2134,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
   // Logout
   const handleLogout = async () => {
-    localStorage.removeItem("custom_user_session");
-    localStorage.removeItem("cached_user_profile");
+    try {
+      await fetchFromPhpApi('logout');
+    } catch (e) {}
+    clearAuthSession();
     await auth.signOut();
     window.location.reload();
   };
