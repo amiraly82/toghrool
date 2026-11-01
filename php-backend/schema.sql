@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS `memory_comments` (
 -- Table: couple_period_settings
 CREATE TABLE IF NOT EXISTS `couple_period_settings` (
   `coupleId` varchar(128) NOT NULL,
+  `trackerOwnerUid` varchar(64) DEFAULT NULL,
   `cycleLength` int(11) DEFAULT 28,
   `periodLength` int(11) DEFAULT 5,
   `lastPeriodStartDate` varchar(32) DEFAULT NULL,
@@ -168,6 +169,7 @@ CREATE TABLE IF NOT EXISTS `couple_period_logs` (
   `sex` varchar(32) DEFAULT 'none',
   `ovulationTestResult` varchar(32) DEFAULT 'none',
   `pregnancyTestResult` varchar(32) DEFAULT 'none',
+  `sharePregnancyTestWithPartner` tinyint(1) DEFAULT 0,
   `waterGlasses` int(11) DEFAULT 4,
   `notes` text DEFAULT NULL,
   `loggedByUid` varchar(64) DEFAULT NULL,
@@ -176,6 +178,25 @@ CREATE TABLE IF NOT EXISTS `couple_period_logs` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_couple_date` (`coupleId`, `date`),
   KEY `idx_couple` (`coupleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: period_sharing
+CREATE TABLE IF NOT EXISTS `period_sharing` (
+  `coupleId` varchar(128) NOT NULL,
+  `ownerUid` varchar(64) NOT NULL,
+  `sharePhase` tinyint(1) NOT NULL DEFAULT 1,
+  `shareNextPeriod` tinyint(1) NOT NULL DEFAULT 1,
+  `shareFertileWindow` tinyint(1) NOT NULL DEFAULT 0,
+  `shareFlow` tinyint(1) NOT NULL DEFAULT 0,
+  `shareMood` tinyint(1) NOT NULL DEFAULT 0,
+  `shareSymptoms` tinyint(1) NOT NULL DEFAULT 0,
+  `shareSex` tinyint(1) NOT NULL DEFAULT 0,
+  `shareTests` tinyint(1) NOT NULL DEFAULT 0,
+  `shareNotes` tinyint(1) NOT NULL DEFAULT 0,
+  `allowPartnerLogging` tinyint(1) NOT NULL DEFAULT 0,
+  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`coupleId`),
+  KEY `idx_owner` (`ownerUid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table: user_period_settings

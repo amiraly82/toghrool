@@ -81,7 +81,23 @@ export interface UserPeriodSettings {
 
 export type CycleGoalMode = 'track' | 'pregnancy' | 'prevention';
 
+export interface PeriodSharingSettings {
+  sharePhase: boolean;
+  shareNextPeriod: boolean;
+  shareFertileWindow: boolean;
+  shareFlow: boolean;
+  shareMood: boolean;
+  shareSymptoms: boolean;
+  shareSex: boolean;
+  shareTests: boolean;
+  shareNotes: boolean;
+  allowPartnerLogging: boolean;
+}
+
 export interface ImpoPeriodSettings {
+  trackerOwnerUid?: string | null;
+  isOwner?: boolean;
+  allowPartnerLogging?: boolean;
   cycleLength: number;
   periodLength: number;
   lastPeriodStartDate: string;
@@ -105,9 +121,10 @@ export interface ImpoDailyLog {
   waterGlasses?: number;
   ovulationTestResult?: 'negative' | 'positive_weak' | 'positive_peak' | 'none';
   pregnancyTestResult?: 'negative' | 'positive' | 'none';
-  loggedByUid: string;
-  loggedByName: string;
-  createdAt: any;
+  sharePregnancyTestWithPartner?: boolean;
+  loggedByUid?: string;
+  loggedByName?: string;
+  createdAt?: any;
 }
 
 export interface MemoryReaction {

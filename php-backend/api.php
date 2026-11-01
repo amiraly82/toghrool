@@ -671,19 +671,21 @@ switch ($action) {
         break;
 
     // ----------------------------------------------------
-    // PERIOD TRACKER (SENSITIVE HEALTH DATA - SCOPED STRICTLY TO COUPLE)
+    // PERIOD TRACKER (SENSITIVE HEALTH DATA - SCOPED STRICTLY TO OWNER & SHARING PERMISSIONS)
     // ----------------------------------------------------
     case 'getPeriodData':
         $user = requireCoupleMember($pdo);
         $targetId = $user['coupleId'];
 
-        // Settings
+        // 1. Settings & Owner Resolution
         $stmt = $pdo->prepare("SELECT * FROM couple_period_settings WHERE coupleId = ?");
         $stmt->execute([$targetId]);
         $settings = $stmt->fetch();
 
         if (!$settings) {
             $settings = [
+                'coupleId' => $targetId,
+                'trackerOwnerUid' => null,
                 'cycleLength' => 28,
                 'periodLength' => 5,
                 'lastPeriodStartDate' => date('Y-m-d'),
@@ -696,36 +698,141 @@ switch ($action) {
             $settings['periodLength'] = (int)($settings['periodLength'] ?: 5);
         }
 
-        // Daily Logs
+        $ownerUid = $settings['trackerOwnerUid'] ?? null;
+        // If owner is not established yet, requester is treated as potential owner during initial setup
+        $isOwner = $ownerUid ? ($user['uid'] === $ownerUid) : true;
+
+        // 2. Sharing Permissions
+        $stmt = $pdo->prepare("SELECT * FROM period_sharing WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $rowSharing = $stmt->fetch();
+
+        if ($rowSharing) {
+            $sharing = [
+                'sharePhase' => (bool)$rowSharing['sharePhase'],
+                'shareNextPeriod' => (bool)$rowSharing['shareNextPeriod'],
+                'shareFertileWindow' => (bool)$rowSharing['shareFertileWindow'],
+                'shareFlow' => (bool)$rowSharing['shareFlow'],
+                'shareMood' => (bool)$rowSharing['shareMood'],
+                'shareSymptoms' => (bool)$rowSharing['shareSymptoms'],
+                'shareSex' => (bool)$rowSharing['shareSex'],
+                'shareTests' => (bool)$rowSharing['shareTests'],
+                'shareNotes' => (bool)$rowSharing['shareNotes'],
+                'allowPartnerLogging' => (bool)$rowSharing['allowPartnerLogging']
+            ];
+        } else {
+            // Default sharing: Only sharePhase and shareNextPeriod are ON. Sex, notes, tests NEVER default to partner.
+            $sharing = [
+                'sharePhase' => true,
+                'shareNextPeriod' => true,
+                'shareFertileWindow' => false,
+                'shareFlow' => false,
+                'shareMood' => false,
+                'shareSymptoms' => false,
+                'shareSex' => false,
+                'shareTests' => false,
+                'shareNotes' => false,
+                'allowPartnerLogging' => false
+            ];
+        }
+
+        // 3. Daily Logs with Strict Server-Side Filtering
         $stmt = $pdo->prepare("SELECT * FROM couple_period_logs WHERE coupleId = ? ORDER BY date DESC");
         $stmt->execute([$targetId]);
         $rawLogs = $stmt->fetchAll();
 
         $logs = [];
         foreach ($rawLogs as $row) {
-            $logs[] = [
-                'id' => $row['id'],
-                'date' => $row['date'],
-                'isPeriodDay' => (bool)$row['isPeriodDay'],
-                'isPeriodStart' => (bool)$row['isPeriodStart'],
-                'flow' => $row['flow'] ?: 'none',
-                'moods' => $row['moods'] ? json_decode($row['moods'], true) : [],
-                'symptoms' => $row['symptoms'] ? json_decode($row['symptoms'], true) : [],
-                'discharge' => $row['discharge'] ?: 'none',
-                'sex' => $row['sex'] ?: 'none',
-                'ovulationTestResult' => $row['ovulationTestResult'] ?: 'none',
-                'pregnancyTestResult' => $row['pregnancyTestResult'] ?: 'none',
-                'waterGlasses' => (int)($row['waterGlasses'] ?? 4),
-                'notes' => $row['notes'] ?: '',
-                'loggedByUid' => $row['loggedByUid'] ?: '',
-                'loggedByName' => $row['loggedByName'] ?: '',
-                'createdAt' => $row['createdAt'] ?? date('c')
-            ];
+            if ($isOwner) {
+                // Owner receives all sensitive health data
+                $logs[] = [
+                    'id' => $row['id'],
+                    'date' => $row['date'],
+                    'isPeriodDay' => (bool)$row['isPeriodDay'],
+                    'isPeriodStart' => (bool)$row['isPeriodStart'],
+                    'flow' => $row['flow'] ?: 'none',
+                    'moods' => $row['moods'] ? json_decode($row['moods'], true) : [],
+                    'symptoms' => $row['symptoms'] ? json_decode($row['symptoms'], true) : [],
+                    'discharge' => $row['discharge'] ?: 'none',
+                    'sex' => $row['sex'] ?: 'none',
+                    'ovulationTestResult' => $row['ovulationTestResult'] ?: 'none',
+                    'pregnancyTestResult' => $row['pregnancyTestResult'] ?: 'none',
+                    'sharePregnancyTestWithPartner' => (bool)($row['sharePregnancyTestWithPartner'] ?? 0),
+                    'waterGlasses' => (int)($row['waterGlasses'] ?? 4),
+                    'notes' => $row['notes'] ?: '',
+                    'loggedByUid' => $row['loggedByUid'] ?: '',
+                    'loggedByName' => $row['loggedByName'] ?: '',
+                    'createdAt' => $row['createdAt'] ?? date('c')
+                ];
+            } else {
+                // Partner (Observer): ONLY permitted fields are included. Unpermitted fields are COMPLETELY OMITTED.
+                $item = [
+                    'id' => $row['id'],
+                    'date' => $row['date']
+                ];
+
+                if ($sharing['sharePhase']) {
+                    $item['isPeriodDay'] = (bool)$row['isPeriodDay'];
+                    $item['isPeriodStart'] = (bool)$row['isPeriodStart'];
+                }
+
+                if ($sharing['shareFlow'] && !empty($row['flow']) && $row['flow'] !== 'none') {
+                    $item['flow'] = $row['flow'];
+                }
+
+                if ($sharing['shareMood'] && !empty($row['moods'])) {
+                    $moodsArr = json_decode($row['moods'], true);
+                    if (!empty($moodsArr)) {
+                        $item['moods'] = $moodsArr;
+                    }
+                }
+
+                if ($sharing['shareSymptoms'] && !empty($row['symptoms'])) {
+                    $symptomsArr = json_decode($row['symptoms'], true);
+                    if (!empty($symptomsArr)) {
+                        $item['symptoms'] = $symptomsArr;
+                    }
+                }
+
+                if ($sharing['shareFertileWindow'] && !empty($row['discharge']) && $row['discharge'] !== 'none') {
+                    $item['discharge'] = $row['discharge'];
+                }
+
+                // Sex log is NEVER sent unless shareSex is true
+                if ($sharing['shareSex'] && !empty($row['sex']) && $row['sex'] !== 'none') {
+                    $item['sex'] = $row['sex'];
+                }
+
+                // Tests: Ovulation kit if shareTests; Pregnancy test ONLY if both shareTests AND log-level sharePregnancyTestWithPartner is true
+                if ($sharing['shareTests']) {
+                    if (!empty($row['ovulationTestResult']) && $row['ovulationTestResult'] !== 'none') {
+                        $item['ovulationTestResult'] = $row['ovulationTestResult'];
+                    }
+                    if (!empty($row['sharePregnancyTestWithPartner']) && !empty($row['pregnancyTestResult']) && $row['pregnancyTestResult'] !== 'none') {
+                        $item['pregnancyTestResult'] = $row['pregnancyTestResult'];
+                    }
+                }
+
+                // Notes are NEVER sent unless shareNotes is true
+                if ($sharing['shareNotes'] && !empty($row['notes'])) {
+                    $item['notes'] = $row['notes'];
+                }
+
+                $logs[] = $item;
+            }
         }
+
+        // Response payload
+        $settings['isOwner'] = $isOwner;
+        $settings['trackerOwnerUid'] = $ownerUid;
+        $settings['allowPartnerLogging'] = $sharing['allowPartnerLogging'];
 
         echo json_encode([
             'status' => 'success',
+            'isOwner' => $isOwner,
+            'trackerOwnerUid' => $ownerUid,
             'settings' => $settings,
+            'sharing' => $sharing,
             'logs' => $logs
         ]);
         break;
@@ -734,6 +841,25 @@ switch ($action) {
         $user = requireCoupleMember($pdo);
         $targetId = $user['coupleId'];
         $settings = $input['settings'] ?? [];
+
+        // Check ownership
+        $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $existing = $stmt->fetch();
+        $existingOwner = $existing['trackerOwnerUid'] ?? null;
+
+        if ($existingOwner && $user['uid'] !== $existingOwner) {
+            http_response_code(403);
+            echo json_encode([
+                'status' => 'error',
+                'code' => 'FORBIDDEN_NOT_OWNER',
+                'message' => 'تنها صاحب ترکر مجاز به تغییر تنظیمات پریود است.'
+            ]);
+            exit();
+        }
+
+        // Set owner if not established
+        $trackerOwnerUid = $existingOwner ?: ($settings['trackerOwnerUid'] ?? $user['uid']);
 
         $cycleLength = (int)($settings['cycleLength'] ?? 28);
         $periodLength = (int)($settings['periodLength'] ?? 5);
@@ -745,9 +871,10 @@ switch ($action) {
 
         $stmt = $pdo->prepare("
             INSERT INTO couple_period_settings 
-                (coupleId, cycleLength, periodLength, lastPeriodStartDate, goalMode, birthDate, viewMode, updatedBy, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                (coupleId, trackerOwnerUid, cycleLength, periodLength, lastPeriodStartDate, goalMode, birthDate, viewMode, updatedBy, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ON DUPLICATE KEY UPDATE 
+                trackerOwnerUid = COALESCE(couple_period_settings.trackerOwnerUid, VALUES(trackerOwnerUid)),
                 cycleLength = VALUES(cycleLength),
                 periodLength = VALUES(periodLength),
                 lastPeriodStartDate = VALUES(lastPeriodStartDate),
@@ -757,17 +884,95 @@ switch ($action) {
                 updatedBy = VALUES(updatedBy),
                 updatedAt = NOW()
         ");
-        $stmt->execute([$targetId, $cycleLength, $periodLength, $lastPeriodStartDate, $goalMode, $birthDate, $viewMode, $updatedBy]);
+        $stmt->execute([$targetId, $trackerOwnerUid, $cycleLength, $periodLength, $lastPeriodStartDate, $goalMode, $birthDate, $viewMode, $updatedBy]);
 
         echo json_encode([
             'status' => 'success',
             'settings' => [
+                'trackerOwnerUid' => $trackerOwnerUid,
+                'isOwner' => ($user['uid'] === $trackerOwnerUid),
                 'cycleLength' => $cycleLength,
                 'periodLength' => $periodLength,
                 'lastPeriodStartDate' => $lastPeriodStartDate,
                 'goalMode' => $goalMode,
                 'birthDate' => $birthDate,
                 'viewMode' => $viewMode
+            ]
+        ]);
+        break;
+
+    case 'savePeriodSharing':
+        $user = requireCoupleMember($pdo);
+        $targetId = $user['coupleId'];
+
+        // Verify owner
+        $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $settings = $stmt->fetch();
+        $ownerUid = $settings['trackerOwnerUid'] ?? null;
+
+        if (!$ownerUid) {
+            $ownerUid = $user['uid'];
+            $pdo->prepare("UPDATE couple_period_settings SET trackerOwnerUid = ? WHERE coupleId = ?")->execute([$ownerUid, $targetId]);
+        }
+
+        if ($user['uid'] !== $ownerUid) {
+            http_response_code(403);
+            echo json_encode([
+                'status' => 'error',
+                'code' => 'FORBIDDEN_NOT_OWNER',
+                'message' => 'تنها صاحب ترکر مجاز به تغییر تنظیمات اشتراک‌گذاری است.'
+            ]);
+            exit();
+        }
+
+        $sharing = $input['sharing'] ?? [];
+        $sharePhase = !empty($sharing['sharePhase']) ? 1 : 0;
+        $shareNextPeriod = !empty($sharing['shareNextPeriod']) ? 1 : 0;
+        $shareFertileWindow = !empty($sharing['shareFertileWindow']) ? 1 : 0;
+        $shareFlow = !empty($sharing['shareFlow']) ? 1 : 0;
+        $shareMood = !empty($sharing['shareMood']) ? 1 : 0;
+        $shareSymptoms = !empty($sharing['shareSymptoms']) ? 1 : 0;
+        $shareSex = !empty($sharing['shareSex']) ? 1 : 0;
+        $shareTests = !empty($sharing['shareTests']) ? 1 : 0;
+        $shareNotes = !empty($sharing['shareNotes']) ? 1 : 0;
+        $allowPartnerLogging = !empty($sharing['allowPartnerLogging']) ? 1 : 0;
+
+        $stmt = $pdo->prepare("
+            INSERT INTO period_sharing 
+                (coupleId, ownerUid, sharePhase, shareNextPeriod, shareFertileWindow, shareFlow, shareMood, shareSymptoms, shareSex, shareTests, shareNotes, allowPartnerLogging, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE 
+                ownerUid = VALUES(ownerUid),
+                sharePhase = VALUES(sharePhase),
+                shareNextPeriod = VALUES(shareNextPeriod),
+                shareFertileWindow = VALUES(shareFertileWindow),
+                shareFlow = VALUES(shareFlow),
+                shareMood = VALUES(shareMood),
+                shareSymptoms = VALUES(shareSymptoms),
+                shareSex = VALUES(shareSex),
+                shareTests = VALUES(shareTests),
+                shareNotes = VALUES(shareNotes),
+                allowPartnerLogging = VALUES(allowPartnerLogging),
+                updatedAt = NOW()
+        ");
+        $stmt->execute([
+            $targetId, $ownerUid, $sharePhase, $shareNextPeriod, $shareFertileWindow, $shareFlow, $shareMood, $shareSymptoms, $shareSex, $shareTests, $shareNotes, $allowPartnerLogging
+        ]);
+
+        echo json_encode([
+            'status' => 'success',
+            'sharing' => [
+                'sharePhase' => (bool)$sharePhase,
+                'shareNextPeriod' => (bool)$shareNextPeriod,
+                'shareFertileWindow' => (bool)$shareFertileWindow,
+                'shareFlow' => (bool)$shareFlow,
+                'shareMood' => (bool)$shareMood,
+                'shareSymptoms' => (bool)$shareSymptoms,
+                'shareSex' => (bool)$shareSex,
+                'shareTests' => (bool)$shareTests,
+                'shareNotes' => (bool)$shareNotes,
+                'allowPartnerLogging' => (bool)$allowPartnerLogging
             ]
         ]);
         break;
@@ -783,27 +988,68 @@ switch ($action) {
             exit();
         }
 
-        // IDs strictly generated server-side
+        // Ownership & Partner logging authorization check
+        $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $settings = $stmt->fetch();
+        $ownerUid = $settings['trackerOwnerUid'] ?? null;
+        $isOwner = $ownerUid ? ($user['uid'] === $ownerUid) : true;
+
+        if (!$isOwner) {
+            // Check allowPartnerLogging in period_sharing
+            $stmt = $pdo->prepare("SELECT allowPartnerLogging FROM period_sharing WHERE coupleId = ?");
+            $stmt->execute([$targetId]);
+            $sharingRow = $stmt->fetch();
+            $allowPartnerLogging = !empty($sharingRow['allowPartnerLogging']);
+
+            if (!$allowPartnerLogging) {
+                http_response_code(403);
+                echo json_encode([
+                    'status' => 'error',
+                    'code' => 'FORBIDDEN_PARTNER_LOGGING_DISABLED',
+                    'message' => 'امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است.'
+                ]);
+                exit();
+            }
+        }
+
         $id = generateId('log_');
         $date = $log['date'];
         $isPeriodDay = !empty($log['isPeriodDay']) ? 1 : 0;
         $isPeriodStart = !empty($log['isPeriodStart']) ? 1 : 0;
-        $flow = $log['flow'] ?? 'none';
-        $moods = !empty($log['moods']) ? json_encode($log['moods']) : '[]';
-        $symptoms = !empty($log['symptoms']) ? json_encode($log['symptoms']) : '[]';
-        $discharge = $log['discharge'] ?? 'none';
-        $sex = $log['sex'] ?? 'none';
-        $ovulationTestResult = $log['ovulationTestResult'] ?? 'none';
-        $pregnancyTestResult = $log['pregnancyTestResult'] ?? 'none';
-        $waterGlasses = (int)($log['waterGlasses'] ?? 4);
-        $notes = $log['notes'] ?? '';
         $loggedByUid = $user['uid'];
         $loggedByName = $user['displayName'];
 
+        if ($isOwner) {
+            // Owner can log all fields
+            $flow = $log['flow'] ?? 'none';
+            $moods = !empty($log['moods']) ? json_encode($log['moods']) : '[]';
+            $symptoms = !empty($log['symptoms']) ? json_encode($log['symptoms']) : '[]';
+            $discharge = $log['discharge'] ?? 'none';
+            $sex = $log['sex'] ?? 'none';
+            $ovulationTestResult = $log['ovulationTestResult'] ?? 'none';
+            $pregnancyTestResult = $log['pregnancyTestResult'] ?? 'none';
+            $sharePregnancyTestWithPartner = !empty($log['sharePregnancyTestWithPartner']) ? 1 : 0;
+            $waterGlasses = (int)($log['waterGlasses'] ?? 4);
+            $notes = $log['notes'] ?? '';
+        } else {
+            // Partner can ONLY log simple period start/day; sensitive fields are strictly suppressed
+            $flow = 'none';
+            $moods = '[]';
+            $symptoms = '[]';
+            $discharge = 'none';
+            $sex = 'none';
+            $ovulationTestResult = 'none';
+            $pregnancyTestResult = 'none';
+            $sharePregnancyTestWithPartner = 0;
+            $waterGlasses = 4;
+            $notes = '';
+        }
+
         $stmt = $pdo->prepare("
             INSERT INTO couple_period_logs 
-                (id, coupleId, date, isPeriodDay, isPeriodStart, flow, moods, symptoms, discharge, sex, ovulationTestResult, pregnancyTestResult, waterGlasses, notes, loggedByUid, loggedByName, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                (id, coupleId, date, isPeriodDay, isPeriodStart, flow, moods, symptoms, discharge, sex, ovulationTestResult, pregnancyTestResult, sharePregnancyTestWithPartner, waterGlasses, notes, loggedByUid, loggedByName, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ON DUPLICATE KEY UPDATE 
                 isPeriodDay = VALUES(isPeriodDay),
                 isPeriodStart = VALUES(isPeriodStart),
@@ -814,13 +1060,14 @@ switch ($action) {
                 sex = VALUES(sex),
                 ovulationTestResult = VALUES(ovulationTestResult),
                 pregnancyTestResult = VALUES(pregnancyTestResult),
+                sharePregnancyTestWithPartner = VALUES(sharePregnancyTestWithPartner),
                 waterGlasses = VALUES(waterGlasses),
                 notes = VALUES(notes),
                 loggedByUid = VALUES(loggedByUid),
                 loggedByName = VALUES(loggedByName)
         ");
         $stmt->execute([
-            $id, $targetId, $date, $isPeriodDay, $isPeriodStart, $flow, $moods, $symptoms, $discharge, $sex, $ovulationTestResult, $pregnancyTestResult, $waterGlasses, $notes, $loggedByUid, $loggedByName
+            $id, $targetId, $date, $isPeriodDay, $isPeriodStart, $flow, $moods, $symptoms, $discharge, $sex, $ovulationTestResult, $pregnancyTestResult, $sharePregnancyTestWithPartner, $waterGlasses, $notes, $loggedByUid, $loggedByName
         ]);
 
         if ($isPeriodStart) {
@@ -834,6 +1081,23 @@ switch ($action) {
     case 'deletePeriodLog':
         $user = requireCoupleMember($pdo);
         $targetId = $user['coupleId'];
+
+        // Only owner can delete period logs
+        $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $settings = $stmt->fetch();
+        $ownerUid = $settings['trackerOwnerUid'] ?? null;
+
+        if ($ownerUid && $user['uid'] !== $ownerUid) {
+            http_response_code(403);
+            echo json_encode([
+                'status' => 'error',
+                'code' => 'FORBIDDEN_NOT_OWNER',
+                'message' => 'تنها صاحب ترکر مجاز به حذف لاگ است.'
+            ]);
+            exit();
+        }
+
         $id = trim($input['id'] ?? $_GET['id'] ?? '');
         $date = trim($input['date'] ?? $_GET['date'] ?? '');
 
@@ -843,7 +1107,6 @@ switch ($action) {
             exit();
         }
 
-        // Hardened: strictly WHERE coupleId = ?
         if ($id) {
             $stmt = $pdo->prepare("DELETE FROM couple_period_logs WHERE id = ? AND coupleId = ?");
             $stmt->execute([$id, $targetId]);
@@ -859,6 +1122,80 @@ switch ($action) {
         }
 
         echo json_encode(['status' => 'success']);
+        break;
+
+    case 'exportMyPeriodData':
+        $user = requireCoupleMember($pdo);
+        $targetId = $user['coupleId'];
+
+        // Only owner can export
+        $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $settings = $stmt->fetch();
+        $ownerUid = $settings['trackerOwnerUid'] ?? null;
+
+        if ($ownerUid && $user['uid'] !== $ownerUid) {
+            http_response_code(403);
+            echo json_encode([
+                'status' => 'error',
+                'code' => 'FORBIDDEN_NOT_OWNER',
+                'message' => 'تنها صاحب ترکر مجاز به دریافت خروجی از داده‌ها است.'
+            ]);
+            exit();
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM couple_period_settings WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $fullSettings = $stmt->fetch();
+
+        $stmt = $pdo->prepare("SELECT * FROM period_sharing WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $fullSharing = $stmt->fetch();
+
+        $stmt = $pdo->prepare("SELECT * FROM couple_period_logs WHERE coupleId = ? ORDER BY date DESC");
+        $stmt->execute([$targetId]);
+        $fullLogs = $stmt->fetchAll();
+
+        echo json_encode([
+            'status' => 'success',
+            'data' => [
+                'exportedAt' => date('c'),
+                'ownerUid' => $user['uid'],
+                'settings' => $fullSettings,
+                'sharing' => $fullSharing,
+                'logs' => $fullLogs
+            ]
+        ]);
+        break;
+
+    case 'deleteMyPeriodData':
+        $user = requireCoupleMember($pdo);
+        $targetId = $user['coupleId'];
+
+        // Only owner can delete all health data
+        $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
+        $stmt->execute([$targetId]);
+        $settings = $stmt->fetch();
+        $ownerUid = $settings['trackerOwnerUid'] ?? null;
+
+        if ($ownerUid && $user['uid'] !== $ownerUid) {
+            http_response_code(403);
+            echo json_encode([
+                'status' => 'error',
+                'code' => 'FORBIDDEN_NOT_OWNER',
+                'message' => 'تنها صاحب ترکر مجاز به حذف کامل اطلاعات است.'
+            ]);
+            exit();
+        }
+
+        $pdo->prepare("DELETE FROM couple_period_logs WHERE coupleId = ?")->execute([$targetId]);
+        $pdo->prepare("DELETE FROM couple_period_settings WHERE coupleId = ?")->execute([$targetId]);
+        $pdo->prepare("DELETE FROM period_sharing WHERE coupleId = ?")->execute([$targetId]);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'تمام داده‌های ترکر با موفقیت حذف شدند.'
+        ]);
         break;
 
     // ----------------------------------------------------
