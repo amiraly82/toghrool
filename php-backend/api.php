@@ -171,6 +171,7 @@ function requireAuth($pdo) {
 
 // Enforce paired couple membership
 function requireCoupleMember($pdo) {
+    global $input;
     $user = requireAuth($pdo);
     if (empty($user['coupleId'])) {
         http_response_code(403);
