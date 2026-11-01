@@ -9,6 +9,7 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "push": "git add -A && git commit -m 'chore: update project' && git push origin main",
     "android:add": "cap add android",
     "android:sync": "cap sync android",
     "android:open": "cap open android",
