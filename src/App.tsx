@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
-import { auth, db } from "./firebase";
+import { auth } from "./firebase";
 import { UserProfile } from "./types";
 import AuthAndPairing from "./components/AuthAndPairing";
 import Dashboard from "./components/Dashboard";
@@ -148,7 +147,7 @@ export default function App() {
     let unsubscribeUserDoc: (() => void) | null = null;
 
     const setupUserSubscription = async (uid: string, email: string, displayName: string) => {
-      // 1. Try PHP API first if available on cPanel host
+      // 1. Try PHP API first (source of truth on cPanel host)
       try {
         const res = await fetchFromPhpApi('getUser', { uid });
         if (res && res.status === 'success' && res.user) {
@@ -159,73 +158,34 @@ export default function App() {
           return;
         }
       } catch (phpErr) {
-        console.warn("PHP API getUser failed, trying Firestore...", phpErr);
+        console.warn("PHP API getUser failed:", phpErr);
       }
 
-      // 2. Try Firestore listener
-      if (unsubscribeUserDoc) {
-        unsubscribeUserDoc();
+      // If cached profile exists, use it
+      const cached = localStorage.getItem("cached_user_profile");
+      if (cached) {
+        try {
+          setUserProfile(JSON.parse(cached));
+          setLoading(false);
+          setError(null);
+          return;
+        } catch (e) {}
       }
-      const userDocRef = doc(db, "users", uid);
-      
-      unsubscribeUserDoc = onSnapshot(userDocRef, async (snapshot) => {
-        if (snapshot.exists()) {
-          const profileData = snapshot.data() as UserProfile;
-          setUserProfile(profileData);
-          localStorage.setItem("cached_user_profile", JSON.stringify(profileData));
-          setLoading(false);
-          setError(null);
-        } else {
-          const myCode = generateCoupleCode();
-          const initialProfile: UserProfile = {
-            uid,
-            email,
-            displayName,
-            coupleCode: myCode,
-            partnerEmail: null,
-            partnerUid: null,
-            coupleId: null
-          };
-          
-          try {
-            await setDoc(userDocRef, initialProfile);
-          } catch (e) {
-            console.warn("Failed to set doc on snapshot, using local initial profile", e);
-          }
-          setUserProfile(initialProfile);
-          localStorage.setItem("cached_user_profile", JSON.stringify(initialProfile));
-          setLoading(false);
-          setError(null);
-        }
-      }, (err) => {
-        console.warn("User doc snapshot listener error (handled gracefully):", err);
-        
-        // If cached profile exists, use it
-        const cached = localStorage.getItem("cached_user_profile");
-        if (cached) {
-          try {
-            setUserProfile(JSON.parse(cached));
-            setLoading(false);
-            setError(null);
-            return;
-          } catch (e) {}
-        }
-        
-        // Construct local fallback profile for current user
-        const localProfile: UserProfile = {
-          uid,
-          email,
-          displayName,
-          coupleCode: generateCoupleCode(),
-          partnerEmail: null,
-          partnerUid: null,
-          coupleId: null
-        };
-        setUserProfile(localProfile);
-        localStorage.setItem("cached_user_profile", JSON.stringify(localProfile));
-        setLoading(false);
-        setError(null);
-      });
+
+      // Construct local fallback profile for current user
+      const localProfile: UserProfile = {
+        uid,
+        email,
+        displayName,
+        coupleCode: generateCoupleCode(),
+        partnerEmail: null,
+        partnerUid: null,
+        coupleId: null
+      };
+      setUserProfile(localProfile);
+      localStorage.setItem("cached_user_profile", JSON.stringify(localProfile));
+      setLoading(false);
+      setError(null);
     };
 
     // Fast-path: If custom session exists, setup Firestore listener immediately for sub-millisecond response
@@ -304,20 +264,9 @@ export default function App() {
       if (res && res.status === 'success' && res.user) {
         setUserProfile(res.user);
         localStorage.setItem("cached_user_profile", JSON.stringify(res.user));
-        return;
       }
     } catch (phpErr) {
       console.warn("PHP getUser refresh failed", phpErr);
-    }
-
-    try {
-      const userDocRef = doc(db, "users", activeUid);
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists()) {
-        setUserProfile(docSnap.data() as UserProfile);
-      }
-    } catch (err) {
-      console.error(err);
     } finally {
       setLoading(false);
     }

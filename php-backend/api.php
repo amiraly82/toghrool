@@ -1291,6 +1291,86 @@ switch ($action) {
         break;
 
     // ----------------------------------------------------
+    // PRIVATE EXPENSES & BUDGETS (USER-SCOPED ONLY)
+    // ----------------------------------------------------
+    case 'getExpenses':
+        $user = requireAuth($pdo);
+        $stmt = $pdo->prepare("SELECT * FROM private_expenses WHERE userId = ? ORDER BY date DESC, createdAt DESC");
+        $stmt->execute([$user['uid']]);
+        $expenses = $stmt->fetchAll();
+        foreach ($expenses as &$exp) {
+            $exp['amount'] = (float)$exp['amount'];
+        }
+        echo json_encode(['status' => 'success', 'expenses' => $expenses]);
+        break;
+
+    case 'addExpense':
+        $user = requireAuth($pdo);
+        $exp = $input['expense'] ?? [];
+        if (empty($exp['amount']) || empty($exp['category'])) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'مبلغ و دسته‌بندی هزینه الزامی است.']);
+            exit();
+        }
+        $id = generateId('exp_');
+        $stmt = $pdo->prepare("INSERT INTO private_expenses (id, userId, amount, category, description, date, type, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+        $stmt->execute([
+            $id,
+            $user['uid'],
+            (float)($exp['amount'] ?? 0),
+            $exp['category'] ?? '',
+            $exp['description'] ?? '',
+            $exp['date'] ?? date('Y-m-d'),
+            $exp['type'] ?? 'expense'
+        ]);
+        echo json_encode(['status' => 'success', 'id' => $id]);
+        break;
+
+    case 'deleteExpense':
+        $user = requireAuth($pdo);
+        $id = trim($input['id'] ?? $_GET['id'] ?? '');
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'شناسه هزینه الزامی است.']);
+            exit();
+        }
+        $stmt = $pdo->prepare("DELETE FROM private_expenses WHERE id = ? AND userId = ?");
+        $stmt->execute([$id, $user['uid']]);
+        if ($stmt->rowCount() === 0) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'تراکنش یافت نشد یا دسترسی ندارید.']);
+            exit();
+        }
+        echo json_encode(['status' => 'success']);
+        break;
+
+    case 'getBudget':
+        $user = requireAuth($pdo);
+        $stmt = $pdo->prepare("SELECT * FROM private_budgets WHERE userId = ?");
+        $stmt->execute([$user['uid']]);
+        $row = $stmt->fetch();
+        $budget = [
+            'userId' => $user['uid'],
+            'budgets' => [],
+            'monthlyIncomeGoal' => 0
+        ];
+        if ($row) {
+            $budget['budgets'] = !empty($row['budgets']) ? json_decode($row['budgets'], true) : [];
+            $budget['monthlyIncomeGoal'] = (float)($row['monthlyIncomeGoal'] ?? 0);
+        }
+        echo json_encode(['status' => 'success', 'budget' => $budget]);
+        break;
+
+    case 'saveBudget':
+        $user = requireAuth($pdo);
+        $budgets = !empty($input['budgets']) ? (is_string($input['budgets']) ? $input['budgets'] : json_encode($input['budgets'], JSON_UNESCAPED_UNICODE)) : '{}';
+        $goal = (float)($input['monthlyIncomeGoal'] ?? 0);
+        $stmt = $pdo->prepare("INSERT INTO private_budgets (userId, budgets, monthlyIncomeGoal, updatedAt) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE budgets = VALUES(budgets), monthlyIncomeGoal = VALUES(monthlyIncomeGoal), updatedAt = NOW()");
+        $stmt->execute([$user['uid'], $budgets, $goal]);
+        echo json_encode(['status' => 'success']);
+        break;
+
+    // ----------------------------------------------------
     // DEFAULT HEALTH STATUS
     // ----------------------------------------------------
     default:

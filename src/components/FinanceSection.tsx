@@ -4,8 +4,7 @@ import {
   Wallet, DollarSign, TrendingDown, TrendingUp, Plus, Trash2, PiggyBank, 
   Percent, Settings, Calendar, Info, X, Check, Filter, PieChart, BarChart2
 } from "lucide-react";
-import { db } from "../firebase";
-import { collection, doc, query, where, onSnapshot, addDoc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { fetchFromPhpApi } from "../apiClient";
 import { UserProfile, PrivateExpense, PrivateBudget } from "../types";
 
 // Jalali Month and Date Formatter Helpers
@@ -60,86 +59,41 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
   // Success indicator triggers
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Load user data
+  // Load user data from MySQL backend
   useEffect(() => {
     if (!userProfile?.uid) return;
 
-    setLoading(true);
+    let isMounted = true;
+    const loadFinanceData = async () => {
+      setLoading(true);
+      try {
+        const expRes = await fetchFromPhpApi('getExpenses');
+        if (isMounted && expRes && expRes.status === 'success' && Array.isArray(expRes.expenses)) {
+          setExpenses(expRes.expenses);
+        }
 
-    // 1. Listen to Private Expenses
-    const expensesQuery = query(
-      collection(db, "private_expenses"),
-      where("userId", "==", userProfile.uid)
-    );
+        const bRes = await fetchFromPhpApi('getBudget');
+        if (isMounted && bRes && bRes.status === 'success' && bRes.budget) {
+          setBudget(bRes.budget);
+          setMonthlyIncomeGoal(String(bRes.budget.monthlyIncomeGoal || ""));
 
-    const unsubscribeExpenses = onSnapshot(expensesQuery, (snapshot) => {
-      const list: PrivateExpense[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        list.push({
-          id: doc.id,
-          userId: data.userId,
-          amount: data.amount || 0,
-          category: data.category || "",
-          description: data.description || "",
-          date: data.date || "",
-          type: data.type || "expense",
-          createdAt: data.createdAt
-        });
-      });
-
-      // Sort client-side securely by date and createdAt
-      list.sort((a, b) => {
-        const dateCompare = b.date.localeCompare(a.date);
-        if (dateCompare !== 0) return dateCompare;
-        const aTime = a.createdAt?.seconds || 0;
-        const bTime = b.createdAt?.seconds || 0;
-        return bTime - aTime;
-      });
-
-      setExpenses(list);
-      setLoading(false);
-    }, (err) => {
-      console.error("Error reading private expenses:", err);
-      setError("خطا در همگام‌سازی تراکنش‌های مالی شخصی.");
-      setLoading(false);
-    });
-
-    // 2. Listen to Private Budget
-    const budgetDocRef = doc(db, "private_budgets", userProfile.uid);
-    const unsubscribeBudget = onSnapshot(budgetDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setBudget({
-          userId: userProfile.uid,
-          budgets: data.budgets || {},
-          monthlyIncomeGoal: data.monthlyIncomeGoal || 0,
-          updatedAt: data.updatedAt
-        });
-        setMonthlyIncomeGoal(String(data.monthlyIncomeGoal || ""));
-        
-        const initialFormValues: { [cat: string]: string } = {};
-        DEFAULT_CATEGORIES.forEach(cat => {
-          initialFormValues[cat.name] = String(data.budgets?.[cat.name] || "");
-        });
-        setBudgetFormValues(initialFormValues);
-      } else {
-        // Initialize defaults
-        const initialFormValues: { [cat: string]: string } = {};
-        DEFAULT_CATEGORIES.forEach(cat => {
-          initialFormValues[cat.name] = "";
-        });
-        setBudgetFormValues(initialFormValues);
-        setMonthlyIncomeGoal("");
-        setBudget(null);
+          const initialFormValues: { [cat: string]: string } = {};
+          DEFAULT_CATEGORIES.forEach(cat => {
+            initialFormValues[cat.name] = String(bRes.budget.budgets?.[cat.name] || "");
+          });
+          setBudgetFormValues(initialFormValues);
+        }
+      } catch (err) {
+        console.error("Error reading finance data:", err);
+        if (isMounted) setError("خطا در همگام‌سازی تراکنش‌های مالی شخصی.");
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    }, (err) => {
-      console.error("Error reading private budget:", err);
-    });
+    };
 
+    loadFinanceData();
     return () => {
-      unsubscribeExpenses();
-      unsubscribeBudget();
+      isMounted = false;
     };
   }, [userProfile?.uid]);
 
@@ -154,19 +108,34 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
     try {
       setError(null);
-      await addDoc(collection(db, "private_expenses"), {
-        userId: userProfile.uid,
-        amount: numAmount,
-        category,
-        description: description.trim(),
-        date,
-        type,
-        createdAt: serverTimestamp()
+      const res = await fetchFromPhpApi('addExpense', {
+        expense: {
+          amount: numAmount,
+          category,
+          description: description.trim(),
+          date,
+          type
+        }
       });
 
-      setAmount("");
-      setDescription("");
-      triggerSuccess("تراکنش با موفقیت ثبت شد ✨");
+      if (res && res.status === 'success') {
+        const newEntry: PrivateExpense = {
+          id: res.id,
+          userId: userProfile.uid,
+          amount: numAmount,
+          category,
+          description: description.trim(),
+          date,
+          type,
+          createdAt: new Date().toISOString()
+        };
+        setExpenses(prev => [newEntry, ...prev]);
+        setAmount("");
+        setDescription("");
+        triggerSuccess("تراکنش با موفقیت ثبت شد ✨");
+      } else {
+        setError(res?.message || "ثبت تراکنش با خطا مواجه شد.");
+      }
     } catch (err) {
       console.error("Error saving transaction:", err);
       setError("ثبت تراکنش با خطا مواجه شد.");
@@ -179,8 +148,13 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
     try {
       setError(null);
-      await deleteDoc(doc(db, "private_expenses", id));
-      triggerSuccess("تراکنش با موفقیت حذف شد.");
+      const res = await fetchFromPhpApi('deleteExpense', { id });
+      if (res && res.status === 'success') {
+        setExpenses(prev => prev.filter(e => e.id !== id));
+        triggerSuccess("تراکنش با موفقیت حذف شد.");
+      } else {
+        setError(res?.message || "حذف تراکنش با خطا مواجه شد.");
+      }
     } catch (err) {
       console.error("Error deleting transaction:", err);
       setError("حذف تراکنش با خطا مواجه شد.");
@@ -201,15 +175,22 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
     try {
       setError(null);
-      await setDoc(doc(db, "private_budgets", userProfile.uid), {
-        userId: userProfile.uid,
+      const res = await fetchFromPhpApi('saveBudget', {
         budgets: newBudgets,
-        monthlyIncomeGoal: isNaN(incomeGoal) ? 0 : incomeGoal,
-        updatedAt: serverTimestamp()
+        monthlyIncomeGoal: isNaN(incomeGoal) ? 0 : incomeGoal
       });
 
-      setShowBudgetModal(false);
-      triggerSuccess("بودجه‌بندی و اهداف مالی با موفقیت ذخیره شد 💼");
+      if (res && res.status === 'success') {
+        setBudget({
+          userId: userProfile.uid,
+          budgets: newBudgets,
+          monthlyIncomeGoal: isNaN(incomeGoal) ? 0 : incomeGoal
+        });
+        setShowBudgetModal(false);
+        triggerSuccess("بودجه‌بندی و اهداف مالی با موفقیت ذخیره شد 💼");
+      } else {
+        setError(res?.message || "ذخیره بودجه‌بندی با خطا مواجه شد.");
+      }
     } catch (err) {
       console.error("Error saving budget limits:", err);
       setError("ذخیره بودجه‌بندی با خطا مواجه شد.");

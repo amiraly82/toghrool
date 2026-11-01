@@ -1,23 +1,12 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { auth, db } from "../firebase";
+import { auth } from "../firebase";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut,
   updateProfile 
 } from "firebase/auth";
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  query, 
-  where, 
-  getDocs,
-  serverTimestamp 
-} from "firebase/firestore";
 import { Heart, Key, Mail, User, ShieldAlert, Sparkles, LogOut, Copy, Check } from "lucide-react";
 import { UserProfile } from "../types";
 import { fetchFromPhpApi, clearAuthSession } from "../apiClient";
@@ -56,52 +45,28 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
 
     try {
       // 1. Try PHP API first (for cPanel MySQL hosting without Firebase dependency)
-      const res = await fetchFromPhpApi('demoLogin', { partnerNumber });
-      if (res && res.status === 'success' && res.user) {
-        localStorage.setItem("custom_user_session", JSON.stringify({
-          uid: res.user.uid,
-          email: res.user.email,
-          displayName: res.user.displayName
-        }));
-        localStorage.setItem("cached_user_profile", JSON.stringify(res.user));
-        onRefreshProfile();
-        setAuthLoading(false);
-        return;
-      }
-    } catch (phpErr) {
-      console.warn("PHP API demo login skipped/failed, falling back to Firestore/Local:", phpErr);
-    }
-
-    const demoEmail1 = "demo_partner1@wishlist.com";
-    const demoEmail2 = "demo_partner2@wishlist.com";
-    const demoPassword = "demo_password123";
-    const uid1 = "demo_user_p1";
-    const uid2 = "demo_user_p2";
-    const coupleId = "couple_demo_user_p1_demo_user_p2";
-
-    try {
-      // Try setting up Firestore documents if accessible
       try {
-        const user1Ref = doc(db, "users", uid1);
-        const user1Snap = await getDoc(user1Ref);
-        if (!user1Snap.exists()) {
-          await setDoc(user1Ref, {
-            uid: uid1, email: demoEmail1, displayName: "امیر", coupleCode: "AMIR01",
-            partnerEmail: demoEmail2, partnerUid: uid2, coupleId: coupleId, passwordHash: demoPassword, isCustomUser: true
-          });
+        const res = await fetchFromPhpApi('demoLogin', { partnerNumber });
+        if (res && res.status === 'success' && res.user) {
+          localStorage.setItem("custom_user_session", JSON.stringify({
+            uid: res.user.uid,
+            email: res.user.email,
+            displayName: res.user.displayName
+          }));
+          localStorage.setItem("cached_user_profile", JSON.stringify(res.user));
+          onRefreshProfile();
+          setAuthLoading(false);
+          return;
         }
-
-        const user2Ref = doc(db, "users", uid2);
-        const user2Snap = await getDoc(user2Ref);
-        if (!user2Snap.exists()) {
-          await setDoc(user2Ref, {
-            uid: uid2, email: demoEmail2, displayName: "سارا", coupleCode: "SARA02",
-            partnerEmail: demoEmail1, partnerUid: uid1, coupleId: coupleId, passwordHash: demoPassword, isCustomUser: true
-          });
-        }
-      } catch (fbErr) {
-        console.warn("Firestore unreachable (offline mode), proceeding with local session", fbErr);
+      } catch (phpErr) {
+        console.warn("PHP API demo login skipped/failed, falling back to Local:", phpErr);
       }
+
+      const demoEmail1 = "demo_partner1@wishlist.com";
+      const demoEmail2 = "demo_partner2@wishlist.com";
+      const uid1 = "demo_user_p1";
+      const uid2 = "demo_user_p2";
+      const coupleId = "couple_demo_user_p1_demo_user_p2";
 
       const targetUid = partnerNumber === 1 ? uid1 : uid2;
       const targetEmail = partnerNumber === 1 ? demoEmail1 : demoEmail2;
@@ -171,36 +136,11 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
           return;
         }
 
-        // Firebase / Local Fallback
-        const customUid = `user_${Math.random().toString(36).substr(2, 9)}`;
-        const myCode = generateCoupleCode();
-        const customProfile: UserProfile = {
-          uid: customUid,
-          email: emailLower,
-          displayName: name,
-          coupleCode: myCode,
-          partnerEmail: null,
-          partnerUid: null,
-          coupleId: null,
-          passwordHash: password,
-          isCustomUser: true
-        };
-
-        try {
-          await setDoc(doc(db, "users", customUid), customProfile);
-        } catch (fbErr) {
-          console.warn("Firestore unreachable on signup, proceeding with local profile", fbErr);
-        }
-
-        localStorage.setItem("custom_user_session", JSON.stringify({
-          uid: customUid,
-          email: emailLower,
-          displayName: name
-        }));
-        localStorage.setItem("cached_user_profile", JSON.stringify(customProfile));
-        onRefreshProfile();
+        setError(res?.message || "خطا در ثبت‌نام. لطفاً مجدداً امتحان کنید.");
+        setAuthLoading(false);
+        return;
       } else {
-        // Sign In - Try PHP API first
+        // Sign In - PHP API (single source of truth)
         const res = await fetchFromPhpApi('login', { email: emailLower, password });
         if (res && res.status === 'success' && res.user) {
           localStorage.setItem("custom_user_session", JSON.stringify({
@@ -216,46 +156,11 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
           onRefreshProfile();
           setAuthLoading(false);
           return;
-        } else if (res && res.status === 'error' && res.message && !res.message.includes('HTTP error') && !res.message.includes('fetch')) {
-          setError(res.message);
+        } else {
+          setError(res?.message || "ایمیل یا رمز عبور اشتباه است.");
           setAuthLoading(false);
           return;
         }
-
-        // Firestore Fallback
-        try {
-          const q = query(collection(db, "users"), where("email", "==", emailLower));
-          const querySnapshot = await getDocs(q);
-
-          if (!querySnapshot.empty) {
-            const userDoc = querySnapshot.docs[0];
-            const userData = userDoc.data() as UserProfile;
-
-            if (userData.passwordHash && userData.passwordHash !== password) {
-              setError("ایمیل یا رمز عبور اشتباه است.");
-              setAuthLoading(false);
-              return;
-            }
-
-            localStorage.setItem("custom_user_session", JSON.stringify({
-              uid: userData.uid,
-              email: userData.email,
-              displayName: userData.displayName,
-              gender: userData.gender
-            }));
-            localStorage.setItem("cached_user_profile", JSON.stringify(userData));
-            if (userData.gender) {
-              localStorage.setItem(`impo_partner_role_${userData.uid}`, userData.gender);
-            }
-            onRefreshProfile();
-            setAuthLoading(false);
-            return;
-          }
-        } catch (fbErr) {
-          console.warn("Firestore unreachable on login", fbErr);
-        }
-
-        setError("کاربری با این مشخصات یافت نشد.");
       }
     } catch (err: any) {
       console.error(err);
@@ -267,8 +172,8 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
 
   const handlePairingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partnerCode || partnerCode.trim().length !== 6) {
-      setError("لطفاً کد ۶ رقمی معتبر وارد کنید.");
+    if (!partnerCode || (partnerCode.trim().length !== 6 && partnerCode.trim().length !== 8)) {
+      setError("کد اتصال باید ۶ یا ۸ کاراکتر باشد.");
       return;
     }
 
@@ -285,8 +190,8 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
         return;
       }
 
-      // Try PHP API pairing first
-      const res = await fetchFromPhpApi('pairByCode', { myUid: userProfile.uid, code: targetCode });
+      // PHP API pairing (single source of truth)
+      const res = await fetchFromPhpApi('pairByCode', { code: targetCode });
       if (res && res.status === 'success' && res.coupleId) {
         const updatedProfile = {
           ...userProfile,
@@ -296,57 +201,11 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
         onRefreshProfile();
         setPairingLoading(false);
         return;
-      } else if (res && res.status === 'error' && res.message && !res.message.includes('HTTP error') && !res.message.includes('fetch')) {
-        setError(res.message);
+      } else {
+        setError(res?.message || "کد زوجین یافت نشد.");
         setPairingLoading(false);
         return;
       }
-
-      // Firebase pairing fallback
-      try {
-        const q = query(collection(db, "users"), where("coupleCode", "==", targetCode));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-          const partnerDoc = querySnapshot.docs[0];
-          const partnerData = partnerDoc.data();
-          const newCoupleId = `couple_${userProfile.uid}_${partnerData.uid}`;
-
-          await setDoc(doc(db, "couples", newCoupleId), {
-            id: newCoupleId,
-            partner1Uid: userProfile.uid,
-            partner1Email: userProfile.email || null,
-            partner1Name: userProfile.displayName || "پارتنر ۱",
-            partner2Uid: partnerData.uid,
-            partner2Email: partnerData.email || null,
-            partner2Name: partnerData.displayName || "پارتنر ۲",
-            createdAt: new Date().toISOString()
-          });
-
-          await updateDoc(doc(db, "users", userProfile.uid), {
-            partnerEmail: partnerData.email || null,
-            partnerUid: partnerData.uid || null,
-            coupleId: newCoupleId
-          });
-
-          await updateDoc(doc(db, "users", partnerData.uid), {
-            partnerEmail: userProfile.email || null,
-            partnerUid: userProfile.uid || null,
-            coupleId: newCoupleId
-          });
-        }
-      } catch (fbErr) {
-        console.warn("Firestore unreachable on pairing", fbErr);
-      }
-
-      // Local fallback pairing
-      const localCoupleId = `couple_${userProfile.uid}_paired`;
-      const updatedProfile: UserProfile = {
-        ...userProfile,
-        coupleId: localCoupleId
-      };
-      localStorage.setItem("cached_user_profile", JSON.stringify(updatedProfile));
-      onRefreshProfile();
     } catch (err: any) {
       console.error(err);
       setError("خطا در ایجاد اتصال زوجین: " + err.message);

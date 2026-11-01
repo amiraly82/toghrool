@@ -1,8 +1,28 @@
+# Dependencies
 node_modules/
-build/
+
+# Production builds
 dist/
+build/
 coverage/
-.DS_Store
-*.log
+
+# Android build artifacts & gradle caches
+android/.gradle/
+android/app/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+
+# Environment files & Secrets
 .env*
 !.env.example
+config.php
+db_credentials.php
+php-backend/config.php
+php-backend/db_credentials.php
+firebase-applet-config.json
+
+# Operating System & IDE
+.DS_Store
+*.log
+.idea/
+.vscode/

@@ -88,3 +88,25 @@ CREATE TABLE IF NOT EXISTS `memory_comments` (
   KEY `idx_memory` (`memoryId`),
   KEY `idx_couple` (`coupleId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7. Table: private_expenses
+CREATE TABLE IF NOT EXISTS `private_expenses` (
+  `id` varchar(64) NOT NULL PRIMARY KEY,
+  `userId` varchar(64) NOT NULL,
+  `amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `category` varchar(64) NOT NULL,
+  `description` text DEFAULT NULL,
+  `date` varchar(32) NOT NULL,
+  `type` varchar(16) NOT NULL DEFAULT 'expense',
+  `createdAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_user_date` (`userId`, `date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 8. Table: private_budgets
+CREATE TABLE IF NOT EXISTS `private_budgets` (
+  `userId` varchar(64) NOT NULL PRIMARY KEY,
+  `budgets` json DEFAULT NULL,
+  `monthlyIncomeGoal` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `updatedAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

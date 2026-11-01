@@ -116,10 +116,7 @@ const FLOW_LABELS: Record<string, string> = {
   medium: "متوسط 🩸",
   heavy: "زیاد / شدید 🔥",
 };
-import { db, auth } from "../firebase";
-import { 
-  collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, serverTimestamp, setDoc 
-} from "firebase/firestore";
+import { auth } from "../firebase";
 import { WishlistItem, UserProfile, LinkPreview, Poke, Memory, MemoryComment, MemoryReaction, ImpoPeriodSettings } from "../types";
 import { calculateCycleStatus } from "../utils/impoCycleEngine";
 import { fetchFromPhpApi, clearAuthSession } from "../apiClient";
@@ -476,112 +473,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [settingsFormPeriodLength, setSettingsFormPeriodLength] = useState<number>(5);
   const [settingsFormLastPeriodStartDate, setSettingsFormLastPeriodStartDate] = useState<string>("");
 
-  // Firestore Snapshots Setup
+  // Notification permission check
   useEffect(() => {
-    if (!userProfile.coupleId) return;
-
-    // Listen to Wishlist Items
-    const wishlistQuery = query(
-      collection(db, "wishlist"),
-      where("coupleId", "==", userProfile.coupleId)
-    );
-
-    const unsubscribeItems = onSnapshot(wishlistQuery, (snapshot) => {
-      const fetchedItems: WishlistItem[] = [];
-      snapshot.forEach((doc) => {
-        fetchedItems.push({ id: doc.id, ...doc.data() } as WishlistItem);
-      });
-      // Sort client-side to avoid needing composite indexes!
-      fetchedItems.sort((a, b) => {
-        const t1 = a.createdAt?.seconds || a.createdAt?.toMillis?.() || (a.createdAt ? new Date(a.createdAt).getTime() : 0) || 0;
-        const t2 = b.createdAt?.seconds || b.createdAt?.toMillis?.() || (b.createdAt ? new Date(b.createdAt).getTime() : 0) || 0;
-        return t2 - t1;
-      });
-      setItems(fetchedItems);
-      setLoading(false);
-    }, (err) => {
-      console.error("Error fetching wishlist:", err);
-      setLoading(false);
-    });
-
-    // Listen to real-time pokes (reminders)
-    const pokesQuery = query(
-      collection(db, "pokes"),
-      where("coupleId", "==", userProfile.coupleId),
-      where("recipientUid", "==", userProfile.uid),
-      where("read", "==", false)
-    );
-
-    const unsubscribePokes = onSnapshot(pokesQuery, (snapshot) => {
-      const fetchedPokes: Poke[] = [];
-      snapshot.forEach((doc) => {
-        fetchedPokes.push({ id: doc.id, ...doc.data() } as Poke);
-      });
-      // Sort client-side to avoid index requirement
-      fetchedPokes.sort((a, b) => {
-        const t1 = a.createdAt?.seconds || a.createdAt?.toMillis?.() || (a.createdAt ? new Date(a.createdAt).getTime() : 0) || 0;
-        const t2 = b.createdAt?.seconds || b.createdAt?.toMillis?.() || (b.createdAt ? new Date(b.createdAt).getTime() : 0) || 0;
-        return t2 - t1;
-      });
-      setPokes(fetchedPokes);
-
-      // Trigger standard browser notification or customized in-app toast for new pokes
-      if (fetchedPokes.length > 0) {
-        const latestPoke = fetchedPokes[0];
-        
-        // Custom interactive visual sound & toast trigger
-        setShowNotificationAlert(`${latestPoke.senderName}: بهت یادآوری کرد که "${latestPoke.itemTitle}" را انجام بدی! 💕`);
-        
-        // Try native browser notification if allowed
-        if (Notification.permission === "granted") {
-          new Notification("یادآوری آرزوی مشترک", {
-            body: `${latestPoke.senderName} منتظر تکمیل "${latestPoke.itemTitle}" است! 🧸`,
-            icon: "/favicon.ico"
-          });
-        }
-      }
-    }, (err) => {
-      console.error("Error fetching pokes:", err);
-    });
-
-    // Listen to Shared Memories
-    const memoriesQuery = query(
-      collection(db, "memories"),
-      where("coupleId", "==", userProfile.coupleId)
-    );
-
-    const unsubscribeMemories = onSnapshot(memoriesQuery, (snapshot) => {
-      const fetchedMemories: Memory[] = [];
-      snapshot.forEach((doc) => {
-        fetchedMemories.push({ id: doc.id, ...doc.data() } as Memory);
-      });
-      // Sort client-side: memories with specified date descending, otherwise creation time descending
-      fetchedMemories.sort((a, b) => {
-        if (a.date && b.date) {
-          if (a.date !== b.date) {
-            return b.date.localeCompare(a.date);
-          }
-        }
-        const t1 = a.createdAt?.seconds || a.createdAt?.toMillis?.() || (a.createdAt ? new Date(a.createdAt).getTime() : 0) || 0;
-        const t2 = b.createdAt?.seconds || b.createdAt?.toMillis?.() || (b.createdAt ? new Date(b.createdAt).getTime() : 0) || 0;
-        return t2 - t1;
-      });
-      setMemories(fetchedMemories);
-    }, (err) => {
-      console.error("Error fetching memories:", err);
-    });
-
-    // Check notification permission state
     if ("Notification" in window) {
       setNotificationsEnabled(Notification.permission === "granted");
     }
-
-    return () => {
-      unsubscribeItems();
-      unsubscribePokes();
-      unsubscribeMemories();
-    };
-  }, [userProfile.coupleId, userProfile.uid]);
+  }, []);
 
   // Continuous Data Synchronization with Host PHP API (MySQL)
   useEffect(() => {
@@ -625,11 +522,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             coupleId: userProfile.coupleId || '',
             uid: userProfile.uid
           });
-          if (isMounted && periodRes && periodRes.status === 'success' && periodRes.settings) {
-            setImpoSettings(periodRes.settings);
-            setPeriodSettings(periodRes.settings);
-            const targetId = userProfile.coupleId || userProfile.uid;
-            localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(periodRes.settings));
+          if (isMounted && periodRes && periodRes.status === 'success') {
+            if (periodRes.settings) {
+              setImpoSettings(periodRes.settings);
+              setPeriodSettings(periodRes.settings);
+              const targetId = userProfile.coupleId || userProfile.uid;
+              localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(periodRes.settings));
+            }
+            if (Array.isArray(periodRes.logs)) {
+              setPeriodLogs(periodRes.logs);
+            }
           }
         } catch (e) {}
       }
@@ -703,175 +605,50 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     }
   }, [userProfile]);
 
-  // Listen to Partner Profile
+  // Load Custom Categories (Shelves) from local storage
   useEffect(() => {
-    if (!userProfile.partnerUid) {
-      setPartnerProfile(null);
-      return;
-    }
-    const partnerRef = doc(db, "users", userProfile.partnerUid);
-    const unsubscribe = onSnapshot(partnerRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setPartnerProfile(snapshot.data() as UserProfile);
+    if (!userProfile?.coupleId) return;
+    try {
+      const stored = localStorage.getItem(`couples_categories_${userProfile.coupleId}`);
+      if (stored) {
+        setCustomCategories(JSON.parse(stored));
       }
-    });
-    return unsubscribe;
-  }, [userProfile.partnerUid]);
+    } catch (e) {}
+  }, [userProfile?.coupleId]);
 
-  // Sync current user's online/active status
+  // Load Custom Tabs from local storage
+  useEffect(() => {
+    if (!userProfile?.coupleId) return;
+    try {
+      const stored = localStorage.getItem(`couples_custom_tabs_${userProfile.coupleId}`);
+      if (stored) {
+        setCustomTabs(JSON.parse(stored));
+      }
+    } catch (e) {}
+  }, [userProfile?.coupleId]);
+
+  // Load Notes inside a Custom Tab from local storage
+  useEffect(() => {
+    if (!userProfile?.coupleId || !activeTab.startsWith("tab-")) return;
+    const tabId = activeTab.replace("tab-", "");
+    try {
+      const stored = localStorage.getItem(`couples_tab_notes_${userProfile.coupleId}_${tabId}`);
+      if (stored) {
+        setNotes(JSON.parse(stored));
+      } else {
+        setNotes([]);
+      }
+    } catch (e) {}
+  }, [userProfile?.coupleId, activeTab]);
+
+  // Load Personal Period Settings from local storage
   useEffect(() => {
     if (!userProfile?.uid) return;
-
-    const updateStatus = (isOnline: boolean) => {
-      try {
-        const userDocRef = doc(db, "users", userProfile.uid);
-        updateDoc(userDocRef, {
-          isOnline: isOnline,
-          lastActiveAt: Date.now()
-        }).catch(() => {});
-      } catch (err) {}
-    };
-
-    // Set online immediately
-    updateStatus(true);
-
-    // Setup periodic updates (heartbeat) every 40 seconds to keep lastActiveAt fresh
-    const heartbeatInterval = setInterval(() => {
-      updateStatus(true);
-    }, 40000);
-
-    // Event listener to set offline when tab is hidden or user leaves
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        updateStatus(false);
-      } else {
-        updateStatus(true);
-      }
-    };
-
-    const handleBeforeUnload = () => {
-      updateStatus(false);
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      clearInterval(heartbeatInterval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      // Set offline when unmounting (e.g. sign out)
-      updateStatus(false);
-    };
-  }, [userProfile?.uid]);
-
-  // Listen to Custom Categories (Shelves)
-  useEffect(() => {
-    if (!userProfile.coupleId) return;
-    const q = query(
-      collection(db, "categories"),
-      where("coupleId", "==", userProfile.coupleId)
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const cats: any[] = [];
-      snapshot.forEach((doc) => {
-        cats.push({ id: doc.id, ...doc.data() });
-      });
-      setCustomCategories(cats);
-    }, (err) => {
-      console.error("Error loading categories:", err);
-    });
-    return unsubscribe;
-  }, [userProfile.coupleId]);
-
-  // Listen to Custom Tabs
-  useEffect(() => {
-    if (!userProfile.coupleId) return;
-    const q = query(
-      collection(db, "custom_tabs"),
-      where("coupleId", "==", userProfile.coupleId)
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const tabs: any[] = [];
-      snapshot.forEach((doc) => {
-        tabs.push({ id: doc.id, ...doc.data() });
-      });
-      setCustomTabs(tabs);
-    }, (err) => {
-      console.error("Error loading custom tabs:", err);
-    });
-    return unsubscribe;
-  }, [userProfile.coupleId]);
-
-  // Listen to Notes inside a Custom Tab
-  useEffect(() => {
-    if (!userProfile.coupleId || !activeTab.startsWith("tab-")) return;
-    const tabId = activeTab.replace("tab-", "");
-    const q = query(
-      collection(db, "tab_notes"),
-      where("coupleId", "==", userProfile.coupleId),
-      where("tabId", "==", tabId)
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedNotes: any[] = [];
-      snapshot.forEach((doc) => {
-        fetchedNotes.push({ id: doc.id, ...doc.data() });
-      });
-      fetchedNotes.sort((a, b) => {
-        const t1 = a.createdAt?.seconds || 0;
-        const t2 = b.createdAt?.seconds || 0;
-        return t2 - t1;
-      });
-      setNotes(fetchedNotes);
-    }, (err) => {
-      console.error("Error loading notes:", err);
-    });
-    return unsubscribe;
-  }, [userProfile.coupleId, activeTab]);
-
-  // Listen to Period Settings
-  useEffect(() => {
-    if (!userProfile.coupleId) return;
-    const settingsRef = doc(db, "period_settings", userProfile.coupleId);
-    const unsubscribe = onSnapshot(settingsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setPeriodSettings({
-          cycleLength: data.cycleLength || 28,
-          periodLength: data.periodLength || 5,
-          lastPeriodStartDate: data.lastPeriodStartDate || ""
-        });
-        // Seed form fields with current values
-        setSettingsFormCycleLength(data.cycleLength || 28);
-        setSettingsFormPeriodLength(data.periodLength || 5);
-        setSettingsFormLastPeriodStartDate(data.lastPeriodStartDate || "");
-      } else {
-        setPeriodSettings(null);
-      }
-    }, (err) => {
-      console.error("Error loading period settings:", err);
-    });
-    return unsubscribe;
-  }, [userProfile.coupleId]);
-
-  // Listen to Personalized Period Settings
-  useEffect(() => {
-    if (!userProfile.uid) return;
-    const personalSettingsRef = doc(db, "user_period_settings", userProfile.uid);
-    const unsubscribe = onSnapshot(personalSettingsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setUserPeriodSettings({
-          uid: data.uid || userProfile.uid,
-          cycleLengthMin: data.cycleLengthMin ?? 25,
-          cycleLengthMax: data.cycleLengthMax ?? 35,
-          cycleLengthTypical: data.cycleLengthTypical ?? 28,
-          periodLength: data.periodLength ?? 5,
-          lastPeriodStartDate: data.lastPeriodStartDate || "",
-          pmsNotificationEnabled: data.pmsNotificationEnabled ?? true,
-          pmsNotificationDaysBefore: data.pmsNotificationDaysBefore ?? 2,
-          showPmsPredictions: data.showPmsPredictions ?? true,
-        });
+    try {
+      const stored = localStorage.getItem(`user_period_settings_${userProfile.uid}`);
+      if (stored) {
+        const data = JSON.parse(stored);
+        setUserPeriodSettings(data);
         setPersonalUseAdvanced(true);
         setPersonalCycleMin(data.cycleLengthMin ?? 25);
         setPersonalCycleMax(data.cycleLengthMax ?? 35);
@@ -881,36 +658,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         setPersonalPmsNotificationEnabled(data.pmsNotificationEnabled ?? true);
         setPersonalPmsNotificationDaysBefore(data.pmsNotificationDaysBefore ?? 2);
         setPersonalShowPmsPredictions(data.showPmsPredictions ?? true);
-      } else {
-        setUserPeriodSettings(null);
-        setPersonalUseAdvanced(false);
       }
-    }, (err) => {
-      console.error("Error loading personal period settings:", err);
-    });
-    return unsubscribe;
-  }, [userProfile.uid]);
-
-  // Listen to Period Logs
-  useEffect(() => {
-    if (!userProfile.coupleId) return;
-    const q = query(
-      collection(db, "period_logs"),
-      where("coupleId", "==", userProfile.coupleId)
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const logs: any[] = [];
-      snapshot.forEach((doc) => {
-        logs.push({ id: doc.id, ...doc.data() });
-      });
-      // Sort desc by date
-      logs.sort((a, b) => b.date.localeCompare(a.date));
-      setPeriodLogs(logs);
-    }, (err) => {
-      console.error("Error loading period logs:", err);
-    });
-    return unsubscribe;
-  }, [userProfile.coupleId]);
+    } catch (e) {}
+  }, [userProfile?.uid]);
 
   // Handlers for cropping drag / pan
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1186,14 +936,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         console.warn("PHP API updateProfile error:", phpErr);
       }
 
-      // 3. Sync to Firestore in background (non-blocking, never await)
-      try {
-        updateDoc(doc(db, "users", userProfile.uid), {
-          displayName: cleanName,
-          photoURL: finalPhotoURL
-        }).catch(() => {});
-      } catch (firestoreErr) {}
-
       setShowProfileModal(false);
       onRefreshProfile();
       triggerAlert("تغییرات پروفایل با موفقیت ذخیره شد. ✨");
@@ -1220,32 +962,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           const partnerUid = userProfile.partnerUid;
           const coupleId = userProfile.coupleId;
 
-          // 1. PHP API Call
+          // PHP API Call
           try {
             await fetchFromPhpApi('unpair', { uid: currentUid });
           } catch (phpErr) {
             console.warn("PHP unpair error:", phpErr);
-          }
-
-          // 2. Firestore update (safe)
-          try {
-            await updateDoc(doc(db, "users", currentUid), {
-              partnerEmail: null,
-              partnerUid: null,
-              coupleId: null
-            });
-            if (partnerUid) {
-              await updateDoc(doc(db, "users", partnerUid), {
-                partnerEmail: null,
-                partnerUid: null,
-                coupleId: null
-              });
-            }
-            if (coupleId) {
-              await deleteDoc(doc(db, "couples", coupleId));
-            }
-          } catch (fsErr) {
-            console.warn("Firestore unpair error:", fsErr);
           }
 
           const uncoupledProfile: UserProfile = {
@@ -1270,13 +991,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
   const handleSavePeriodSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userProfile.coupleId) return;
+    if (!userProfile?.coupleId) return;
     try {
-      await setDoc(doc(db, "period_settings", userProfile.coupleId), {
+      const updated = {
         cycleLength: Number(settingsFormCycleLength) || 28,
         periodLength: Number(settingsFormPeriodLength) || 5,
         lastPeriodStartDate: settingsFormLastPeriodStartDate
-      });
+      };
+      await fetchFromPhpApi('savePeriodSettings', { settings: updated });
+      setPeriodSettings(updated);
       setShowPeriodSettingsModal(false);
       triggerAlert("تنظیمات ردیاب عادت ماهانه با موفقیت ذخیره شد. ✨");
       confetti({
@@ -1292,9 +1015,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
   const handleSavePersonalPeriodSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userProfile.uid) return;
+    if (!userProfile?.uid) return;
     try {
-      await setDoc(doc(db, "user_period_settings", userProfile.uid), {
+      const personalSettings = {
         uid: userProfile.uid,
         cycleLengthMin: Number(personalCycleMin) || 25,
         cycleLengthMax: Number(personalCycleMax) || 35,
@@ -1304,19 +1027,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         pmsNotificationEnabled: personalPmsNotificationEnabled,
         pmsNotificationDaysBefore: Number(personalPmsNotificationDaysBefore) || 2,
         showPmsPredictions: personalShowPmsPredictions,
-        updatedAt: serverTimestamp()
-      });
-      setUserPeriodSettings({
-        uid: userProfile.uid,
-        cycleLengthMin: Number(personalCycleMin) || 25,
-        cycleLengthMax: Number(personalCycleMax) || 35,
-        cycleLengthTypical: Number(personalCycleTypical) || 28,
-        periodLength: Number(personalPeriodLength) || 5,
-        lastPeriodStartDate: personalLastPeriodStartDate || settingsFormLastPeriodStartDate || "",
-        pmsNotificationEnabled: personalPmsNotificationEnabled,
-        pmsNotificationDaysBefore: Number(personalPmsNotificationDaysBefore) || 2,
-        showPmsPredictions: personalShowPmsPredictions,
-      });
+      };
+      localStorage.setItem(`user_period_settings_${userProfile.uid}`, JSON.stringify(personalSettings));
+      setUserPeriodSettings(personalSettings);
       setPersonalUseAdvanced(true);
       setShowPeriodSettingsModal(false);
       triggerAlert("تنظیمات پیشرفته و شخصی شما با موفقیت ذخیره شد. ✨");
@@ -1333,30 +1046,29 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
   const handleSavePeriodLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userProfile.coupleId) return;
+    if (!userProfile?.coupleId) return;
     try {
-      const logDocId = `${userProfile.coupleId}_${logFormDate}`;
-      await setDoc(doc(db, "period_logs", logDocId), {
-        coupleId: userProfile.coupleId,
+      const logData = {
         date: logFormDate,
         flow: logFormFlow,
-        mood: logFormMood,
+        moods: [logFormMood],
         symptoms: logFormSymptoms,
         notes: logFormNotes,
-        isPeriodStart: logFormIsPeriodStart,
-        loggedBy: userProfile.uid,
-        loggedByName: userProfile.displayName,
-        createdAt: serverTimestamp()
-      });
+        isPeriodDay: true,
+        isPeriodStart: logFormIsPeriodStart
+      };
+      await fetchFromPhpApi('savePeriodLog', { log: logData });
 
       // Automatically update last period start date if marked as start
       if (logFormIsPeriodStart) {
-        if (!periodSettings || logFormDate >= periodSettings.lastPeriodStartDate) {
-          await setDoc(doc(db, "period_settings", userProfile.coupleId), {
-            cycleLength: periodSettings?.cycleLength || 28,
-            periodLength: periodSettings?.periodLength || 5,
-            lastPeriodStartDate: logFormDate
-          }, { merge: true });
+        if (!periodSettings || logFormDate >= (periodSettings.lastPeriodStartDate || '')) {
+          await fetchFromPhpApi('savePeriodSettings', {
+            settings: {
+              cycleLength: periodSettings?.cycleLength || 28,
+              periodLength: periodSettings?.periodLength || 5,
+              lastPeriodStartDate: logFormDate
+            }
+          });
         }
       }
 
@@ -1376,7 +1088,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const handleDeletePeriodLog = async (logId: string) => {
     triggerConfirm("آیا مطمئن هستید که می‌خواهید این گزارش را حذف کنید؟", async () => {
       try {
-        await deleteDoc(doc(db, "period_logs", logId));
+        await fetchFromPhpApi('deletePeriodLog', { id: logId });
+        setPeriodLogs(prev => prev.filter(l => l.id !== logId));
       } catch (err) {
         console.error("Error deleting period log:", err);
       }
@@ -1388,7 +1101,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     const existing = periodLogs.find(l => l.date === dateStr);
     if (existing) {
       setLogFormFlow(existing.flow || "medium");
-      setLogFormMood(existing.mood || "neutral");
+      setLogFormMood(Array.isArray(existing.moods) ? existing.moods[0] : (existing.mood || "neutral"));
       setLogFormSymptoms(existing.symptoms || []);
       setLogFormNotes(existing.notes || "");
       setLogFormIsPeriodStart(existing.isPeriodStart || false);
@@ -1402,112 +1115,114 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     setShowLogPeriodModal(true);
   };
 
-  const handleCreateCategory = async (e: React.FormEvent) => {
+  const handleCreateCategory = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newShelfLabel.trim()) return;
-    try {
-      await addDoc(collection(db, "categories"), {
-        coupleId: userProfile.coupleId,
-        label: newShelfLabel,
-        iconName: newShelfIcon,
-        color: newShelfColor,
-        createdAt: serverTimestamp()
-      });
-      setNewShelfLabel("");
-      setShowAddShelfModal(false);
-      confetti({
-        particleCount: 20,
-        spread: 40,
-        colors: ["#10b981", "#6366f1"]
-      });
-    } catch (err) {
-      console.error("Error adding category:", err);
-    }
+    if (!newShelfLabel.trim() || !userProfile?.coupleId) return;
+    const newCat = {
+      id: "cat_" + Date.now(),
+      coupleId: userProfile.coupleId,
+      label: newShelfLabel,
+      iconName: newShelfIcon,
+      color: newShelfColor,
+      createdAt: new Date().toISOString()
+    };
+    const updated = [...customCategories, newCat];
+    setCustomCategories(updated);
+    localStorage.setItem(`couples_categories_${userProfile.coupleId}`, JSON.stringify(updated));
+    setNewShelfLabel("");
+    setShowAddShelfModal(false);
+    confetti({
+      particleCount: 20,
+      spread: 40,
+      colors: ["#10b981", "#6366f1"]
+    });
   };
 
-  const handleCreateTab = async (e: React.FormEvent) => {
+  const handleCreateTab = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTabTitle.trim()) return;
-    try {
-      const docRef = await addDoc(collection(db, "custom_tabs"), {
-        coupleId: userProfile.coupleId,
-        title: newTabTitle,
-        icon: newTabIcon,
-        createdAt: serverTimestamp()
-      });
-      setNewTabTitle("");
-      setShowAddTabModal(false);
-      setActiveTab(`tab-${docRef.id}`);
-      confetti({
-        particleCount: 30,
-        spread: 50,
-        colors: ["#a855f7", "#ec4899"]
-      });
-    } catch (err) {
-      console.error("Error adding tab:", err);
-    }
+    if (!newTabTitle.trim() || !userProfile?.coupleId) return;
+    const newTabId = "tab_" + Date.now();
+    const newTab = {
+      id: newTabId,
+      coupleId: userProfile.coupleId,
+      title: newTabTitle,
+      icon: newTabIcon,
+      createdAt: new Date().toISOString()
+    };
+    const updated = [...customTabs, newTab];
+    setCustomTabs(updated);
+    localStorage.setItem(`couples_custom_tabs_${userProfile.coupleId}`, JSON.stringify(updated));
+    setNewTabTitle("");
+    setShowAddTabModal(false);
+    setActiveTab(`tab-${newTabId}`);
+    confetti({
+      particleCount: 30,
+      spread: 50,
+      colors: ["#a855f7", "#ec4899"]
+    });
   };
 
-  const handleCreateNote = async (e: React.FormEvent) => {
+  const handleCreateNote = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNoteContent.trim() || !activeTab.startsWith("tab-")) return;
+    if (!newNoteContent.trim() || !activeTab.startsWith("tab-") || !userProfile?.coupleId) return;
     const tabId = activeTab.replace("tab-", "");
-    try {
-      await addDoc(collection(db, "tab_notes"), {
-        coupleId: userProfile.coupleId,
-        tabId: tabId,
-        content: newNoteContent,
-        color: newNoteColor,
-        createdBy: userProfile.uid,
-        createdByName: userProfile.displayName,
-        photoURL: userProfile.photoURL || "",
-        createdAt: serverTimestamp()
-      });
-      setNewNoteContent("");
-      setShowAddNoteModal(false);
-    } catch (err) {
-      console.error("Error adding note:", err);
-    }
+    const newNote = {
+      id: "note_" + Date.now(),
+      coupleId: userProfile.coupleId,
+      tabId: tabId,
+      content: newNoteContent,
+      color: newNoteColor,
+      createdBy: userProfile.uid,
+      createdByName: userProfile.displayName,
+      photoURL: userProfile.photoURL || "",
+      createdAt: new Date().toISOString()
+    };
+    const updated = [newNote, ...notes];
+    setNotes(updated);
+    localStorage.setItem(`couples_tab_notes_${userProfile.coupleId}_${tabId}`, JSON.stringify(updated));
+    setNewNoteContent("");
+    setShowAddNoteModal(false);
   };
 
-  const handleDeleteCategory = async (catId: string, e: React.MouseEvent) => {
+  const handleDeleteCategory = (catId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     triggerConfirm(
       "آیا مطمئن هستید که می‌خواهید این دسته‌بندی (قفسه) را حذف کنید؟ آرزوهای این قفسه حذف نمی‌شوند اما دسته‌بندی آن‌ها برداشته می‌شود.",
-      async () => {
-        try {
-          await deleteDoc(doc(db, "categories", catId));
-          if (categoryFilter === catId) {
-            setCategoryFilter("all");
-          }
-        } catch (err) {
-          console.error("Error deleting category:", err);
+      () => {
+        const updated = customCategories.filter(c => c.id !== catId);
+        setCustomCategories(updated);
+        if (userProfile?.coupleId) {
+          localStorage.setItem(`couples_categories_${userProfile.coupleId}`, JSON.stringify(updated));
+        }
+        if (categoryFilter === catId) {
+          setCategoryFilter("all");
         }
       }
     );
   };
 
-  const handleDeleteTab = async (tabId: string, e: React.MouseEvent) => {
+  const handleDeleteTab = (tabId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     triggerConfirm(
       "آیا مطمئن هستید که می‌خواهید این تب و تمامی یادداشت‌های داخل آن را حذف کنید؟",
-      async () => {
-        try {
-          await deleteDoc(doc(db, "custom_tabs", tabId));
-          setActiveTab("wishlist");
-        } catch (err) {
-          console.error("Error deleting tab:", err);
+      () => {
+        const updated = customTabs.filter(t => t.id !== tabId);
+        setCustomTabs(updated);
+        if (userProfile?.coupleId) {
+          localStorage.setItem(`couples_custom_tabs_${userProfile.coupleId}`, JSON.stringify(updated));
         }
+        setActiveTab("wishlist");
       }
     );
   };
 
-  const handleDeleteNote = async (noteId: string) => {
-    triggerConfirm("آیا از حذف این یادداشت مطمئن هستید؟", async () => {
-      try {
-        await deleteDoc(doc(db, "tab_notes", noteId));
-      } catch (err) {
-        console.error("Error deleting note:", err);
+  const handleDeleteNote = (noteId: string) => {
+    triggerConfirm("آیا از حذف این یادداشت مطمئن هستید؟", () => {
+      const updated = notes.filter(n => n.id !== noteId);
+      setNotes(updated);
+      if (userProfile?.coupleId && activeTab.startsWith("tab-")) {
+        const tabId = activeTab.replace("tab-", "");
+        localStorage.setItem(`couples_tab_notes_${userProfile.coupleId}_${tabId}`, JSON.stringify(updated));
       }
     });
   };
@@ -1621,14 +1336,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       };
       setItems(prev => [newItem, ...prev.filter(i => i.id !== newItem.id)]);
 
-      // 2. Background Firestore attempt (non-blocking)
-      try {
-        addDoc(collection(db, "wishlist"), {
-          ...itemData,
-          createdAt: serverTimestamp()
-        }).catch(() => {});
-      } catch (fsErr) {}
-
       // Reset form
       setNewTitle("");
       setNewCategory("place");
@@ -1674,15 +1381,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         }
       });
     } catch (e) {}
-
-    // 3. Background Firestore
-    try {
-      updateDoc(doc(db, "wishlist", itemId), {
-        progress: newVal,
-        isCompleted: isCompleted,
-        completedAt: isCompleted ? serverTimestamp() : null
-      }).catch(() => {});
-    } catch (err) {}
 
     if (isCompleted) {
       // Glorious Full Canvas Celebration Confetti (Multi-Phase: Fireworks, Side Cannons, and Pop Bursts)
@@ -1749,15 +1447,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       // 1. Optimistic local state update
       setItems(prev => prev.filter(item => item.id !== itemId));
 
-      // 2. Host PHP API (MySQL) call
+      // Host PHP API (MySQL) call
       try {
         await fetchFromPhpApi('deleteWishlistItem', { id: itemId });
       } catch (e) {}
-
-      // 3. Background Firestore
-      try {
-        deleteDoc(doc(db, "wishlist", itemId)).catch(() => {});
-      } catch (err) {}
     });
   };
 
@@ -1796,11 +1489,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       });
     } catch (e) {}
 
-    // 3. Background Firestore
-    try {
-      updateDoc(doc(db, "wishlist", editingWish.id), updates).catch(() => {});
-    } catch (err) {}
-
     setShowEditWishModal(false);
     setEditingWish(null);
 
@@ -1829,19 +1517,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       itemTitle: item.title
     };
 
-    // 1. Host PHP API (MySQL)
+    // Host PHP API (MySQL)
     try {
       await fetchFromPhpApi('sendPoke', { poke: pokeData });
     } catch (e) {}
-
-    // 2. Background Firestore
-    try {
-      addDoc(collection(db, "pokes"), {
-        ...pokeData,
-        createdAt: serverTimestamp(),
-        read: false
-      }).catch(() => {});
-    } catch (err) {}
 
     triggerAlert(`پیام یادآوری شیرین برای پارتنر شما فرستاده شد! 💌`);
   };
@@ -1866,14 +1545,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       await fetchFromPhpApi('sendPoke', { poke: pokeData });
     } catch (e) {}
 
-    try {
-      addDoc(collection(db, "pokes"), {
-        ...pokeData,
-        createdAt: serverTimestamp(),
-        read: false
-      }).catch(() => {});
-    } catch (err) {}
-
     triggerAlert("پیام همراهی و همدلی برای شریک زندگی شما ارسال شد! 💕");
   };
 
@@ -1882,9 +1553,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     try {
       await fetchFromPhpApi('markPokeRead', { id: pokeId });
     } catch (e) {}
-    try {
-      updateDoc(doc(db, "pokes", pokeId), { read: true }).catch(() => {});
-    } catch (err) {}
     setShowNotificationAlert(null);
   };
 
@@ -1975,14 +1643,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
       setMemories(prev => [newMemory, ...prev.filter(m => m.id !== newMemory.id)]);
 
-      // 2. Background Firestore attempt (non-blocking, never await)
-      try {
-        addDoc(collection(db, "memories"), {
-          ...memoryPayload,
-          createdAt: serverTimestamp()
-        }).catch(() => {});
-      } catch (fsErr) {}
-
       // Joyful splash of pink/rose confetti!
       confetti({
         particleCount: 100,
@@ -1990,7 +1650,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         origin: { y: 0.6 },
         colors: ["#f43f5e", "#ec4899", "#a855f7", "#f59e0b"]
       });
-
       // Clear state and close modal
       setMemoryFormTitle("");
       setMemoryFormDate("");
@@ -2013,9 +1672,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     try {
       setMemories(prev => prev.filter(m => m.id !== memoryId));
       await fetchFromPhpApi('deleteMemory', { id: memoryId });
-      try {
-        deleteDoc(doc(db, "memories", memoryId)).catch(() => {});
-      } catch (fsErr) {}
       triggerAlert("خاطره با موفقیت حذف شد. 🕊️");
     } catch (err) {
       console.error("Error deleting memory:", err);

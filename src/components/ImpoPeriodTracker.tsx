@@ -16,11 +16,6 @@ import {
   formatPersianDate, toPersianDigits, gregorianToJalali, jalaliToGregorian, 
   getDaysInJalaliMonth, JALALI_MONTHS, JALALI_WEEKDAYS, getTehranDate, toGregorianIsoString 
 } from "../utils/jalali";
-import { db } from "../firebase";
-import { 
-  doc, onSnapshot, setDoc, updateDoc, collection, query, where, 
-  orderBy, addDoc, deleteDoc, serverTimestamp 
-} from "firebase/firestore";
 import { fetchFromPhpApi } from "../apiClient";
 import JalaliDatePicker from "./JalaliDatePicker";
 
