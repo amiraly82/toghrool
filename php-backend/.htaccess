@@ -1,0 +1,19 @@
+# Apache .htaccess configuration for React SPA + PHP API on cPanel
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Handle CORS OPTIONS Preflight
+  Header always set Access-Control-Allow-Origin "*"
+  Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+  Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+
+  # Do not rewrite if requested file or directory exists physically
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Redirect all other SPA routes to index.html
+  RewriteRule ^ index.html [L]
+</IfModule>

@@ -1,0 +1,186 @@
+{
+  "entities": {
+    "user_period_settings": {
+      "title": "User Period Settings",
+      "description": "Personalized advanced calendar and menstrual period settings for each user",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique identifier of the user"
+        },
+        "cycleLengthMin": {
+          "type": "number",
+          "description": "The minimum cycle length in days"
+        },
+        "cycleLengthMax": {
+          "type": "number",
+          "description": "The maximum cycle length in days"
+        },
+        "cycleLengthTypical": {
+          "type": "number",
+          "description": "The average/typical cycle length in days"
+        },
+        "periodLength": {
+          "type": "number",
+          "description": "The average period/menstruation duration in days"
+        },
+        "lastPeriodStartDate": {
+          "type": "string",
+          "description": "The starting date of the last menstrual period (YYYY-MM-DD)"
+        },
+        "pmsNotificationEnabled": {
+          "type": "boolean",
+          "description": "Whether the user wants notifications for PMS predictions"
+        },
+        "pmsNotificationDaysBefore": {
+          "type": "number",
+          "description": "Number of days before PMS starts to send notification"
+        },
+        "showPmsPredictions": {
+          "type": "boolean",
+          "description": "Whether to display PMS predictions on the calendar"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the settings were last saved"
+        }
+      },
+      "required": [
+        "uid",
+        "cycleLengthTypical",
+        "periodLength"
+      ]
+    },
+    "memories": {
+      "title": "Memories",
+      "description": "Shared sweet memories written by the couple with titles, dates, optional images, and content stories",
+      "type": "object",
+      "properties": {
+        "coupleId": {
+          "type": "string",
+          "description": "The unique identifier of the couple"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the memory"
+        },
+        "date": {
+          "type": "string",
+          "description": "The Persian/Jalali date or YYYY-MM-DD of the memory"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "The Base64 encoded or URL of the memory cover photo"
+        },
+        "content": {
+          "type": "string",
+          "description": "The story/body text of the memory"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The UID of the partner who logged this memory"
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "The display name of the partner who logged this memory"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        }
+      },
+      "required": [
+        "coupleId",
+        "title",
+        "date",
+        "content",
+        "createdBy",
+        "createdByName"
+      ]
+    },
+    "private_expenses": {
+      "title": "Private Expenses",
+      "description": "Private financial transactions (income or expense) logged by an individual partner, hidden from the other partner",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who owns this transaction"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount in Tomans"
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the transaction"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional details/note about the transaction"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of transaction (YYYY-MM-DD)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["expense", "income"],
+          "description": "Type of transaction"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when logged"
+        }
+      },
+      "required": ["userId", "amount", "category", "date", "type"]
+    },
+    "private_budgets": {
+      "title": "Private Budgets",
+      "description": "Private budget limits for categories and monthly goals configured by an individual partner",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who owns this budget"
+        },
+        "budgets": {
+          "type": "object",
+          "description": "A map of category names to budget limit amounts"
+        },
+        "monthlyIncomeGoal": {
+          "type": "number",
+          "description": "Monthly target income goal"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when updated"
+        }
+      },
+      "required": ["userId", "budgets"]
+    }
+  },
+  "firestore": {
+    "/user_period_settings/{userId}": {
+      "schema": "user_period_settings",
+      "description": "Collection of personalized advanced settings for each user"
+    },
+    "/memories/{memoryId}": {
+      "schema": "memories",
+      "description": "Collection of shared sweet memories of the couple"
+    },
+    "/private_expenses/{expenseId}": {
+      "schema": "private_expenses",
+      "description": "Collection of private individual expenses and incomes"
+    },
+    "/private_budgets/{userId}": {
+      "schema": "private_budgets",
+      "description": "Private category budget configurations for each user"
+    }
+  }
+}

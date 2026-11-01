@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /private_expenses/{expenseId} {
+      allow read, write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid) && (request.resource == null || request.resource.data.userId == request.auth.uid);
+    }
+
+    match /private_budgets/{userId} {
+      allow read, write: if request.auth != null && userId == request.auth.uid;
+    }
+
+    match /user_period_settings/{userId} {
+      allow read, write: if true;
+    }
+
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /couples/{coupleId} {
+      allow read, write: if true;
+    }
+
+    match /wishlist/{itemId} {
+      allow read, write: if true;
+    }
+
+    match /pokes/{pokeId} {
+      allow read, write: if true;
+    }
+
+    match /categories/{catId} {
+      allow read, write: if true;
+    }
+
+    match /custom_tabs/{tabId} {
+      allow read, write: if true;
+    }
+
+    match /tab_notes/{noteId} {
+      allow read, write: if true;
+    }
+
+    match /period_settings/{coupleId} {
+      allow read, write: if true;
+    }
+
+    match /period_logs/{logId} {
+      allow read, write: if true;
+    }
+
+    match /memories/{memoryId} {
+      allow read, write: if true;
+    }
+  }
+}
+

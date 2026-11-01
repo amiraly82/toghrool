@@ -1,0 +1,6 @@
+{
+  "name": "Couples Shared Wishlist",
+  "description": "یک اپلیکیشن زیبا و مدرن برای زوج‌ها جهت ثبت ویش‌لیست‌های مشترک، کتاب‌ها، فیلم‌ها، مکان‌ها، خریدها و سفرها با قابلیت همگام‌سازی لحظه‌ای، ثبت در تقویم و تالار افتخارات آرزوهای برآورده شده.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
