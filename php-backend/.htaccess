@@ -1,24 +1,32 @@
-# Apache configuration for React SPA + Secure PHP API on cPanel
+DirectoryIndex index.html index.php
+Options -Indexes
+
+AddDefaultCharset UTF-8
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /
 
-  # Pass Authorization header to PHP (prevents cPanel/FastCGI stripping Authorization)
+  # Pass Authorization and X-Auth-Token headers to PHP FastCGI
   SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
   SetEnvIfNoCase ^X-Auth-Token$ "(.+)" HTTP_X_AUTH_TOKEN=$1
 
-  # Do not rewrite if requested file or directory exists physically
+  # Explicitly allow api.php and static assets to execute/serve directly
+  RewriteCond %{REQUEST_URI} api\.php [NC,OR]
+  RewriteCond %{REQUEST_URI} \.(php|js|css|png|jpg|jpeg|webp|gif|svg|woff2|woff|ttf|json|ico)$ [NC]
+  RewriteRule ^ - [L]
+
+  # Do not rewrite if physical file or directory exists
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Redirect all other SPA routes to index.html
+  # SPA fallback for router navigation (excluding api.php)
+  RewriteCond %{REQUEST_URI} !api\.php [NC]
   RewriteRule ^ index.html [L]
 </IfModule>
 
-# Block direct access to sensitive configuration, credentials, SQL and env files
+# Block direct web access to sensitive configuration, credentials, SQL and env files
 <FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op]|env|git.*|md)$|config\.php|db_credentials\.php)$">
   <IfModule mod_authz_core.c>
     Require all denied
@@ -37,4 +45,14 @@
   Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Auth-Token, X-Requested-With"
   Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
   Header append Vary Origin
+
+  <FilesMatch "\.(html|htm|json|php)$">
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+  </FilesMatch>
+
+  <FilesMatch "\.(js|css)$">
+    Header always set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
 </IfModule>
