@@ -29,7 +29,9 @@ import {
   X,
   Download,
   Brain,
-  Dna
+  Dna,
+  Moon,
+  Flower2
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import {
@@ -214,6 +216,7 @@ export default function ImpoPeriodTracker({
   const [warningMessage, setWarningMessage] = useState("");
   const [showDeleteAllConfirmModal, setShowDeleteAllConfirmModal] = useState(false);
   const [trackerToast, setTrackerToast] = useState<string | null>(null);
+  const [selectedLegendPhase, setSelectedLegendPhase] = useState<string | null>(null);
 
   const showNotice = (msg: string) => {
     setTrackerToast(msg);
@@ -800,40 +803,181 @@ export default function ImpoPeriodTracker({
     });
   };
 
-  // Ring geometry (exact Soft Pastel Minimalist Capsule Ring + Circular Nodes)
+  // Ring geometry (Soft Pastel Minimalist Capsule Ring on Menstrual Cycle Clock)
   const ringCx = 160;
   const ringCy = 160;
-  const ringR = 116;
+  const ringR = 118;
+  const ringStrokeWidth = 30;
 
-  const yellowIconPos = polarToCartesian(ringCx, ringCy, ringR, 15);
-  const sageIconPos = polarToCartesian(ringCx, ringCy, ringR, 89);
-  const pinkIconPos = polarToCartesian(ringCx, ringCy, ringR, 143);
-  const blueIconPos = polarToCartesian(ringCx, ringCy, ringR, 247);
-  const sageNodePos = polarToCartesian(ringCx, ringCy, ringR, 271);
-  const yellowMiniIconPos = polarToCartesian(ringCx, ringCy, ringR, 294);
-  const blueNodePos = polarToCartesian(ringCx, ringCy, ringR, 329);
-  const pinkNodePos = polarToCartesian(ringCx, ringCy, ringR, 350);
+  // Real biological menstrual cycle timeline geometry
+  const cycleGeometry = useMemo(() => {
+    const degPerDay = 360 / safeCycleLength;
+    const gap = 5.5; // Degree inset for round caps to ensure separated pill capsules
 
-  // Active phase angle highlight
-  const activePhaseMarkerAngle = useMemo(() => {
+    // 1. Period Phase (Days 1 to periodLength)
+    const p1Start = 1;
+    const p1End = Math.max(1, Math.min(safePeriodLength, safeCycleLength));
+    const p1RawStart = (p1Start - 1) * degPerDay;
+    const p1RawEnd = p1End * degPerDay;
+    const p1ArcStart = p1RawStart + gap;
+    const p1ArcEnd = Math.max(p1ArcStart + 1, p1RawEnd - gap);
+    const p1MidAngle = (p1RawStart + p1RawEnd) / 2;
+    const p1IconPos = polarToCartesian(ringCx, ringCy, ringR, p1MidAngle);
+
+    // 2. Follicular Phase (Days periodLength + 1 to fertileStart - 1)
+    const p2Start = p1End + 1;
+    const p2End = Math.max(p2Start - 1, safeFertileStart - 1);
+    const hasFollicular = p2End >= p2Start;
+    const p2RawStart = (p2Start - 1) * degPerDay;
+    const p2RawEnd = p2End * degPerDay;
+    const p2ArcStart = p2RawStart + gap;
+    const p2ArcEnd = Math.max(p2ArcStart + 1, p2RawEnd - gap);
+    const p2MidAngle = (p2RawStart + p2RawEnd) / 2;
+    const p2IconPos = polarToCartesian(ringCx, ringCy, ringR, p2MidAngle);
+
+    // 3. Fertile Window & Ovulation (Days fertileStart to fertileEnd)
+    const p3Start = Math.min(safeFertileStart, safeCycleLength);
+    const p3End = Math.min(safeFertileEnd, safeCycleLength);
+    const hasFertile = p3End >= p3Start;
+    const p3RawStart = (p3Start - 1) * degPerDay;
+    const p3RawEnd = p3End * degPerDay;
+    const p3ArcStart = p3RawStart + gap;
+    const p3ArcEnd = Math.max(p3ArcStart + 1, p3RawEnd - gap);
+    const p3MidAngle = (p3RawStart + p3RawEnd) / 2;
+    const p3IconPos = polarToCartesian(ringCx, ringCy, ringR, p3MidAngle);
+
+    // Exact Ovulation Day Node
+    const safeOvu = Math.max(1, Math.min(safeOvulationDay, safeCycleLength));
+    const ovuAngle = ((safeOvu - 0.5) / safeCycleLength) * 360;
+    const ovuPos = polarToCartesian(ringCx, ringCy, ringR, ovuAngle);
+
+    // 4. Luteal Phase & PMS (Days fertileEnd + 1 to cycleLength)
+    const p4Start = p3End + 1;
+    const p4End = safeCycleLength;
+    const hasLuteal = p4End >= p4Start;
+    const p4RawStart = (p4Start - 1) * degPerDay;
+    const p4ArcStart = p4RawStart + gap;
+    const p4ArcEnd = Math.max(p4ArcStart + 1, 360 - gap);
+    const p4MidAngle = (p4RawStart + 360) / 2;
+    const p4IconPos = polarToCartesian(ringCx, ringCy, ringR, p4MidAngle);
+
+    // Today pointer & cursor position on the ring track
+    const currentDayClamped = Math.max(1, Math.min(cycleStatus.currentCycleDay, safeCycleLength));
+    const todayAngle = ((currentDayClamped - 0.5) / safeCycleLength) * 360;
+    const todayPos = polarToCartesian(ringCx, ringCy, ringR, todayAngle);
+
+    return {
+      period: {
+        startDay: p1Start,
+        endDay: p1End,
+        path: describeArc(ringCx, ringCy, ringR, p1ArcStart, p1ArcEnd),
+        iconPos: p1IconPos
+      },
+      follicular: hasFollicular ? {
+        startDay: p2Start,
+        endDay: p2End,
+        path: describeArc(ringCx, ringCy, ringR, p2ArcStart, p2ArcEnd),
+        iconPos: p2IconPos
+      } : null,
+      fertile: hasFertile ? {
+        startDay: p3Start,
+        endDay: p3End,
+        path: describeArc(ringCx, ringCy, ringR, p3ArcStart, p3ArcEnd),
+        iconPos: p3IconPos,
+        ovuPos,
+        ovuDay: safeOvu
+      } : null,
+      luteal: hasLuteal ? {
+        startDay: p4Start,
+        endDay: p4End,
+        path: describeArc(ringCx, ringCy, ringR, p4ArcStart, p4ArcEnd),
+        iconPos: p4IconPos
+      } : null,
+      today: {
+        day: cycleStatus.currentCycleDay,
+        pos: todayPos,
+        angle: todayAngle
+      }
+    };
+  }, [safeCycleLength, safePeriodLength, safeFertileStart, safeFertileEnd, safeOvulationDay, cycleStatus.currentCycleDay]);
+
+  // Active Phase Meta for Badges and Typography
+  const currentPhaseMeta = useMemo(() => {
     switch (cycleStatus.phase) {
       case "period":
       case "due":
-      case "delayed":
-        return 166;
+        return {
+          title: "فاز قاعدگی (پریود)",
+          subtitle: "روزهای استراحت، آرامش و مراقبت ویژه",
+          color: "#F6C3E5",
+          bgClass: "bg-[#F6C3E5]",
+          borderClass: "border-[#E5ADD2]",
+          pillText: "text-[#1B1B1A]",
+          icon: Droplet
+        };
       case "follicular":
-        return 102;
-      case "fertile":
-        return 232;
+        return {
+          title: "فاز فولیکولار",
+          subtitle: "روزهای پرانرژی، نشاط و خلاقیت",
+          color: "#F6DC6B",
+          bgClass: "bg-[#F6DC6B]",
+          borderClass: "border-[#E8CE55]",
+          pillText: "text-[#1B1B1A]",
+          icon: Sparkles
+        };
       case "ovulation":
-        return 271;
+        return {
+          title: "روز تخمک‌گذاری",
+          subtitle: "اوج باروری و بیشترین شانس لقاح",
+          color: "#A7B86C",
+          bgClass: "bg-[#A7B86C]",
+          borderClass: "border-[#96A75B]",
+          pillText: "text-[#1B1B1A]",
+          icon: Flower2
+        };
+      case "fertile":
+        return {
+          title: "پنجره باروری",
+          subtitle: "آمادگی بدن و شانس بالای بارداری",
+          color: "#A7B86C",
+          bgClass: "bg-[#A7B86C]",
+          borderClass: "border-[#96A75B]",
+          pillText: "text-[#1B1B1A]",
+          icon: Flower2
+        };
+      case "delayed":
+        return {
+          title: "تاخیر در قاعدگی",
+          subtitle: `${toPersianDigits(cycleStatus.delayedDays)} روز از موعد گذشته`,
+          color: "#F9C6B8",
+          bgClass: "bg-[#F9C6B8]",
+          borderClass: "border-[#E8A594]",
+          pillText: "text-[#1B1B1A]",
+          icon: AlertCircle
+        };
       case "pms":
+        return {
+          title: "سندروم پیش از قاعدگی (PMS)",
+          subtitle: "نیاز به همراهی، همدلی و نوشیدنی‌های گرم",
+          color: "#B8CEF4",
+          bgClass: "bg-[#B8CEF4]",
+          borderClass: "border-[#9ABBE5]",
+          pillText: "text-[#1B1B1A]",
+          icon: Moon
+        };
       case "luteal":
       default:
-        return 38;
+        return {
+          title: "فاز لوتئال",
+          subtitle: "روزهای بازگشت به تعادل، استراحت و مراقبت",
+          color: "#B8CEF4",
+          bgClass: "bg-[#B8CEF4]",
+          borderClass: "border-[#9ABBE5]",
+          pillText: "text-[#1B1B1A]",
+          icon: Moon
+        };
     }
-  }, [cycleStatus.phase]);
-  const activeMarkerPos = polarToCartesian(ringCx, ringCy, ringR - 29, activePhaseMarkerAngle);
+  }, [cycleStatus.phase, cycleStatus.delayedDays]);
 
   // Normalize biorhythm -100..100 into 0..10 editorial score
   const bioMetrics = useMemo(() => {
@@ -1019,236 +1163,356 @@ export default function ImpoPeriodTracker({
           {/* HERO VISUAL: Segmented Pastel Capsule Ring OR Squircle Monthly Calendar */}
           <div className="flex flex-col items-center">
             {viewMode === "circular" ? (
-              <div className="relative w-[310px] h-[310px] sm:w-[340px] sm:h-[340px] flex items-center justify-center select-none">
-                <svg className="w-full h-full" viewBox="0 0 320 320">
-                  {/* 1. Butter Yellow Capsule (PMS & Luteal Care: 14° -> 64°) */}
-                  <path
-                    d={describeArc(ringCx, ringCy, ringR, 14, 64)}
-                    fill="none"
-                    stroke="#F6DC6B"
-                    strokeWidth="33"
-                    strokeLinecap="round"
-                  />
-                  {/* Monoline Shield Icon inside Yellow Capsule */}
-                  <g transform={`translate(${yellowIconPos.x - 9}, ${yellowIconPos.y - 9})`}>
-                    <path
-                      d="M9 1.8L3 4.3v4.4c0 4.1 2.6 7.8 6 9.1 3.4-1.3 6-5 6-9.1V4.3L9 1.8z"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M6.7 9.3l1.6 1.6 3.2-3.2"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </g>
-
-                  {/* 2. Sage Olive Capsule (Follicular Energy: 86° -> 118°) */}
-                  <path
-                    d={describeArc(ringCx, ringCy, ringR, 86, 118)}
-                    fill="none"
-                    stroke="#A7B86C"
-                    strokeWidth="33"
-                    strokeLinecap="round"
-                  />
-                  {/* Monoline Organic Vitality Icon inside Sage Capsule */}
-                  <g transform={`translate(${sageIconPos.x - 9}, ${sageIconPos.y - 9})`}>
-                    <path
-                      d="M9 3c3.5 0 6 2.5 6 6 0 4.2-6 7.5-6 7.5S3 13.2 3 9c0-3.5 2.5-6 6-6z"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M9 6.5v5"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </g>
-
-                  {/* 3. Pastel Pink Capsule (Period Phase: 140° -> 192°) */}
-                  <path
-                    d={describeArc(ringCx, ringCy, ringR, 140, 192)}
-                    fill="none"
-                    stroke="#F6C3E5"
-                    strokeWidth="33"
-                    strokeLinecap="round"
-                  />
-                  {/* Monoline Heart + Coral Dot (Exact Reference Detail) */}
-                  <g transform={`translate(${pinkIconPos.x - 9}, ${pinkIconPos.y - 9})`}>
-                    <path
-                      d="M9 15.6s-6.2-3.9-6.2-8c0-2.1 1.6-3.6 3.5-3.6 1.2 0 2.2.6 2.7 1.5.5-.9 1.5-1.5 2.7-1.5 1.9 0 3.5 1.5 3.5 3.6 0 4.1-6.2 8-6.2 8z"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <circle cx="15.2" cy="3.8" r="1.8" fill="#D94E4E" />
-                  </g>
-
-                  {/* 4. Powder Blue Capsule (Fertile Window: 214° -> 250°) */}
-                  <path
-                    d={describeArc(ringCx, ringCy, ringR, 214, 250)}
-                    fill="none"
-                    stroke="#B8CEF4"
-                    strokeWidth="33"
-                    strokeLinecap="round"
-                  />
-                  {/* Monoline Brain/Calm Icon inside Blue Capsule */}
-                  <g transform={`translate(${blueIconPos.x - 9}, ${blueIconPos.y - 9})`}>
+              <div className="flex flex-col items-center w-full">
+                <div className="relative w-[310px] h-[310px] sm:w-[340px] sm:h-[340px] flex items-center justify-center select-none">
+                  <svg className="w-full h-full" viewBox="0 0 320 320">
+                    {/* Background Track Circle (Sand #EFECE2) */}
                     <circle
-                      cx="6.8"
-                      cy="9"
-                      r="3.6"
+                      cx={ringCx}
+                      cy={ringCy}
+                      r={ringR}
                       fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.4"
+                      stroke="#EFECE2"
+                      strokeWidth={ringStrokeWidth}
                     />
-                    <circle
-                      cx="11.2"
-                      cy="9"
-                      r="3.6"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.4"
-                    />
-                  </g>
 
-                  {/* 5. Sage Circular Node (Ovulation Peak at 271°) */}
-                  <circle cx={sageNodePos.x} cy={sageNodePos.y} r="16.5" fill="#A7B86C" />
-                  <g transform={`translate(${sageNodePos.x - 8}, ${sageNodePos.y - 8})`}>
-                    <path
-                      d="M8 2.2l1.6 3.6L13.2 7l-3.6 1.6L8 12.2 6.4 8.6 2.8 7l3.6-1.2L8 2.2z"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.4"
-                      strokeLinejoin="round"
-                    />
-                  </g>
+                    {/* 1. Pastel Pink Capsule: Period Phase (Days 1 to periodLength) */}
+                    {cycleGeometry.period && (
+                      <g>
+                        <path
+                          d={cycleGeometry.period.path}
+                          fill="none"
+                          stroke="#F6C3E5"
+                          strokeWidth={ringStrokeWidth}
+                          strokeLinecap="round"
+                        />
+                        {/* Droplet Icon */}
+                        <g transform={`translate(${cycleGeometry.period.iconPos.x - 7.5}, ${cycleGeometry.period.iconPos.y - 7.5})`}>
+                          <path
+                            d="M7.5 2C7.5 2 3 6.8 3 9.6a4.5 4.5 0 009 0C12 6.8 7.5 2 7.5 2z"
+                            fill="none"
+                            stroke="#1B1B1A"
+                            strokeWidth="1.5"
+                            strokeLinejoin="round"
+                          />
+                        </g>
+                      </g>
+                    )}
 
-                  {/* 6. Butter Yellow Mini-Capsule (Biorhythm / Endocrine at 292° -> 308°) */}
-                  <path
-                    d={describeArc(ringCx, ringCy, ringR, 292, 308)}
-                    fill="none"
-                    stroke="#F6DC6B"
-                    strokeWidth="33"
-                    strokeLinecap="round"
-                  />
-                  <g transform={`translate(${yellowMiniIconPos.x - 8}, ${yellowMiniIconPos.y - 8})`}>
-                    <path
-                      d="M5 2.5c0 3.5 6 3.5 6 7s-6 3.5-6 7M11 2.5c0 3.5-6 3.5-6 7s6 3.5 6 7"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                    />
-                  </g>
+                    {/* 2. Butter Yellow Capsule: Follicular Phase (Days periodLength + 1 to fertileStart - 1) */}
+                    {cycleGeometry.follicular && (
+                      <g>
+                        <path
+                          d={cycleGeometry.follicular.path}
+                          fill="none"
+                          stroke="#F6DC6B"
+                          strokeWidth={ringStrokeWidth}
+                          strokeLinecap="round"
+                        />
+                        {/* Sparkles / Energy Icon */}
+                        <g transform={`translate(${cycleGeometry.follicular.iconPos.x - 7.5}, ${cycleGeometry.follicular.iconPos.y - 7.5})`}>
+                          <path
+                            d="M7.5 2l1.4 3.4 3.6 1.4-3.6 1.4-1.4 3.6-1.4-3.6-3.6-1.4 3.6-1.4L7.5 2z"
+                            fill="none"
+                            stroke="#1B1B1A"
+                            strokeWidth="1.5"
+                            strokeLinejoin="round"
+                          />
+                        </g>
+                      </g>
+                    )}
 
-                  {/* 7. Powder Blue Circular Node (329°) */}
-                  <circle cx={blueNodePos.x} cy={blueNodePos.y} r="16.5" fill="#B8CEF4" />
-                  <g transform={`translate(${blueNodePos.x - 8}, ${blueNodePos.y - 8})`}>
-                    <path
-                      d="M4.5 11.5l7-7M3.5 9.5a2 2 0 112 2M10.5 4.5a2 2 0 112 2"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                    />
-                  </g>
+                    {/* 3. Sage Olive Capsule: Fertile Window & Ovulation (Days fertileStart to fertileEnd) */}
+                    {cycleGeometry.fertile && (
+                      <g>
+                        <path
+                          d={cycleGeometry.fertile.path}
+                          fill="none"
+                          stroke="#A7B86C"
+                          strokeWidth={ringStrokeWidth}
+                          strokeLinecap="round"
+                        />
+                        {/* Blossom / Flower Icon */}
+                        <g transform={`translate(${cycleGeometry.fertile.iconPos.x - 7.5}, ${cycleGeometry.fertile.iconPos.y - 7.5})`}>
+                          <circle cx="7.5" cy="7.5" r="2.2" fill="none" stroke="#1B1B1A" strokeWidth="1.4" />
+                          <path
+                            d="M7.5 2.2a2.3 2.3 0 010 4.6M7.5 8.2a2.3 2.3 0 010 4.6M2.2 7.5a2.3 2.3 0 014.6 0M8.2 7.5a2.3 2.3 0 014.6 0"
+                            fill="none"
+                            stroke="#1B1B1A"
+                            strokeWidth="1.3"
+                          />
+                        </g>
 
-                  {/* 8. Pastel Pink Circular Node (350°) */}
-                  <circle cx={pinkNodePos.x} cy={pinkNodePos.y} r="16.5" fill="#F6C3E5" />
-                  <g transform={`translate(${pinkNodePos.x - 8}, ${pinkNodePos.y - 8})`}>
-                    <path
-                      d="M8 2.8C8 2.8 3.5 7.5 3.5 10.3a4.5 4.5 0 009 0C12.5 7.5 8 2.8 8 2.8z"
-                      fill="none"
-                      stroke="#1B1B1A"
-                      strokeWidth="1.4"
-                      strokeLinejoin="round"
-                    />
-                  </g>
+                        {/* Ovulation Day Node */}
+                        <g transform={`translate(${cycleGeometry.fertile.ovuPos.x}, ${cycleGeometry.fertile.ovuPos.y})`}>
+                          <circle cx="0" cy="0" r="7" fill="#1B1B1A" />
+                          <circle cx="0" cy="0" r="2.5" fill="#FAF6EC" />
+                        </g>
+                      </g>
+                    )}
 
-                  {/* Subtle Active Phase Indicator Dot inside the Ring */}
-                  <circle
-                    cx={activeMarkerPos.x}
-                    cy={activeMarkerPos.y}
-                    r="4"
-                    fill="#1B1B1A"
-                  />
-                </svg>
+                    {/* 4. Powder Blue Capsule: Luteal Phase & PMS (Days fertileEnd + 1 to cycleLength) */}
+                    {cycleGeometry.luteal && (
+                      <g>
+                        <path
+                          d={cycleGeometry.luteal.path}
+                          fill="none"
+                          stroke="#B8CEF4"
+                          strokeWidth={ringStrokeWidth}
+                          strokeLinecap="round"
+                        />
+                        {/* Moon / Calm Icon */}
+                        <g transform={`translate(${cycleGeometry.luteal.iconPos.x - 7.5}, ${cycleGeometry.luteal.iconPos.y - 7.5})`}>
+                          <path
+                            d="M11.5 8.5a4.5 4.5 0 11-5.5-5.5 5.2 5.2 0 005.5 5.5z"
+                            fill="none"
+                            stroke="#1B1B1A"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </g>
+                      </g>
+                    )}
 
-                {/* Center Editorial Hero Typography (Exact Match to "8.8 / your health score (i)") */}
-                <div className="absolute flex flex-col items-center justify-center text-center px-6 z-10">
-                  {cycleStatus.diffDays >= 90 ? (
-                    <>
-                      <span className="text-xl font-bold text-[#1B1B1A]">مشورت با پزشک</span>
-                      <span className="text-xs text-[#78746B] mt-1">بیش از ۹۰ روز توقف چرخه</span>
-                    </>
-                  ) : cycleStatus.diffDays >= 45 ? (
-                    <>
-                      <span className="text-[52px] font-bold leading-none text-[#1B1B1A]">
-                        {toPersianDigits(cycleStatus.diffDays)}
-                      </span>
-                      <span className="text-xs text-[#78746B] mt-2">روز از شروع دوره قبلی</span>
-                    </>
-                  ) : cycleStatus.isDelayed ? (
-                    <>
-                      <span className="text-[60px] font-bold leading-none text-[#D94E4E]">
-                        {toPersianDigits(cycleStatus.delayedDays)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowSettingsModal(true)}
-                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
-                      >
-                        <span>
-                          {partnerRole === "male" ? "روز تاخیر پارتنر" : "روز تاخیر قاعدگی"}
+                    {/* 5. TODAY (امروز) CURSOR & POINTER */}
+                    <g>
+                      {/* Outer dashed beacon ring */}
+                      <circle
+                        cx={cycleGeometry.today.pos.x}
+                        cy={cycleGeometry.today.pos.y}
+                        r="18"
+                        fill="none"
+                        stroke="#1B1B1A"
+                        strokeWidth="2"
+                        strokeDasharray="3 3"
+                        opacity="0.8"
+                      />
+                      {/* Solid Charcoal Disk */}
+                      <circle
+                        cx={cycleGeometry.today.pos.x}
+                        cy={cycleGeometry.today.pos.y}
+                        r="12"
+                        fill="#1B1B1A"
+                        stroke="#FAF6EC"
+                        strokeWidth="2.5"
+                      />
+                      {/* Cream Center Core */}
+                      <circle
+                        cx={cycleGeometry.today.pos.x}
+                        cy={cycleGeometry.today.pos.y}
+                        r="4"
+                        fill="#FAF6EC"
+                      />
+                    </g>
+                  </svg>
+
+                  {/* Center Editorial Hero Typography */}
+                  <div className="absolute flex flex-col items-center justify-center text-center px-4 z-10 select-none">
+                    {/* Active Phase Pill Badge */}
+                    <div
+                      className="mb-1.5 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-none"
+                      style={{ backgroundColor: currentPhaseMeta.color, color: "#1B1B1A" }}
+                    >
+                      <currentPhaseMeta.icon className="w-3.5 h-3.5 stroke-[2]" />
+                      <span>{currentPhaseMeta.title}</span>
+                    </div>
+
+                    {cycleStatus.diffDays >= 90 ? (
+                      <>
+                        <span className="text-xl font-bold text-[#1B1B1A]">مشورت با پزشک</span>
+                        <span className="text-xs text-[#78746B] mt-1">بیش از ۹۰ روز توقف چرخه</span>
+                      </>
+                    ) : cycleStatus.diffDays >= 45 ? (
+                      <>
+                        <span className="text-[52px] font-bold leading-none text-[#1B1B1A]">
+                          {toPersianDigits(cycleStatus.diffDays)}
                         </span>
-                        <Info className="w-3.5 h-3.5 stroke-[1.6]" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[64px] sm:text-[72px] font-bold leading-none tracking-tight text-[#1B1B1A]">
-                        {toPersianDigits(cycleStatus.currentCycleDay)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowSettingsModal(true)}
-                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
-                        title="مشاهده و ویرایش تنظیمات چرخه"
-                      >
-                        <span>
-                          {partnerRole === "male"
-                            ? `روز چرخه پارتنر از ${toPersianDigits(safeCycleLength)}`
-                            : `روز چرخه از ${toPersianDigits(safeCycleLength)} روز`}
+                        <span className="text-xs text-[#78746B] mt-2">روز از شروع دوره قبلی</span>
+                      </>
+                    ) : cycleStatus.isDelayed ? (
+                      <>
+                        <span className="text-[58px] sm:text-[66px] font-bold leading-none text-[#D94E4E]">
+                          {toPersianDigits(cycleStatus.delayedDays)}
                         </span>
-                        <Info className="w-3.5 h-3.5 stroke-[1.6]" />
-                      </button>
-                    </>
-                  )}
+                        <button
+                          type="button"
+                          onClick={() => setShowSettingsModal(true)}
+                          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
+                        >
+                          <span>{partnerRole === "male" ? "روز تاخیر پارتنر" : "روز تاخیر قاعدگی"}</span>
+                          <Info className="w-3.5 h-3.5 stroke-[1.6]" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[64px] sm:text-[72px] font-bold leading-none tracking-tight text-[#1B1B1A]">
+                          {toPersianDigits(cycleStatus.currentCycleDay)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowSettingsModal(true)}
+                          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
+                          title="مشاهده و ویرایش تنظیمات چرخه"
+                        >
+                          <span>
+                            {partnerRole === "male"
+                              ? `روز چرخه پارتنر از ${toPersianDigits(safeCycleLength)}`
+                              : `روز چرخه از ${toPersianDigits(safeCycleLength)} روز`}
+                          </span>
+                          <Info className="w-3.5 h-3.5 stroke-[1.6]" />
+                        </button>
+                      </>
+                    )}
 
-                  {(effectiveIsOwner || sharing.sharePhase) && (
-                    <span className="mt-2.5 px-3 py-1 rounded-full bg-[#EFECE2] text-[#1B1B1A] text-[11px] font-bold">
-                      {cycleStatus.phase === "due"
-                        ? "موعد مورد انتظار امروز"
-                        : cycleStatus.daysUntilNextPeriod > 0
-                        ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا موعد بعدی`
-                        : cycleStatus.phaseTitle}
-                    </span>
-                  )}
+                    {(effectiveIsOwner || sharing.sharePhase) && (
+                      <span className="mt-2 px-3 py-1 rounded-full bg-[#EFECE2] text-[#1B1B1A] text-[11px] font-bold">
+                        {cycleStatus.phase === "due"
+                          ? "موعد مورد انتظار امروز"
+                          : cycleStatus.daysUntilNextPeriod > 0
+                          ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا موعد بعدی`
+                          : cycleStatus.phaseTitle}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* 4-PHASE VISUAL TIMELINE LEGEND (Explains each colored segment on the circle) */}
+                <div className="w-full max-w-[340px] sm:max-w-md mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* 1. پریود */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedLegendPhase((prev) => (prev === "period" ? null : "period"))
+                    }
+                    className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                      cycleStatus.phase === "period" || cycleStatus.phase === "due"
+                        ? "bg-[#F6C3E5]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
+                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#F6C3E5] border border-[#1B1B1A]/20 shrink-0" />
+                      <span>پریود</span>
+                    </div>
+                    <div className="text-[11px] text-[#78746B] mt-0.5 font-medium">
+                      روز ۱ تا {toPersianDigits(safePeriodLength)}
+                    </div>
+                    {(cycleStatus.phase === "period" || cycleStatus.phase === "due") && (
+                      <span className="mt-1 inline-block text-[10px] font-bold text-[#1B1B1A] bg-[#1B1B1A]/10 px-2 py-0.5 rounded-full">
+                        فاز کنونی
+                      </span>
+                    )}
+                  </button>
+
+                  {/* 2. فولیکولار */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedLegendPhase((prev) => (prev === "follicular" ? null : "follicular"))
+                    }
+                    className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                      cycleStatus.phase === "follicular"
+                        ? "bg-[#F6DC6B]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
+                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#F6DC6B] border border-[#1B1B1A]/20 shrink-0" />
+                      <span>فولیکولار</span>
+                    </div>
+                    <div className="text-[11px] text-[#78746B] mt-0.5 font-medium">
+                      روز {toPersianDigits(safePeriodLength + 1)} تا {toPersianDigits(Math.max(safePeriodLength + 1, safeFertileStart - 1))}
+                    </div>
+                    {cycleStatus.phase === "follicular" && (
+                      <span className="mt-1 inline-block text-[10px] font-bold text-[#1B1B1A] bg-[#1B1B1A]/10 px-2 py-0.5 rounded-full">
+                        فاز کنونی
+                      </span>
+                    )}
+                  </button>
+
+                  {/* 3. باروری و تخمک‌گذاری */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedLegendPhase((prev) => (prev === "fertile" ? null : "fertile"))
+                    }
+                    className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                      cycleStatus.phase === "fertile" || cycleStatus.phase === "ovulation"
+                        ? "bg-[#A7B86C]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
+                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#A7B86C] border border-[#1B1B1A]/20 shrink-0" />
+                      <span>باروری</span>
+                    </div>
+                    <div className="text-[11px] text-[#78746B] mt-0.5 font-medium">
+                      روز {toPersianDigits(safeFertileStart)} تا {toPersianDigits(safeFertileEnd)}
+                    </div>
+                    {(cycleStatus.phase === "fertile" || cycleStatus.phase === "ovulation") && (
+                      <span className="mt-1 inline-block text-[10px] font-bold text-[#1B1B1A] bg-[#1B1B1A]/10 px-2 py-0.5 rounded-full">
+                        فاز کنونی
+                      </span>
+                    )}
+                  </button>
+
+                  {/* 4. لوتئال / PMS */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedLegendPhase((prev) => (prev === "luteal" ? null : "luteal"))
+                    }
+                    className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                      cycleStatus.phase === "luteal" || cycleStatus.phase === "pms"
+                        ? "bg-[#B8CEF4]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
+                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#B8CEF4] border border-[#1B1B1A]/20 shrink-0" />
+                      <span>لوتئال / PMS</span>
+                    </div>
+                    <div className="text-[11px] text-[#78746B] mt-0.5 font-medium">
+                      روز {toPersianDigits(safeFertileEnd + 1)} تا {toPersianDigits(safeCycleLength)}
+                    </div>
+                    {(cycleStatus.phase === "luteal" || cycleStatus.phase === "pms") && (
+                      <span className="mt-1 inline-block text-[10px] font-bold text-[#1B1B1A] bg-[#1B1B1A]/10 px-2 py-0.5 rounded-full">
+                        فاز کنونی
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Optional Expandable Phase Tip Note on Click */}
+                {selectedLegendPhase && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-[340px] sm:max-w-md mt-2 p-3.5 bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl text-xs text-[#1B1B1A] space-y-1"
+                  >
+                    {selectedLegendPhase === "period" && (
+                      <div className="leading-relaxed">
+                        <strong className="text-[#1B1B1A]">🌸 فاز قاعدگی (پریود):</strong> روزهای پاکسازی و بازسازی دیواره رحم. نیاز به استراحت کافی، گرم نگه داشتن بدن، نوشیدن آب و دمنوش‌های تسکین‌بخش.
+                      </div>
+                    )}
+                    {selectedLegendPhase === "follicular" && (
+                      <div className="leading-relaxed">
+                        <strong className="text-[#1B1B1A]">⚡ فاز فولیکولار:</strong> افزایش طبیعی استروژن، بالا رفتن انرژی جسمی و انگیزه. بهترین زمان برای پروژه‌های جدید، ورزش و فعالیت‌های پرنشاط.
+                      </div>
+                    )}
+                    {selectedLegendPhase === "fertile" && (
+                      <div className="leading-relaxed">
+                        <strong className="text-[#1B1B1A]">🌿 پنجره باروری و تخمک‌گذاری:</strong> روزهای اوج شانس بارداری با ترشحات شفاف رحمی. نقطه مشکی روی حلقه نشان‌دهنده روز دقیق تخمک‌گذاری است (روز {toPersianDigits(safeOvulationDay)}).
+                      </div>
+                    )}
+                    {selectedLegendPhase === "luteal" && (
+                      <div className="leading-relaxed">
+                        <strong className="text-[#1B1B1A]">🌙 فاز لوتئال و PMS:</strong> روزهای آرامش و آماده‌سازی برای چرخه بعد. در روزهای پایانی این فاز، همراهی عاطفی، درک تغییرات خلقی و کاهش استرس اهمیت دارد.
+                      </div>
+                    )}
+                  </motion.div>
+                )}
               </div>
             ) : (
               /* ----------------- SQUIRCLE MONTHLY CALENDAR VIEW ----------------- */
