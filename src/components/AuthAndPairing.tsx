@@ -75,6 +75,17 @@ export default function AuthAndPairing({
     return () => clearInterval(interval);
   }, [otpTimer]);
 
+  // Reset transient form fields on authMode transition to prevent autofill or stale state
+  useEffect(() => {
+    if (authMode === 'forgot_reset') {
+      setOtpCode("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } else if (authMode === 'signup_otp') {
+      setOtpCode("");
+    }
+  }, [authMode]);
+
   const formatTimer = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -483,6 +494,7 @@ export default function AuthAndPairing({
                     <div className="relative">
                       <input
                         type="password"
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -651,6 +663,7 @@ export default function AuthAndPairing({
                     <div className="relative">
                       <input
                         type="password"
+                        autoComplete="new-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -683,7 +696,13 @@ export default function AuthAndPairing({
               {/* VIEW 3: SIGNUP OTP VERIFICATION */}
               {/* ========================================================= */}
               {authMode === 'signup_otp' && (
-                <form onSubmit={handleVerifySignupOtp} className="space-y-4">
+                <form onSubmit={handleVerifySignupOtp} className="space-y-4" autoComplete="off">
+                  {/* Trap fields to absorb aggressive browser autofill */}
+                  <div style={{ display: "none", opacity: 0, position: "absolute", left: "-9999px" }} aria-hidden="true">
+                    <input type="text" name="fake_username_trap" tabIndex={-1} autoComplete="off" />
+                    <input type="password" name="fake_password_trap" tabIndex={-1} autoComplete="off" />
+                  </div>
+
                   <div className="p-4 bg-[#FAF6EC] border border-[#E8E2D4] rounded-2xl text-right space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-[#1B1B1A] flex items-center gap-1.5">
@@ -713,9 +732,15 @@ export default function AuthAndPairing({
                     </label>
                     <input
                       type="text"
+                      name="token_otp_signup"
+                      id="token_otp_signup"
+                      autoComplete="one-time-code"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
                       inputMode="numeric"
                       value={otpCode}
-                      onChange={(e) => setOtpCode(normalizeDigits(e.target.value).slice(0, 5))}
+                      onChange={(e) => setOtpCode(normalizeDigits(e.target.value).replace(/\D/g, '').slice(0, 5))}
                       placeholder="• • • • •"
                       className="w-full py-3.5 bg-[#EFECE2] focus:bg-[#FFFDF8] border-2 border-dashed border-[#C5BDAA] focus:border-[#1B1B1A] rounded-2xl text-center font-mono text-2xl font-black tracking-[12px] text-[#1B1B1A] outline-none transition-all placeholder:tracking-normal"
                       maxLength={5}
@@ -821,7 +846,13 @@ export default function AuthAndPairing({
               {/* VIEW 5: FORGOT PASSWORD RESET */}
               {/* ========================================================= */}
               {authMode === 'forgot_reset' && (
-                <form onSubmit={handleResetPassword} className="space-y-4">
+                <form onSubmit={handleResetPassword} className="space-y-4" autoComplete="off">
+                  {/* Trap fields to absorb aggressive browser credential autofill */}
+                  <div style={{ display: "none", opacity: 0, position: "absolute", left: "-9999px" }} aria-hidden="true">
+                    <input type="text" name="fake_username_trap" tabIndex={-1} autoComplete="off" />
+                    <input type="password" name="fake_password_trap" tabIndex={-1} autoComplete="off" />
+                  </div>
+
                   <div className="p-4 bg-[#FAF6EC] border border-[#E8E2D4] rounded-2xl text-right space-y-1">
                     <h3 className="text-xs font-bold text-[#1B1B1A] flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4 text-[#A7B86C]" />
@@ -838,9 +869,16 @@ export default function AuthAndPairing({
                     </label>
                     <input
                       type="text"
+                      name="token_otp_recovery"
+                      id="token_otp_recovery"
+                      autoComplete="one-time-code"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
                       inputMode="numeric"
+                      pattern="[0-9]*"
                       value={otpCode}
-                      onChange={(e) => setOtpCode(normalizeDigits(e.target.value).slice(0, 5))}
+                      onChange={(e) => setOtpCode(normalizeDigits(e.target.value).replace(/\D/g, '').slice(0, 5))}
                       placeholder="• • • • •"
                       className="w-full py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border-2 border-dashed border-[#C5BDAA] focus:border-[#1B1B1A] rounded-2xl text-center font-mono text-2xl font-black tracking-[12px] text-[#1B1B1A] outline-none transition-all placeholder:tracking-normal"
                       maxLength={5}
@@ -872,6 +910,9 @@ export default function AuthAndPairing({
                     <div className="relative">
                       <input
                         type="password"
+                        name="new_user_secret_password"
+                        id="new_user_secret_password"
+                        autoComplete="new-password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
@@ -888,6 +929,9 @@ export default function AuthAndPairing({
                     <div className="relative">
                       <input
                         type="password"
+                        name="confirm_user_secret_password"
+                        id="confirm_user_secret_password"
+                        autoComplete="new-password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
