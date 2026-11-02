@@ -427,10 +427,26 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           });
           if (isMounted && periodRes && periodRes.status === 'success') {
             if (periodRes.settings) {
-              setImpoSettings(periodRes.settings);
-              setPeriodSettings(periodRes.settings);
               const targetId = userProfile.coupleId || userProfile.uid;
-              localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(periodRes.settings));
+              const localRaw = localStorage.getItem(`impo_period_settings_${targetId}`) || localStorage.getItem(`impo_period_settings_${userProfile.uid}`);
+              let localBirthDate: string | undefined;
+              if (localRaw) {
+                try {
+                  const parsedLocal = JSON.parse(localRaw);
+                  if (parsedLocal?.birthDate && parsedLocal.birthDate !== '2000-01-01') {
+                    localBirthDate = parsedLocal.birthDate;
+                  }
+                } catch {}
+              }
+              const mergedPeriodSettings = {
+                ...periodRes.settings,
+                birthDate: (periodRes.settings.birthDate && periodRes.settings.birthDate !== '2000-01-01')
+                  ? periodRes.settings.birthDate
+                  : (localBirthDate || periodRes.settings.birthDate || '2000-01-01')
+              };
+              setImpoSettings(mergedPeriodSettings);
+              setPeriodSettings(mergedPeriodSettings);
+              localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(mergedPeriodSettings));
             }
             if (Array.isArray(periodRes.logs)) {
               setPeriodLogs(periodRes.logs);

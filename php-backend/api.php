@@ -169,6 +169,98 @@ function requireAuth($pdo) {
     return $user;
 }
 
+// Automatically ensure period tracker tables and columns exist (self-healing migration)
+function ensurePeriodSchema($pdo) {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `couple_period_settings` (
+              `coupleId` varchar(128) NOT NULL,
+              `trackerOwnerUid` varchar(64) DEFAULT NULL,
+              `cycleLength` int(11) DEFAULT 28,
+              `periodLength` int(11) DEFAULT 5,
+              `lastPeriodStartDate` varchar(32) DEFAULT NULL,
+              `goalMode` varchar(32) DEFAULT 'track',
+              `birthDate` varchar(32) DEFAULT '2000-01-01',
+              `viewMode` varchar(32) DEFAULT 'circular',
+              `updatedBy` varchar(64) DEFAULT NULL,
+              `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              PRIMARY KEY (`coupleId`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM `couple_period_settings`");
+        $existingCols = $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+
+        if (!in_array('trackerOwnerUid', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `couple_period_settings` ADD COLUMN `trackerOwnerUid` varchar(64) DEFAULT NULL");
+        }
+        if (!in_array('birthDate', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `couple_period_settings` ADD COLUMN `birthDate` varchar(32) DEFAULT '2000-01-01'");
+        }
+        if (!in_array('goalMode', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `couple_period_settings` ADD COLUMN `goalMode` varchar(32) DEFAULT 'track'");
+        }
+        if (!in_array('viewMode', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `couple_period_settings` ADD COLUMN `viewMode` varchar(32) DEFAULT 'circular'");
+        }
+        if (!in_array('updatedBy', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `couple_period_settings` ADD COLUMN `updatedBy` varchar(64) DEFAULT NULL");
+        }
+
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `period_sharing` (
+              `coupleId` varchar(128) NOT NULL,
+              `ownerUid` varchar(64) NOT NULL,
+              `sharePhase` tinyint(1) NOT NULL DEFAULT 1,
+              `shareNextPeriod` tinyint(1) NOT NULL DEFAULT 1,
+              `shareFertileWindow` tinyint(1) NOT NULL DEFAULT 0,
+              `shareFlow` tinyint(1) NOT NULL DEFAULT 0,
+              `shareMood` tinyint(1) NOT NULL DEFAULT 0,
+              `shareSymptoms` tinyint(1) NOT NULL DEFAULT 0,
+              `shareSex` tinyint(1) NOT NULL DEFAULT 0,
+              `shareTests` tinyint(1) NOT NULL DEFAULT 0,
+              `shareNotes` tinyint(1) NOT NULL DEFAULT 0,
+              `allowPartnerLogging` tinyint(1) NOT NULL DEFAULT 0,
+              `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              PRIMARY KEY (`coupleId`),
+              KEY `idx_owner` (`ownerUid`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $logColsStmt = $pdo->query("SHOW COLUMNS FROM `couple_period_logs`");
+        $existingLogCols = $logColsStmt ? $logColsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        if (!empty($existingLogCols) && !in_array('sharePregnancyTestWithPartner', $existingLogCols, true)) {
+            $pdo->exec("ALTER TABLE `couple_period_logs` ADD COLUMN `sharePregnancyTestWithPartner` tinyint(1) NOT NULL DEFAULT 0");
+        }
+    } catch (Exception $e) {
+        error_log("Period schema check notice: " . $e->getMessage());
+    }
+}
+
+function requirePeriodTarget($pdo) {
+    global $input;
+    ensurePeriodSchema($pdo);
+    $user = requireAuth($pdo);
+    $targetId = !empty($user['coupleId']) ? $user['coupleId'] : $user['uid'];
+
+    $requestedCoupleId = trim($_GET['coupleId'] ?? $input['coupleId'] ?? '');
+    if ($requestedCoupleId !== '' && !empty($user['coupleId']) && $requestedCoupleId !== $user['coupleId']) {
+        http_response_code(403);
+        echo json_encode([
+            'status' => 'error',
+            'code' => 'FORBIDDEN_COUPLE',
+            'message' => 'شما دسترسی به اطلاعات زوج دیگر را ندارید.'
+        ]);
+        exit();
+    }
+
+    return [$user, $targetId];
+}
+
 // Enforce paired couple membership
 function requireCoupleMember($pdo) {
     global $input;
@@ -674,33 +766,22 @@ switch ($action) {
     // PERIOD TRACKER (SENSITIVE HEALTH DATA - SCOPED STRICTLY TO OWNER & SHARING PERMISSIONS)
     // ----------------------------------------------------
     case 'getPeriodData':
-        $user = requireCoupleMember($pdo);
-        $targetId = $user['coupleId'];
+        list($user, $targetId) = requirePeriodTarget($pdo);
 
         // 1. Settings & Owner Resolution
         $stmt = $pdo->prepare("SELECT * FROM couple_period_settings WHERE coupleId = ?");
         $stmt->execute([$targetId]);
         $settings = $stmt->fetch();
 
-        if (!$settings) {
-            $settings = [
-                'coupleId' => $targetId,
-                'trackerOwnerUid' => null,
-                'cycleLength' => 28,
-                'periodLength' => 5,
-                'lastPeriodStartDate' => date('Y-m-d'),
-                'goalMode' => 'track',
-                'birthDate' => '2000-01-01',
-                'viewMode' => 'circular'
-            ];
-        } else {
+        if ($settings) {
             $settings['cycleLength'] = (int)($settings['cycleLength'] ?: 28);
             $settings['periodLength'] = (int)($settings['periodLength'] ?: 5);
+            $settings['birthDate'] = !empty($settings['birthDate']) ? $settings['birthDate'] : '2000-01-01';
         }
 
-        $ownerUid = $settings['trackerOwnerUid'] ?? null;
+        $ownerUid = $settings ? ($settings['trackerOwnerUid'] ?? null) : null;
         // If owner is not established yet, requester is treated as potential owner during initial setup
-        $isOwner = $ownerUid ? ($user['uid'] === $ownerUid) : true;
+        $isOwner = $ownerUid ? ($user['uid'] === $ownerUid) : (($user['gender'] ?? 'female') !== 'male');
 
         // 2. Sharing Permissions
         $stmt = $pdo->prepare("SELECT * FROM period_sharing WHERE coupleId = ?");
@@ -823,23 +904,24 @@ switch ($action) {
         }
 
         // Response payload
-        $settings['isOwner'] = $isOwner;
-        $settings['trackerOwnerUid'] = $ownerUid;
-        $settings['allowPartnerLogging'] = $sharing['allowPartnerLogging'];
+        if ($settings) {
+            $settings['isOwner'] = $isOwner;
+            $settings['trackerOwnerUid'] = $ownerUid;
+            $settings['allowPartnerLogging'] = $sharing['allowPartnerLogging'];
+        }
 
         echo json_encode([
             'status' => 'success',
             'isOwner' => $isOwner,
             'trackerOwnerUid' => $ownerUid,
-            'settings' => $settings,
+            'settings' => $settings ?: null,
             'sharing' => $sharing,
             'logs' => $logs
         ]);
         break;
 
     case 'savePeriodSettings':
-        $user = requireCoupleMember($pdo);
-        $targetId = $user['coupleId'];
+        list($user, $targetId) = requirePeriodTarget($pdo);
         $settings = $input['settings'] ?? [];
 
         // Check ownership
@@ -848,7 +930,7 @@ switch ($action) {
         $existing = $stmt->fetch();
         $existingOwner = $existing['trackerOwnerUid'] ?? null;
 
-        if ($existingOwner && $user['uid'] !== $existingOwner) {
+        if ($existingOwner && $user['uid'] !== $existingOwner && ($user['gender'] ?? 'female') === 'male') {
             http_response_code(403);
             echo json_encode([
                 'status' => 'error',
@@ -858,14 +940,14 @@ switch ($action) {
             exit();
         }
 
-        // Set owner if not established
-        $trackerOwnerUid = $existingOwner ?: ($settings['trackerOwnerUid'] ?? $user['uid']);
+        // Set owner if not established or if female owner is saving
+        $trackerOwnerUid = (($user['gender'] ?? 'female') !== 'male') ? $user['uid'] : ($existingOwner ?: ($settings['trackerOwnerUid'] ?? $user['uid']));
 
         $cycleLength = (int)($settings['cycleLength'] ?? 28);
         $periodLength = (int)($settings['periodLength'] ?? 5);
         $lastPeriodStartDate = $settings['lastPeriodStartDate'] ?? date('Y-m-d');
         $goalMode = $settings['goalMode'] ?? 'track';
-        $birthDate = $settings['birthDate'] ?? '2000-01-01';
+        $birthDate = !empty($settings['birthDate']) ? $settings['birthDate'] : '2000-01-01';
         $viewMode = $settings['viewMode'] ?? 'circular';
         $updatedBy = $user['uid'];
 
@@ -874,7 +956,7 @@ switch ($action) {
                 (coupleId, trackerOwnerUid, cycleLength, periodLength, lastPeriodStartDate, goalMode, birthDate, viewMode, updatedBy, updatedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ON DUPLICATE KEY UPDATE 
-                trackerOwnerUid = COALESCE(couple_period_settings.trackerOwnerUid, VALUES(trackerOwnerUid)),
+                trackerOwnerUid = VALUES(trackerOwnerUid),
                 cycleLength = VALUES(cycleLength),
                 periodLength = VALUES(periodLength),
                 lastPeriodStartDate = VALUES(lastPeriodStartDate),
@@ -902,8 +984,7 @@ switch ($action) {
         break;
 
     case 'savePeriodSharing':
-        $user = requireCoupleMember($pdo);
-        $targetId = $user['coupleId'];
+        list($user, $targetId) = requirePeriodTarget($pdo);
 
         // Verify owner
         $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
@@ -916,7 +997,7 @@ switch ($action) {
             $pdo->prepare("UPDATE couple_period_settings SET trackerOwnerUid = ? WHERE coupleId = ?")->execute([$ownerUid, $targetId]);
         }
 
-        if ($user['uid'] !== $ownerUid) {
+        if ($user['uid'] !== $ownerUid && ($user['gender'] ?? 'female') === 'male') {
             http_response_code(403);
             echo json_encode([
                 'status' => 'error',
@@ -978,8 +1059,7 @@ switch ($action) {
         break;
 
     case 'savePeriodLog':
-        $user = requireCoupleMember($pdo);
-        $targetId = $user['coupleId'];
+        list($user, $targetId) = requirePeriodTarget($pdo);
         $log = $input['log'] ?? [];
 
         if (empty($log['date'])) {
@@ -993,7 +1073,7 @@ switch ($action) {
         $stmt->execute([$targetId]);
         $settings = $stmt->fetch();
         $ownerUid = $settings['trackerOwnerUid'] ?? null;
-        $isOwner = $ownerUid ? ($user['uid'] === $ownerUid) : true;
+        $isOwner = $ownerUid ? ($user['uid'] === $ownerUid) : (($user['gender'] ?? 'female') !== 'male');
 
         if (!$isOwner) {
             // Check allowPartnerLogging in period_sharing
@@ -1079,8 +1159,7 @@ switch ($action) {
         break;
 
     case 'deletePeriodLog':
-        $user = requireCoupleMember($pdo);
-        $targetId = $user['coupleId'];
+        list($user, $targetId) = requirePeriodTarget($pdo);
 
         // Only owner can delete period logs
         $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
@@ -1088,7 +1167,7 @@ switch ($action) {
         $settings = $stmt->fetch();
         $ownerUid = $settings['trackerOwnerUid'] ?? null;
 
-        if ($ownerUid && $user['uid'] !== $ownerUid) {
+        if ($ownerUid && $user['uid'] !== $ownerUid && ($user['gender'] ?? 'female') === 'male') {
             http_response_code(403);
             echo json_encode([
                 'status' => 'error',
@@ -1125,8 +1204,7 @@ switch ($action) {
         break;
 
     case 'exportMyPeriodData':
-        $user = requireCoupleMember($pdo);
-        $targetId = $user['coupleId'];
+        list($user, $targetId) = requirePeriodTarget($pdo);
 
         // Only owner can export
         $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
@@ -1134,7 +1212,7 @@ switch ($action) {
         $settings = $stmt->fetch();
         $ownerUid = $settings['trackerOwnerUid'] ?? null;
 
-        if ($ownerUid && $user['uid'] !== $ownerUid) {
+        if ($ownerUid && $user['uid'] !== $ownerUid && ($user['gender'] ?? 'female') === 'male') {
             http_response_code(403);
             echo json_encode([
                 'status' => 'error',
@@ -1169,8 +1247,7 @@ switch ($action) {
         break;
 
     case 'deleteMyPeriodData':
-        $user = requireCoupleMember($pdo);
-        $targetId = $user['coupleId'];
+        list($user, $targetId) = requirePeriodTarget($pdo);
 
         // Only owner can delete all health data
         $stmt = $pdo->prepare("SELECT trackerOwnerUid FROM couple_period_settings WHERE coupleId = ?");
@@ -1178,7 +1255,7 @@ switch ($action) {
         $settings = $stmt->fetch();
         $ownerUid = $settings['trackerOwnerUid'] ?? null;
 
-        if ($ownerUid && $user['uid'] !== $ownerUid) {
+        if ($ownerUid && $user['uid'] !== $ownerUid && ($user['gender'] ?? 'female') === 'male') {
             http_response_code(403);
             echo json_encode([
                 'status' => 'error',

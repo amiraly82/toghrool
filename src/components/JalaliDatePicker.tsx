@@ -154,7 +154,7 @@ export default function JalaliDatePicker({
   }
 
   const yearsRange = [];
-  for (let y = todayJy - 15; y <= todayJy + 5; y++) {
+  for (let y = 1330; y <= todayJy + 5; y++) {
     yearsRange.push(y);
   }
 

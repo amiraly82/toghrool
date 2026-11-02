@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Droplet, Calendar as CalendarIcon, Heart, Sparkles, Activity, ShieldAlert, 
@@ -252,6 +252,19 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
   const [formBirthDate, setFormBirthDate] = useState<string>(settings.birthDate || "2000-01-01");
   const [formClaimOwner, setFormClaimOwner] = useState<boolean>(settings.trackerOwnerUid ? settings.trackerOwnerUid === userProfile.uid : userProfile.gender !== 'male');
 
+  const showSettingsModalRef = useRef(showSettingsModal);
+  const isSavingSettingsRef = useRef(false);
+  useEffect(() => {
+    showSettingsModalRef.current = showSettingsModal;
+    if (showSettingsModal) {
+      setFormCycleLength(settings.cycleLength || 28);
+      setFormPeriodLength(settings.periodLength || 5);
+      setFormLastPeriodDate(settings.lastPeriodStartDate || toGregorianIsoString(new Date()));
+      setFormGoalMode(settings.goalMode || 'track');
+      setFormBirthDate(settings.birthDate || "2000-01-01");
+    }
+  }, [showSettingsModal]);
+
   // Log Form State
   const [logFormFlow, setLogFormFlow] = useState<any>('none');
   const [logFormIsPeriodStart, setLogFormIsPeriodStart] = useState<boolean>(false);
@@ -281,23 +294,59 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     const targetId = userProfile.coupleId || userProfile.uid;
 
     const fetchTrackerData = async () => {
+      if (isSavingSettingsRef.current) return;
       try {
         const res = await fetchFromPhpApi('getPeriodData', {
           coupleId: userProfile.coupleId || '',
           uid: userProfile.uid
         });
 
-        if (isMounted && res && res.status === 'success') {
+        if (isMounted && !isSavingSettingsRef.current && res && res.status === 'success') {
           if (res.settings) {
-            setSettings(res.settings);
+            // Preserve locally saved custom birthDate if server still has default '2000-01-01'
+            const localRaw = localStorage.getItem(`impo_period_settings_${targetId}`) || localStorage.getItem(`impo_period_settings_${userProfile.uid}`);
+            let localBirthDate: string | undefined;
+            if (localRaw) {
+              try {
+                const parsedLocal = JSON.parse(localRaw);
+                if (parsedLocal?.birthDate && parsedLocal.birthDate !== '2000-01-01') {
+                  localBirthDate = parsedLocal.birthDate;
+                }
+              } catch {}
+            }
+
+            const effectiveBirthDate =
+              (res.settings.birthDate && res.settings.birthDate !== '2000-01-01')
+                ? res.settings.birthDate
+                : (localBirthDate || res.settings.birthDate || '2000-01-01');
+
+            const mergedSettings: ImpoPeriodSettings = {
+              ...res.settings,
+              birthDate: effectiveBirthDate
+            };
+
+            setSettings(mergedSettings);
             setHasConfigured(true);
-            localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(res.settings));
+            localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(mergedSettings));
+            localStorage.setItem(`impo_period_settings_${userProfile.uid}`, JSON.stringify(mergedSettings));
             localStorage.setItem(`impo_period_configured_${targetId}`, "true");
-            setFormCycleLength(res.settings.cycleLength || 28);
-            setFormPeriodLength(res.settings.periodLength || 5);
-            setFormLastPeriodDate(res.settings.lastPeriodStartDate || toGregorianIsoString(new Date()));
-            setFormGoalMode(res.settings.goalMode || 'track');
-            setFormBirthDate(res.settings.birthDate || "2000-01-01");
+
+            if (!showSettingsModalRef.current) {
+              setFormCycleLength(mergedSettings.cycleLength || 28);
+              setFormPeriodLength(mergedSettings.periodLength || 5);
+              setFormLastPeriodDate(mergedSettings.lastPeriodStartDate || toGregorianIsoString(new Date()));
+              setFormGoalMode(mergedSettings.goalMode || 'track');
+              setFormBirthDate(mergedSettings.birthDate || "2000-01-01");
+            }
+
+            // If server had default birthDate but local had user's custom birthDate, sync it up to server
+            if (localBirthDate && res.settings.birthDate === '2000-01-01') {
+              fetchFromPhpApi('savePeriodSettings', {
+                coupleId: userProfile.coupleId || '',
+                uid: userProfile.uid,
+                settings: mergedSettings
+              }).catch(() => {});
+            }
           }
 
           if (res.sharing) {
@@ -616,8 +665,10 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     setHasConfigured(true);
     setShowSettingsModal(false);
     localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(updatedSettings));
+    localStorage.setItem(`impo_period_settings_${userProfile.uid}`, JSON.stringify(updatedSettings));
     localStorage.setItem(`impo_period_configured_${targetId}`, "true");
 
+    isSavingSettingsRef.current = true;
     try {
       await fetchFromPhpApi('savePeriodSettings', {
         coupleId: userProfile.coupleId || '',
@@ -626,6 +677,8 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       });
     } catch (e) {
       console.warn("Host period settings save error:", e);
+    } finally {
+      isSavingSettingsRef.current = false;
     }
   };
 
@@ -1592,7 +1645,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                           راهنمای طلایی همراهی امروز 🌟 (چگونه بهترین همراه باشیم؟):
                         </h4>
                         <span className="text-[10px] font-bold text-indigo-600 bg-white/80 px-2 py-0.5 rounded-lg border border-indigo-100">
-                          توصیه تخصصی ایمپو
+                          توصیه تخصصی طغرل
                         </span>
                       </div>
                       <p className="text-[11px] text-indigo-950 leading-relaxed font-semibold">
@@ -1736,7 +1789,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
               <div>
                 <h4 className="text-xs font-black text-slate-800">ثبت احساسات، دردها و علائم فیزیکی</h4>
                 <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                  ثبت روزانه به الگوریتم ایمپو کمک می‌کند تا پیش‌بینی دقیق‌تری از چرخه‌ها و دردهای شما به دست آورد.
+                  ثبت روزانه به الگوریتم طغرل کمک می‌کند تا پیش‌بینی دقیق‌تری از چرخه‌ها و دردهای شما به دست آورد.
                 </p>
               </div>
             </div>
@@ -2003,7 +2056,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
                   <Settings className="w-5 h-5 text-rose-500" />
-                  تنظیمات چرخه و محاسبات ایمپو
+                  تنظیمات چرخه و محاسبات طغرل
                 </h3>
                 <button
                   onClick={() => setShowSettingsModal(false)}
@@ -2146,6 +2199,18 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                     />
                     <span className="text-[10px] text-slate-400 mt-0.5 block">معمولاً: ۳ تا ۷ روز</span>
                   </div>
+                </div>
+
+                {/* Birth Date */}
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1.5">
+                    تاریخ تولد (برای نمودار بیوریتم طغرل):
+                  </label>
+                  <JalaliDatePicker
+                    value={formBirthDate}
+                    onChange={(val) => setFormBirthDate(val || "2000-01-01")}
+                    placeholder="انتخاب تاریخ تولد به شمسی..."
+                  />
                 </div>
 
                 <div className="pt-3 flex gap-2">
