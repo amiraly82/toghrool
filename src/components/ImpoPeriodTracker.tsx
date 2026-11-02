@@ -153,11 +153,11 @@ const getPhaseStyle = (phase: string) => {
 };
 
 export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGender }: ImpoPeriodTrackerProps) {
-  // Navigation sub-tab inside period tracker: 'dashboard' | 'calendar' | 'predictions' | 'history'
-  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'calendar' | 'predictions' | 'history'>('dashboard');
+  // Navigation sub-tab inside period tracker: 'dashboard' | 'predictions' | 'history'
+  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'predictions' | 'history'>('dashboard');
 
-  // View Mode: Circular (Impo Circle) or Flat (Impo Bar)
-  const [viewMode, setViewMode] = useState<'circular' | 'flat'>('circular');
+  // View Mode: Circular (Impo Circle) or Calendar (Monthly Squircle Calendar)
+  const [viewMode, setViewMode] = useState<'circular' | 'calendar'>('circular');
 
   // Storage Key for Shared Couple Space
   const storageKey = userProfile.coupleId || userProfile.uid;
@@ -905,30 +905,32 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       {/* TOP HEADER: BRANDING, GOAL MODE SELECTOR & QUICK BUTTONS */}
       {/* ----------------------------------------------------------------- */}
       <div className="glass-card rounded-3xl p-5 border border-pink-100/80 bg-white/60 backdrop-blur-xl shadow-lg">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className={`w-12 h-12 rounded-2xl ${partnerRole === 'male' ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 shadow-indigo-200' : 'bg-gradient-to-tr from-rose-500 to-pink-500 shadow-rose-200'} text-white flex items-center justify-center shadow-md`}>
+            <div className={`w-11 h-11 shrink-0 rounded-2xl ${partnerRole === 'male' ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 shadow-indigo-200' : 'bg-gradient-to-tr from-rose-500 to-pink-500 shadow-rose-200'} text-white flex items-center justify-center shadow-md`}>
               {partnerRole === 'male' ? (
-                <HeartHandshake className="w-6 h-6 fill-white" />
+                <HeartHandshake className="w-5 h-5 fill-white" />
               ) : (
-                <Droplet className="w-6 h-6 fill-white" />
+                <Droplet className="w-5 h-5 fill-white" />
               )}
             </div>
             <div className="text-right">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-slate-800">
-                  {partnerRole === 'male' ? "راهنمای همراهی و مراقبت از پارتنر 👨💖" : "تقویم قاعدگی و سلامت من 🌸"}
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base sm:text-lg font-black text-slate-800">
+                  {partnerRole === 'male' ? "همراهی و مراقبت از پارتنر 💖" : "تقویم قاعدگی و سلامت من 🌸"}
                 </h2>
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                  partnerRole === 'male' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-rose-100 text-rose-700 border-rose-200'
-                }`}>
-                  {settings.goalMode === 'pregnancy' ? 'اقدام به بارداری 👶' : settings.goalMode === 'prevention' ? 'پیشگیری طبیعی 🛡️' : 'پریود ترکر سلامت 🌸'}
-                </span>
+                {settings.goalMode !== 'track' && (
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                    partnerRole === 'male' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-rose-100 text-rose-700 border-rose-200'
+                  }`}>
+                    {settings.goalMode === 'pregnancy' ? 'اقدام به بارداری 👶' : 'پیشگیری طبیعی 🛡️'}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5 font-medium">
                 {partnerRole === 'male' 
-                  ? "اطلاع از وضعیت جسمی و روحی پارتنرتان و راهکارهای عاشقی و همدلی در هر روز چرخه" 
-                  : "محاسبه هوشمند چرخه‌های زیستی، تخمک‌گذاری، روزهای باروری و همراهی عاطفی دونفره"
+                  ? "اطلاع از وضعیت چرخه پارتنر و راهکارهای همدلی روزانه" 
+                  : "محاسبه هوشمند چرخه، تخمک‌گذاری و همراهی عاطفی دونفره"
                 }
               </p>
             </div>
@@ -936,7 +938,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
           {/* Quick Buttons differentiated by Partner Role */}
           {partnerRole === 'male' ? (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
               {/* Quick Care Action for Male Partner */}
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -945,24 +947,19 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                 title="ارسال توجه، محبت و همراهی به پارتنر"
               >
                 <Heart className="w-4 h-4 fill-white" />
-                ارسال محبت و مراقبت ویژه 💖
+                ارسال محبت ویژه 💖
               </motion.button>
 
               {/* Log on behalf of partner (only if allowed) */}
-              {sharing.allowPartnerLogging ? (
+              {sharing.allowPartnerLogging && (
                 <button
                   onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
                   className="px-3.5 py-2.5 bg-white/80 hover:bg-white text-slate-700 font-bold text-xs rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
                   title="ثبت علائم به درخواست پارتنر"
                 >
                   <Plus className="w-4 h-4 text-indigo-500" />
-                  ثبت به نیابت از پارتنر ✍️
+                  ثبت علائم ✍️
                 </button>
-              ) : (
-                <span className="px-3 py-2 bg-slate-100 text-slate-400 font-bold text-[11px] rounded-2xl border border-slate-200 flex items-center gap-1 cursor-default">
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                  ثبت لاگ غیرفعال 🔒
-                </span>
               )}
 
               {/* Settings */}
@@ -975,7 +972,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
               </button>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
               {/* Quick Button: Got Period Today */}
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -993,18 +990,17 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                 className="px-3.5 py-2.5 bg-white/80 hover:bg-white text-slate-700 font-bold text-xs rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
               >
                 <Plus className="w-4 h-4 text-rose-500" />
-                ثبت علائم امروز
+                ثبت علائم
               </button>
 
               {/* Sharing & Privacy Button (Owner only) */}
               <button
                 type="button"
                 onClick={() => setShowSharingModal(true)}
-                className="px-3 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-2xl border border-purple-200/80 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
-                title="چه چیزی با پارتنرم به اشتراک بگذارم؟"
+                className="p-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-2xl border border-purple-200/80 shadow-sm flex items-center justify-center cursor-pointer transition-all"
+                title="تنظیمات حریم خصوصی و اشتراک با پارتنر"
               >
                 <ShieldAlert className="w-4 h-4 text-purple-600" />
-                <span>اشتراک با پارتنر 🔒</span>
               </button>
 
               {/* Settings Modal Button */}
@@ -1019,23 +1015,8 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
           )}
         </div>
 
-        {/* Active Perspective Badge (configured exclusively via Profile) */}
-        <div className="flex items-center justify-between gap-3 mt-3 pt-2.5 border-t border-slate-100">
-          {partnerRole === 'male' ? (
-            <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl flex items-center gap-1.5">
-              <span>👨 💖</span>
-              <span>حالت همراهی عاطفی و مراقبت از پارتنر</span>
-            </span>
-          ) : (
-            <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-100 px-3 py-1 rounded-xl flex items-center gap-1.5">
-              <span>👩 🌸</span>
-              <span>حالت ردیابی چرخه سلامت و خودمراقبتی</span>
-            </span>
-          )}
-        </div>
-
-      {/* SUB-TABS NAVIGATION */}
-        <div className="flex items-center gap-2 mt-5 pt-4 border-t border-slate-200/50 overflow-x-auto scrollbar-none">
+        {/* SUB-TABS NAVIGATION */}
+        <div className="flex items-center gap-2 mt-4 pt-3.5 border-t border-slate-200/50 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveSubTab('dashboard')}
             className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
@@ -1045,19 +1026,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
-            داشبورد چرخه
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('calendar')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeSubTab === 'calendar'
-                ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-                : 'bg-white/50 text-slate-600 hover:bg-white/80'
-            }`}
-          >
-            <CalendarIcon className="w-3.5 h-3.5" />
-            تقویم ماهانه
+            داشبورد و تقویم
           </button>
 
           <button
@@ -1110,441 +1079,395 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                   چرخه دایره‌ای
                 </button>
                 <button
-                  onClick={() => setViewMode('flat')}
+                  onClick={() => setViewMode('calendar')}
                   className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                    viewMode === 'flat' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500'
+                    viewMode === 'calendar' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500'
                   }`}
                 >
-                  نمای نواری
+                  نمای تقویمی
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Left/Center: Visual Wheel / Bar Representation */}
+              {/* Left/Center: Visual Wheel / Monthly Squircle Calendar */}
               <div className="lg:col-span-6 flex flex-col items-center justify-center">
                 {viewMode === 'circular' ? (
-                  /* ----------------- 360° IMPO CIRCLE WITH LIQUID WAVE ----------------- */
-                  <div className="relative w-[300px] h-[300px] flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90 drop-shadow-sm" viewBox="0 0 300 300">
-                      <defs>
-                        {/* Gradient for Period */}
-                        <linearGradient id="impoPeriodGrad" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#F43F5E" />
-                          <stop offset="100%" stopColor="#BE123C" />
-                        </linearGradient>
-                        {/* Gradient for Fertile */}
-                        <linearGradient id="impoFertileGrad" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#8B5CF6" />
-                          <stop offset="100%" stopColor="#6D28D9" />
-                        </linearGradient>
-                        {/* Gradient for Ovulation */}
-                        <linearGradient id="impoOvulationGrad" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#D946EF" />
-                          <stop offset="100%" stopColor="#A21CAF" />
-                        </linearGradient>
-                        {/* Gradient for PMS */}
-                        <linearGradient id="impoPmsGrad" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#F59E0B" />
-                          <stop offset="100%" stopColor="#D97706" />
-                        </linearGradient>
-                        {/* Gradient for Follicular */}
-                        <linearGradient id="impoFollicularGrad" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#10B981" />
-                          <stop offset="100%" stopColor="#047857" />
-                        </linearGradient>
+                  <>
+                    {/* ----------------- 360° IMPO CIRCLE WITH LIQUID WAVE ----------------- */}
+                    <div className="relative w-[300px] h-[300px] flex items-center justify-center">
+                      <svg className="w-full h-full transform -rotate-90 drop-shadow-sm" viewBox="0 0 300 300">
+                        <defs>
+                          {/* Gradient for Period */}
+                          <linearGradient id="impoPeriodGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#F43F5E" />
+                            <stop offset="100%" stopColor="#BE123C" />
+                          </linearGradient>
+                          {/* Gradient for Fertile */}
+                          <linearGradient id="impoFertileGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#8B5CF6" />
+                            <stop offset="100%" stopColor="#6D28D9" />
+                          </linearGradient>
+                          {/* Gradient for Ovulation */}
+                          <linearGradient id="impoOvulationGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#D946EF" />
+                            <stop offset="100%" stopColor="#A21CAF" />
+                          </linearGradient>
+                          {/* Gradient for PMS */}
+                          <linearGradient id="impoPmsGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#F59E0B" />
+                            <stop offset="100%" stopColor="#D97706" />
+                          </linearGradient>
+                          {/* Gradient for Follicular */}
+                          <linearGradient id="impoFollicularGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#10B981" />
+                            <stop offset="100%" stopColor="#047857" />
+                          </linearGradient>
 
-                        {/* Liquid Wave Clip Path */}
-                        <clipPath id="circleLiquidClip">
-                          <circle cx="150" cy="150" r={wheelRadius - 15} />
-                        </clipPath>
-                      </defs>
+                          {/* Liquid Wave Clip Path */}
+                          <clipPath id="circleLiquidClip">
+                            <circle cx="150" cy="150" r={wheelRadius - 15} />
+                          </clipPath>
+                        </defs>
 
-                      {/* Base Track Circle */}
-                      <circle
-                        cx="150"
-                        cy="150"
-                        r={wheelRadius}
-                        className="stroke-slate-100 fill-white"
-                        strokeWidth={wheelStroke}
-                      />
-
-                      {/* 1. Period Arc Segment */}
-                      <circle
-                        cx="150"
-                        cy="150"
-                        r={wheelRadius}
-                        fill="none"
-                        stroke="url(#impoPeriodGrad)"
-                        strokeWidth={wheelStroke}
-                        strokeDasharray={`${(safePeriodLength / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
-                        strokeDashoffset="0"
-                        strokeLinecap="round"
-                        className="opacity-90"
-                      />
-
-                      {/* 2. Fertile Window Arc Segment */}
-                      <circle
-                        cx="150"
-                        cy="150"
-                        r={wheelRadius}
-                        fill="none"
-                        stroke="url(#impoFertileGrad)"
-                        strokeWidth={wheelStroke}
-                        strokeDasharray={`${((safeFertileEnd - safeFertileStart + 1) / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
-                        strokeDashoffset={`-${((safeFertileStart - 1) / safeCycleLength) * wheelCircumference}`}
-                        strokeLinecap="round"
-                        className="opacity-80"
-                      />
-
-                      {/* 3. PMS Arc Segment */}
-                      <circle
-                        cx="150"
-                        cy="150"
-                        r={wheelRadius}
-                        fill="none"
-                        stroke="url(#impoPmsGrad)"
-                        strokeWidth={wheelStroke}
-                        strokeDasharray={`${((safeCycleLength - safePmsStart + 1) / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
-                        strokeDashoffset={`-${((safePmsStart - 1) / safeCycleLength) * wheelCircumference}`}
-                        strokeLinecap="round"
-                        className="opacity-75"
-                      />
-
-                      {/* Animated Current Day Progress Glow */}
-                      <circle
-                        cx="150"
-                        cy="150"
-                        r={wheelRadius}
-                        fill="none"
-                        stroke={cycleStatus.stageColor.primary}
-                        strokeWidth={wheelStroke + 4}
-                        strokeDasharray={`4 ${wheelCircumference}`}
-                        strokeDashoffset={`-${((cycleStatus.currentCycleDay - 1) / safeCycleLength) * wheelCircumference}`}
-                        className="opacity-40 animate-pulse"
-                      />
-
-                      {/* Liquid Wave in Center of Wheel (Impo Cycle Wave) */}
-                      <g clipPath="url(#circleLiquidClip)">
-                        <rect x="0" y="0" width="300" height="300" fill="#FFF5F7" />
-                        
-                        {/* Animated Liquid Wave Path */}
-                        <motion.path
-                          d={`M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`}
-                          fill={cycleStatus.stageColor.light}
-                          animate={{
-                            d: [
-                              `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`,
-                              `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) + 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`,
-                              `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`
-                            ]
-                          }}
-                          transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                        {/* Base Track Circle */}
+                        <circle
+                          cx="150"
+                          cy="150"
+                          r={wheelRadius}
+                          className="stroke-slate-100 fill-white"
+                          strokeWidth={wheelStroke}
                         />
-                      </g>
-                    </svg>
 
-                    {/* Floating Glow Pointer for Current Day */}
-                    <div 
-                      className="absolute w-5 h-5 rounded-full border-2 border-white shadow-lg pointer-events-none transition-all duration-700"
-                      style={{
-                        backgroundColor: cycleStatus.stageColor.primary,
-                        left: `${pointerX - 10}px`,
-                        top: `${pointerY - 10}px`
-                      }}
-                    >
-                      <div className="w-full h-full rounded-full animate-ping opacity-60 bg-current" />
-                    </div>
+                        {/* 1. Period Arc Segment */}
+                        <circle
+                          cx="150"
+                          cy="150"
+                          r={wheelRadius}
+                          fill="none"
+                          stroke="url(#impoPeriodGrad)"
+                          strokeWidth={wheelStroke}
+                          strokeDasharray={`${(safePeriodLength / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
+                          strokeDashoffset="0"
+                          strokeLinecap="round"
+                          className="opacity-90"
+                        />
 
-                    {/* Center Typography (Exact Impo Style) */}
-                    <div className="absolute flex flex-col items-center justify-center text-center p-4 z-10 pointer-events-none">
-                      {cycleStatus.diffDays >= 90 ? (
-                        <>
-                          <span className="text-xs font-black text-amber-600">عدم قاعدگی طولانی</span>
-                          <span className="text-lg font-black text-slate-800 mt-1">مشورت با پزشک</span>
-                          <span className="text-[10px] font-bold text-slate-500 mt-0.5">بیش از ۹۰ روز</span>
-                        </>
-                      ) : cycleStatus.diffDays >= 45 ? (
-                        <>
-                          <span className="text-xs font-black text-rose-500">پایان دوره انتظار</span>
-                          <span className="text-lg font-black text-slate-800 mt-1">ثبت پریود جدید</span>
-                          <span className="text-[10px] font-bold text-slate-500 mt-0.5">{toPersianDigits(cycleStatus.diffDays)} روز از شروع قبلی</span>
-                        </>
-                      ) : cycleStatus.phase === 'due' ? (
-                        <>
-                          <span className="text-xs font-black text-rose-500 animate-pulse">
-                            {partnerRole === 'male' ? 'موعد پریود پارتنر' : 'موعد پریود'}
-                          </span>
-                          <span className="text-3xl font-black text-rose-600 mt-0.5">امروز</span>
-                          <span className="text-[10px] font-bold text-slate-500 mt-0.5">زمان مورد انتظار</span>
-                        </>
-                      ) : cycleStatus.isDelayed ? (
-                        <>
-                          <span className="text-xs font-black text-red-500 animate-pulse">
-                            {partnerRole === 'male' ? 'تاخیر پریود پارتنر' : 'تاخیر پریود'}
-                          </span>
-                          <span className="text-4xl font-black text-red-600 mt-0.5">
-                            {toPersianDigits(cycleStatus.delayedDays)}
-                          </span>
-                          <span className="text-xs font-black text-slate-500 mt-0.5">روز تاخیر</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-[11px] font-black text-slate-400">
-                            {partnerRole === 'male' ? 'روز چرخه پارتنر' : 'روز چرخه'}
-                          </span>
-                          <span className="text-4xl font-black text-slate-800 tracking-tight mt-0.5">
-                            {toPersianDigits(cycleStatus.currentCycleDay)}
-                          </span>
-                          <span className="text-[11px] font-black text-slate-500 mt-0.5">
-                            از {toPersianDigits(safeCycleLength)} روز
-                          </span>
-                        </>
-                      )}
+                        {/* 2. Fertile Window Arc Segment */}
+                        <circle
+                          cx="150"
+                          cy="150"
+                          r={wheelRadius}
+                          fill="none"
+                          stroke="url(#impoFertileGrad)"
+                          strokeWidth={wheelStroke}
+                          strokeDasharray={`${((safeFertileEnd - safeFertileStart + 1) / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
+                          strokeDashoffset={`-${((safeFertileStart - 1) / safeCycleLength) * wheelCircumference}`}
+                          strokeLinecap="round"
+                          className="opacity-80"
+                        />
 
-                      <div className="mt-2.5 flex items-center gap-1 text-[10px] font-black text-rose-500 bg-white/90 px-2.5 py-0.5 rounded-full shadow-xs border border-rose-100">
-                        <span>
-                          {cycleStatus.phase === 'due'
-                            ? (partnerRole === 'male' ? 'امروز موعد پریود پارتنر است' : 'امروز موعد مورد انتظار است')
-                            : cycleStatus.diffDays >= 90
-                            ? 'نیاز به بررسی توسط پزشک'
-                            : cycleStatus.diffDays >= 45
-                            ? 'پیشنهاد ثبت چرخه جدید'
-                            : partnerRole === 'male'
-                            ? (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا موعد بعدی پارتنر` : `${toPersianDigits(cycleStatus.delayedDays)} روز تاخیر`)
-                            : (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا پریود بعدی` : `${toPersianDigits(cycleStatus.delayedDays)} روز تاخیر`)
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* ----------------- CALENDAR-BASED STRIP CYCLE VIEW ----------------- */
-                  <div className="w-full py-2 space-y-4 text-right">
-                    {/* Navigation Header for Calendar Strip */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 p-3.5 rounded-2xl border border-slate-200/60 shadow-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs sm:text-sm font-black text-slate-800 flex items-center gap-1.5">
-                          <CalendarIcon className="w-4 h-4 text-rose-500" />
-                          <span>نوار تقویمی چرخه قاعدگی</span>
-                        </span>
-                        <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200/60">
-                          {formatPersianDate(stripSelectedDate)}
-                        </span>
+                        {/* 3. PMS Arc Segment */}
+                        <circle
+                          cx="150"
+                          cy="150"
+                          r={wheelRadius}
+                          fill="none"
+                          stroke="url(#impoPmsGrad)"
+                          strokeWidth={wheelStroke}
+                          strokeDasharray={`${((safeCycleLength - safePmsStart + 1) / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
+                          strokeDashoffset={`-${((safePmsStart - 1) / safeCycleLength) * wheelCircumference}`}
+                          strokeLinecap="round"
+                          className="opacity-75"
+                        />
+
+                        {/* Animated Current Day Progress Glow */}
+                        <circle
+                          cx="150"
+                          cy="150"
+                          r={wheelRadius}
+                          fill="none"
+                          stroke={cycleStatus.stageColor.primary}
+                          strokeWidth={wheelStroke + 4}
+                          strokeDasharray={`4 ${wheelCircumference}`}
+                          strokeDashoffset={`-${((cycleStatus.currentCycleDay - 1) / safeCycleLength) * wheelCircumference}`}
+                          className="opacity-40 animate-pulse"
+                        />
+
+                        {/* Liquid Wave in Center of Wheel (Impo Cycle Wave) */}
+                        <g clipPath="url(#circleLiquidClip)">
+                          <rect x="0" y="0" width="300" height="300" fill="#FFF5F7" />
+                          
+                          {/* Animated Liquid Wave Path */}
+                          <motion.path
+                            d={`M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`}
+                            fill={cycleStatus.stageColor.light}
+                            animate={{
+                              d: [
+                                `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`,
+                                `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) + 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`,
+                                `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`
+                              ]
+                            }}
+                            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                          />
+                        </g>
+                      </svg>
+
+                      {/* Floating Glow Pointer for Current Day */}
+                      <div 
+                        className="absolute w-5 h-5 rounded-full border-2 border-white shadow-lg pointer-events-none transition-all duration-700"
+                        style={{
+                          backgroundColor: cycleStatus.stageColor.primary,
+                          left: `${pointerX - 10}px`,
+                          top: `${pointerY - 10}px`
+                        }}
+                      >
+                        <div className="w-full h-full rounded-full animate-ping opacity-60 bg-current" />
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-1.5 self-end sm:self-auto">
-                        <div className="inline-flex bg-slate-100/90 p-0.5 rounded-xl text-[10px] font-bold border border-slate-200/50">
-                          <button
-                            type="button"
-                            onClick={() => setStripMode('timeline')}
-                            className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                              stripMode === 'timeline' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-                            }`}
-                          >
-                            روزشمار تقویمی
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setStripMode('cycle')}
-                            className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                              stripMode === 'cycle' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-                            }`}
-                          >
-                            کل روزهای چرخه
-                          </button>
-                        </div>
-
-                        {stripMode === 'timeline' && (
-                          <div className="flex items-center gap-1 mr-1">
-                            <button
-                              type="button"
-                              onClick={() => setStripWeekOffset(w => w - 1)}
-                              className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-600 transition-all cursor-pointer"
-                              title="دوره قبل"
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setStripWeekOffset(0);
-                                setStripSelectedDate(toGregorianIsoString(new Date()));
-                              }}
-                              className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-[10px] font-black transition-all cursor-pointer border border-rose-200/60"
-                            >
-                              امروز 📍
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setStripWeekOffset(w => w + 1)}
-                              className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-600 transition-all cursor-pointer"
-                              title="دوره بعد"
-                            >
-                              <ChevronLeft className="w-4 h-4" />
-                            </button>
-                          </div>
+                      {/* Center Typography (Exact Impo Style) */}
+                      <div className="absolute flex flex-col items-center justify-center text-center p-4 z-10 pointer-events-none">
+                        {cycleStatus.diffDays >= 90 ? (
+                          <>
+                            <span className="text-xs font-black text-amber-600">عدم قاعدگی طولانی</span>
+                            <span className="text-lg font-black text-slate-800 mt-1">مشورت با پزشک</span>
+                            <span className="text-[10px] font-bold text-slate-500 mt-0.5">بیش از ۹۰ روز</span>
+                          </>
+                        ) : cycleStatus.diffDays >= 45 ? (
+                          <>
+                            <span className="text-xs font-black text-rose-500">پایان دوره انتظار</span>
+                            <span className="text-lg font-black text-slate-800 mt-1">ثبت پریود جدید</span>
+                            <span className="text-[10px] font-bold text-slate-500 mt-0.5">{toPersianDigits(cycleStatus.diffDays)} روز از شروع قبلی</span>
+                          </>
+                        ) : cycleStatus.phase === 'due' ? (
+                          <>
+                            <span className="text-xs font-black text-rose-500 animate-pulse">
+                              {partnerRole === 'male' ? 'موعد پریود پارتنر' : 'موعد پریود'}
+                            </span>
+                            <span className="text-3xl font-black text-rose-600 mt-0.5">امروز</span>
+                            <span className="text-[10px] font-bold text-slate-500 mt-0.5">زمان مورد انتظار</span>
+                          </>
+                        ) : cycleStatus.isDelayed ? (
+                          <>
+                            <span className="text-xs font-black text-red-500 animate-pulse">
+                              {partnerRole === 'male' ? 'تاخیر پریود پارتنر' : 'تاخیر پریود'}
+                            </span>
+                            <span className="text-4xl font-black text-red-600 mt-0.5">
+                              {toPersianDigits(cycleStatus.delayedDays)}
+                            </span>
+                            <span className="text-xs font-black text-slate-500 mt-0.5">روز تاخیر</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[11px] font-black text-slate-400">
+                              {partnerRole === 'male' ? 'روز چرخه پارتنر' : 'روز چرخه'}
+                            </span>
+                            <span className="text-4xl font-black text-slate-800 tracking-tight mt-0.5">
+                              {toPersianDigits(cycleStatus.currentCycleDay)}
+                            </span>
+                            <span className="text-[11px] font-black text-slate-500 mt-0.5">
+                              از {toPersianDigits(safeCycleLength)} روز
+                            </span>
+                          </>
                         )}
+
+                        <div className="mt-2.5 flex items-center gap-1 text-[10px] font-black text-rose-500 bg-white/90 px-2.5 py-0.5 rounded-full shadow-xs border border-rose-100">
+                          <span>
+                            {cycleStatus.phase === 'due'
+                              ? (partnerRole === 'male' ? 'امروز موعد پریود پارتنر است' : 'امروز موعد مورد انتظار است')
+                              : cycleStatus.diffDays >= 90
+                              ? 'نیاز به بررسی توسط پزشک'
+                              : cycleStatus.diffDays >= 45
+                              ? 'پیشنهاد ثبت چرخه جدید'
+                              : partnerRole === 'male'
+                              ? (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا موعد بعدی پارتنر` : `${toPersianDigits(cycleStatus.delayedDays)} روز تاخیر`)
+                              : (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا پریود بعدی` : `${toPersianDigits(cycleStatus.delayedDays)} روز تاخیر`)
+                            }
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Horizontal Scrollable Calendar Day Strip */}
-                    <div className="overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200">
-                      <div className="flex items-stretch gap-2 min-w-max p-1">
-                        {stripDays.map((dayItem) => {
-                          const phaseColor = getPhaseStyle(dayItem.status.phase);
-                          return (
-                            <button
-                              key={dayItem.iso}
-                              type="button"
-                              onClick={() => setStripSelectedDate(dayItem.iso)}
-                              className={`w-16 h-16 rounded-[18px] flex flex-col items-center justify-center transition-all cursor-pointer text-center relative select-none ${
-                                dayItem.isSelected
-                                  ? 'scale-105 z-10 shadow-sm ' + phaseColor.selectedBg
-                                  : phaseColor.cardBg + ' hover:opacity-90'
-                              } ${dayItem.isToday ? 'border-2 border-dashed border-[#222222]' : ''}`}
-                            >
-                              <span className="text-[10px] font-medium opacity-75 leading-none mb-1">
-                                {dayItem.weekday}
-                              </span>
+                    {/* Color Legend (Impo Phase Palette) */}
+                    <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-[10px] font-black text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                        قاعدگی ({toPersianDigits(safePeriodLength)} روز)
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                        فاز امن / فولیکولار
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                        پنجره باروری
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-500" />
+                        روز تخمک‌گذاری (روز {toPersianDigits(safeOvulationDay)})
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                        دوران PMS
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  /* ----------------- SQUIRCLE MONTHLY CALENDAR VIEW ----------------- */
+                  <div className="w-full bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-xs space-y-5" dir="rtl">
+                    {/* Top Navigation Header: < Month Year > */}
+                    <div className="flex items-center justify-between px-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (calendarMonth === 1) {
+                            setCalendarMonth(12);
+                            setCalendarYear(y => y - 1);
+                          } else {
+                            setCalendarMonth(m => m - 1);
+                          }
+                        }}
+                        className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-[#1A1A1A]"
+                        title="ماه قبل"
+                      >
+                        <ChevronRight className="w-5 h-5 stroke-[2]" />
+                      </button>
 
-                              <span className="text-base font-bold leading-none">
-                                {toPersianDigits(dayItem.jd)}
-                              </span>
+                      <h3 className="text-base sm:text-lg font-bold text-[#1A1A1A]">
+                        {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
+                      </h3>
 
-                              {dayItem.isToday ? (
-                                <span className="text-[10px] font-bold leading-none mt-1">
-                                  امروز
-                                </span>
-                              ) : (
-                                <span className="text-[9px] font-medium opacity-70 leading-none mt-1">
-                                  {JALALI_MONTHS[dayItem.jm - 1]}
-                                </span>
-                              )}
-
-                              {dayItem.hasLog && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#1B9AAA] absolute top-1.5 left-1.5" title="یادداشت ثبت شده" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (calendarMonth === 12) {
+                            setCalendarMonth(1);
+                            setCalendarYear(y => y + 1);
+                          } else {
+                            setCalendarMonth(m => m + 1);
+                          }
+                        }}
+                        className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-[#1A1A1A]"
+                        title="ماه بعد"
+                      >
+                        <ChevronLeft className="w-5 h-5 stroke-[2]" />
+                      </button>
                     </div>
 
-                    {/* Selected Day Inspector Card */}
-                    <div className="bg-white/90 p-4 sm:p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3.5">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs sm:text-sm font-black text-slate-800">
-                            📅 {formatPersianDate(stripSelectedDate)}
-                          </span>
-                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border ${stripSelectedStatus.stageColor.badgeBg}`}>
-                            {stripSelectedStatus.phaseTitle}
-                          </span>
-                        </div>
+                    {/* Weekday Names Header */}
+                    <div className="grid grid-cols-7 gap-2 sm:gap-2.5 text-center text-xs font-medium text-[#757575]">
+                      {JALALI_WEEKDAYS.map(day => (
+                        <span key={day}>{day}</span>
+                      ))}
+                    </div>
 
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-bold text-slate-500">
-                            روز {toPersianDigits(stripSelectedStatus.currentCycleDay)} از چرخه {toPersianDigits(stripSelectedStatus.cycleLength)} روزه
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenLogModal(stripSelectedDate)}
-                            className="px-3 py-1.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer flex items-center gap-1"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                            <span>ثبت یا ویرایش علائم ✍️</span>
-                          </button>
-                        </div>
-                      </div>
+                    {/* Calendar Days Grid */}
+                    {(() => {
+                      const daysInMonth = getDaysInJalaliMonth(calendarYear, calendarMonth);
+                      const [firstGy, firstGm, firstGd] = jalaliToGregorian(calendarYear, calendarMonth, 1);
+                      const firstDateGregorian = new Date(firstGy, firstGm - 1, firstGd);
+                      const jsDay = firstDateGregorian.getDay();
+                      const firstDayOfWeekOffset = (jsDay + 1) % 7;
 
-                      <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                        {stripSelectedStatus.stageDescription}
-                      </p>
+                      const daysArray = [];
+                      for (let i = 0; i < firstDayOfWeekOffset; i++) {
+                        daysArray.push(null);
+                      }
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        daysArray.push(d);
+                      }
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-400 block mb-0.5">احتمال بارداری در این تاریخ:</span>
-                          <span className="text-xs font-black text-purple-700 flex items-center gap-1">
-                            <Baby className="w-3.5 h-3.5" />
-                            {stripSelectedStatus.chanceOfPregnancy}
-                          </span>
-                        </div>
+                      return (
+                        <div className="grid grid-cols-7 gap-2 sm:gap-2.5">
+                          {daysArray.map((day, idx) => {
+                            if (day === null) {
+                              return <div key={`empty_${idx}`} className="aspect-square" />;
+                            }
 
-                        <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-400 block mb-0.5">توصیه خودمراقبتی:</span>
-                          <span className="text-xs font-bold text-slate-700 line-clamp-2">
-                            {stripSelectedStatus.selfCareTip}
-                          </span>
-                        </div>
+                            const [gy, gm, gd] = jalaliToGregorian(calendarYear, calendarMonth, day);
+                            const cellDate = new Date(gy, gm - 1, gd);
+                            const cellIso = toGregorianIsoString(cellDate);
+                            const isToday = cellIso === toGregorianIsoString(new Date());
 
-                        <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-400 block mb-0.5">راهنمای پارتنر:</span>
-                          <span className="text-xs font-bold text-slate-700 line-clamp-2">
-                            {stripSelectedStatus.partnerTip}
-                          </span>
-                        </div>
-                      </div>
+                            const diffFromStart = daysBetween(settings.lastPeriodStartDate, cellDate);
+                            let cellCycleDay = 0;
+                            if (diffFromStart >= 0) {
+                              cellCycleDay = (diffFromStart % safeCycleLength) + 1;
+                            }
 
-                      {/* Logged details if any */}
-                      {(() => {
-                        const dayLog = logs.find(l => l.date === stripSelectedDate);
-                        if (!dayLog) return null;
-                        return (
-                          <div className="bg-pink-50/60 p-3 rounded-2xl border border-pink-100/70 text-xs space-y-1.5">
-                            <span className="font-black text-pink-700 block text-[11px]">علائم و حالات ثبت‌شده در این روز:</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {dayLog.flow && dayLog.flow !== 'none' && (
-                                <span className="bg-white px-2 py-0.5 rounded-lg border border-pink-200 text-pink-700 font-bold text-[10px]">
-                                  خونریزی: {FLOW_OPTIONS.find(f => f.id === dayLog.flow)?.label || dayLog.flow}
+                            const isPeriodDay = cellCycleDay >= 1 && cellCycleDay <= safePeriodLength;
+                            const isOvulationDay = cellCycleDay === safeOvulationDay;
+                            const isFertileDay = cellCycleDay >= safeFertileStart && cellCycleDay <= safeFertileEnd;
+                            const isPmsDay = cellCycleDay >= safePmsStart && cellCycleDay <= safeCycleLength;
+
+                            const hasLog = logs.some(l => l.date === cellIso);
+
+                            let tileColorClass = "bg-[#F7F7F7] text-[#1E1E1E] hover:bg-[#EFEFEF]";
+                            if (isPeriodDay) {
+                              tileColorClass = "bg-[#F9CCD8] text-[#7D243C]";
+                            } else if (isOvulationDay) {
+                              tileColorClass = "bg-[#1B9AAA] text-white";
+                            } else if (isFertileDay) {
+                              tileColorClass = "bg-[#C8EEF2] text-[#0E545B]";
+                            } else if (isPmsDay) {
+                              tileColorClass = "bg-[#E2D2FE] text-[#4A2574]";
+                            }
+
+                            return (
+                              <motion.button
+                                type="button"
+                                key={day}
+                                whileTap={{ scale: 0.96 }}
+                                onClick={() => handleOpenLogModal(cellIso)}
+                                className={`aspect-square rounded-[15px] sm:rounded-[18px] flex flex-col items-center justify-center transition-all cursor-pointer relative select-none ${tileColorClass} ${
+                                  isToday ? 'border-2 border-dashed border-[#222222]' : ''
+                                }`}
+                              >
+                                <span className="text-sm font-bold leading-none">
+                                  {toPersianDigits(day)}
                                 </span>
-                              )}
-                              {(dayLog.moods || []).map(m => (
-                                <span key={m} className="bg-white px-2 py-0.5 rounded-lg border border-purple-200 text-purple-700 font-bold text-[10px]">
-                                  {MOOD_OPTIONS.find(x => x.id === m)?.label || m}
-                                </span>
-                              ))}
-                              {(dayLog.symptoms || []).map(s => (
-                                <span key={s} className="bg-white px-2 py-0.5 rounded-lg border border-amber-200 text-amber-700 font-bold text-[10px]">
-                                  {SYMPTOM_OPTIONS.find(x => x.id === s)?.label || s}
-                                </span>
-                              ))}
-                              {dayLog.notes && (
-                                <p className="w-full text-slate-600 mt-1 font-medium bg-white/80 p-2 rounded-xl text-[11px]">
-                                  یادداشت: {dayLog.notes}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
+                                {isToday && (
+                                  <span className="text-[9px] sm:text-[10px] font-bold leading-none mt-1">
+                                    امروز
+                                  </span>
+                                )}
+                                {hasLog && (
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full absolute top-1.5 left-1.5 ${
+                                      isOvulationDay ? 'bg-white' : 'bg-[#1B9AAA]'
+                                    }`}
+                                    title="گزارش ثبت‌شده"
+                                  />
+                                )}
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Bottom Legend (Exact Match to Reference Design) */}
+                    <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 text-[11px] sm:text-xs font-bold text-[#1E1E1E]">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full bg-[#F9CCD8] inline-block" />
+                        <span>دوره پریود</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full bg-[#E2D2FE] inline-block" />
+                        <span>دوره PMS</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full bg-[#C8EEF2] inline-block" />
+                        <span>دوره باروری</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full bg-[#1B9AAA] inline-block" />
+                        <span>روز تخمک گذاری</span>
+                      </span>
                     </div>
                   </div>
                 )}
-
-                {/* Color Legend (Impo Phase Palette) */}
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-[10px] font-black text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    قاعدگی ({toPersianDigits(safePeriodLength)} روز)
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    فاز امن / فولیکولار
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                    پنجره باروری
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-500" />
-                    روز تخمک‌گذاری (روز {toPersianDigits(safeOvulationDay)})
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                    دوران PMS
-                  </span>
-                </div>
               </div>
 
               {/* Right: Detailed Status Cards & Insights (Differentiated by Role) */}
@@ -1829,165 +1752,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       )}
 
       {/* ----------------------------------------------------------------- */}
-      {/* SUB-TAB 2: JALALI MONTHLY CALENDAR (EXACT SQUIRCLE DESIGN) */}
-      {/* ----------------------------------------------------------------- */}
-      {activeSubTab === 'calendar' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm max-w-lg mx-auto space-y-6" dir="rtl">
-          {/* Top Navigation Header: < Month Year > */}
-          <div className="flex items-center justify-between px-2">
-            <button
-              onClick={() => {
-                if (calendarMonth === 1) {
-                  setCalendarMonth(12);
-                  setCalendarYear(y => y - 1);
-                } else {
-                  setCalendarMonth(m => m - 1);
-                }
-              }}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-[#1A1A1A]"
-              title="ماه قبل"
-            >
-              <ChevronRight className="w-5 h-5 stroke-[2]" />
-            </button>
-
-            <h3 className="text-lg sm:text-xl font-bold text-[#1A1A1A]">
-              {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
-            </h3>
-
-            <button
-              onClick={() => {
-                if (calendarMonth === 12) {
-                  setCalendarMonth(1);
-                  setCalendarYear(y => y + 1);
-                } else {
-                  setCalendarMonth(m => m + 1);
-                }
-              }}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-[#1A1A1A]"
-              title="ماه بعد"
-            >
-              <ChevronLeft className="w-5 h-5 stroke-[2]" />
-            </button>
-          </div>
-
-          {/* Weekday Names Header */}
-          <div className="grid grid-cols-7 gap-2.5 sm:gap-3 text-center text-xs sm:text-sm font-medium text-[#757575]">
-            {JALALI_WEEKDAYS.map(day => (
-              <span key={day}>{day}</span>
-            ))}
-          </div>
-
-          {/* Calendar Days Grid */}
-          {(() => {
-            const daysInMonth = getDaysInJalaliMonth(calendarYear, calendarMonth);
-            const [firstGy, firstGm, firstGd] = jalaliToGregorian(calendarYear, calendarMonth, 1);
-            const firstDateGregorian = new Date(firstGy, firstGm - 1, firstGd);
-            const jsDay = firstDateGregorian.getDay();
-            const firstDayOfWeekOffset = (jsDay + 1) % 7;
-
-            const daysArray = [];
-            for (let i = 0; i < firstDayOfWeekOffset; i++) {
-              daysArray.push(null);
-            }
-            for (let d = 1; d <= daysInMonth; d++) {
-              daysArray.push(d);
-            }
-
-            return (
-              <div className="grid grid-cols-7 gap-2.5 sm:gap-3">
-                {daysArray.map((day, idx) => {
-                  if (day === null) {
-                    return <div key={`empty_${idx}`} className="aspect-square" />;
-                  }
-
-                  const [gy, gm, gd] = jalaliToGregorian(calendarYear, calendarMonth, day);
-                  const cellDate = new Date(gy, gm - 1, gd);
-                  const cellIso = toGregorianIsoString(cellDate);
-                  const isToday = cellIso === toGregorianIsoString(new Date());
-
-                  // Cycle calculations for this specific date
-                  const diffFromStart = daysBetween(settings.lastPeriodStartDate, cellDate);
-                  
-                  let cellCycleDay = 0;
-                  if (diffFromStart >= 0) {
-                    cellCycleDay = (diffFromStart % safeCycleLength) + 1;
-                  }
-
-                  const isPeriodDay = cellCycleDay >= 1 && cellCycleDay <= safePeriodLength;
-                  const isOvulationDay = cellCycleDay === safeOvulationDay;
-                  const isFertileDay = cellCycleDay >= safeFertileStart && cellCycleDay <= safeFertileEnd;
-                  const isPmsDay = cellCycleDay >= safePmsStart && cellCycleDay <= safeCycleLength;
-
-                  const hasLog = logs.some(l => l.date === cellIso);
-
-                  let tileColorClass = "bg-[#F7F7F7] text-[#1E1E1E] hover:bg-[#EFEFEF]";
-                  if (isPeriodDay) {
-                    tileColorClass = "bg-[#F9CCD8] text-[#7D243C]";
-                  } else if (isOvulationDay) {
-                    tileColorClass = "bg-[#1B9AAA] text-white";
-                  } else if (isFertileDay) {
-                    tileColorClass = "bg-[#C8EEF2] text-[#0E545B]";
-                  } else if (isPmsDay) {
-                    tileColorClass = "bg-[#E2D2FE] text-[#4A2574]";
-                  }
-
-                  return (
-                    <motion.button
-                      type="button"
-                      key={day}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => handleOpenLogModal(cellIso)}
-                      className={`aspect-square rounded-[16px] sm:rounded-[18px] flex flex-col items-center justify-center transition-all cursor-pointer relative select-none ${tileColorClass} ${
-                        isToday ? 'border-2 border-dashed border-[#222222]' : ''
-                      }`}
-                    >
-                      <span className="text-sm sm:text-base font-bold leading-none">
-                        {toPersianDigits(day)}
-                      </span>
-                      {isToday && (
-                        <span className="text-[10px] sm:text-xs font-bold leading-none mt-1">
-                          امروز
-                        </span>
-                      )}
-                      {hasLog && (
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full absolute top-1.5 left-1.5 ${
-                            isOvulationDay ? 'bg-white' : 'bg-[#1B9AAA]'
-                          }`}
-                          title="گزارش ثبت‌شده"
-                        />
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            );
-          })()}
-
-          {/* Bottom Legend (Exact Match to Reference Design) */}
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-4 sm:gap-5 text-xs sm:text-sm font-bold text-[#1E1E1E]">
-            <span className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 rounded-full bg-[#F9CCD8] inline-block" />
-              <span>دوره پریود</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 rounded-full bg-[#E2D2FE] inline-block" />
-              <span>دوره PMS</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 rounded-full bg-[#C8EEF2] inline-block" />
-              <span>دوره باروری</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 rounded-full bg-[#1B9AAA] inline-block" />
-              <span>روز تخمک گذاری</span>
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* ----------------------------------------------------------------- */}
-      {/* SUB-TAB 3: FUTURE CYCLE PREDICTIONS */}
+      {/* SUB-TAB 2: FUTURE CYCLE PREDICTIONS */}
       {/* ----------------------------------------------------------------- */}
       {activeSubTab === 'predictions' && (
         <div className="glass-card rounded-3xl p-6 border border-white/60 bg-white/70 space-y-6 text-right">
