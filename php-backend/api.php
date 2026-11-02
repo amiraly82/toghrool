@@ -438,6 +438,22 @@ function ensurePeriodSchema($pdo) {
     }
 }
 
+function ensureMemoriesSchema($pdo) {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    try {
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM `memories`");
+        $existingCols = $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        if (!empty($existingCols) && !in_array('rawImageUrl', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `memories` ADD COLUMN `rawImageUrl` LONGTEXT DEFAULT NULL");
+        }
+    } catch (Exception $e) {
+        error_log("Memories schema check notice: " . $e->getMessage());
+    }
+}
+
 function requirePeriodTarget($pdo) {
     global $input;
     ensurePeriodSchema($pdo);
@@ -1894,6 +1910,7 @@ switch ($action) {
     // MEMORIES (SCOPED TO AUTHENTICATED COUPLE)
     // ----------------------------------------------------
     case 'getMemories':
+        ensureMemoriesSchema($pdo);
         $user = requireCoupleMember($pdo);
         $coupleId = $user['coupleId'];
 
@@ -1930,6 +1947,7 @@ switch ($action) {
         break;
 
     case 'addMemory':
+        ensureMemoriesSchema($pdo);
         $user = requireCoupleMember($pdo);
         $coupleId = $user['coupleId'];
         $mem = $input['memory'] ?? [];
@@ -1944,13 +1962,15 @@ switch ($action) {
         $id = generateId('mem_');
         $reactionsJson = !empty($mem['reactions']) ? (is_string($mem['reactions']) ? $mem['reactions'] : json_encode($mem['reactions'], JSON_UNESCAPED_UNICODE)) : json_encode([]);
 
-        $stmt = $pdo->prepare("INSERT INTO memories (id, coupleId, title, date, imageUrl, content, createdBy, createdByName, reactions, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        $rawImageUrl = !empty($mem['rawImageUrl']) ? $mem['rawImageUrl'] : ($mem['imageUrl'] ?? '');
+        $stmt = $pdo->prepare("INSERT INTO memories (id, coupleId, title, date, imageUrl, rawImageUrl, content, createdBy, createdByName, reactions, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         $stmt->execute([
             $id,
             $coupleId,
             $mem['title'] ?? '',
             $mem['date'] ?? date('Y-m-d'),
             $mem['imageUrl'] ?? '',
+            $rawImageUrl,
             $mem['content'] ?? '',
             $user['uid'],
             $user['displayName'],

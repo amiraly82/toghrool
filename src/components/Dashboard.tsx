@@ -5,7 +5,7 @@ import {
   Heart, Plus, Trash2, Calendar as CalendarIcon, BookOpen, Film, ShoppingBag, MapPin, Compass, 
   Send, ExternalLink, Flame, Sparkles, LogOut, CheckCircle, Bell, BellOff, RefreshCw, ChevronLeft, ChevronRight, 
   MessageCircleHeart, X, Edit2, User, Palette, Layers, Pizza, Coffee, Music, Smile, Camera, Gift, Settings,
-  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download
+  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download, Maximize2
 } from "lucide-react";
 
 import FinanceSection from "./FinanceSection";
@@ -296,6 +296,19 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [memoryDragStart, setMemoryDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [memoryImageDimensions, setMemoryImageDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const memoryCropViewportRef = useRef<HTMLDivElement>(null);
+
+  // Lightbox modal state for full-size uncropped memory preview
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; title: string; date?: string } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Custom category / shelf fields
   const [newShelfLabel, setNewShelfLabel] = useState("");
@@ -686,6 +699,27 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     img.src = cropImageSrc;
   };
 
+  // Helper to ensure cropped image stays strictly inside viewport with zero empty margins/borders
+  const clampMemoryCropOffset = (
+    rawOffset: { x: number; y: number },
+    scale: number,
+    baseDims: { width: number; height: number },
+    vpDims: { width: number; height: number }
+  ) => {
+    if (!vpDims.width || !vpDims.height || !baseDims.width || !baseDims.height) {
+      return rawOffset;
+    }
+    const scaledW = baseDims.width * scale;
+    const scaledH = baseDims.height * scale;
+    const maxOffsetX = Math.max(0, (scaledW - vpDims.width) / 2);
+    const maxOffsetY = Math.max(0, (scaledH - vpDims.height) / 2);
+
+    return {
+      x: Math.min(maxOffsetX, Math.max(-maxOffsetX, rawOffset.x)),
+      y: Math.min(maxOffsetY, Math.max(-maxOffsetY, rawOffset.y))
+    };
+  };
+
   // Handlers for memory image crop drag / pan (16:9 aspect ratio)
   const handleMemoryCropMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -699,9 +733,18 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
   const handleMemoryCropMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDraggingMemoryCrop || !memoryCropImageSrc) return;
-    const newX = e.clientX - memoryDragStart.x;
-    const newY = e.clientY - memoryDragStart.y;
-    setMemoryCropOffset({ x: newX, y: newY });
+    const rawX = e.clientX - memoryDragStart.x;
+    const rawY = e.clientY - memoryDragStart.y;
+    const rect = memoryCropViewportRef.current?.getBoundingClientRect();
+    const vw = rect?.width || 440;
+    const vh = rect?.height || (vw * 9) / 16;
+    const clamped = clampMemoryCropOffset(
+      { x: rawX, y: rawY },
+      memoryCropScale,
+      memoryImageDimensions,
+      { width: vw, height: vh }
+    );
+    setMemoryCropOffset(clamped);
   };
 
   const handleMemoryCropMouseUp = () => {
@@ -719,9 +762,18 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
   const handleMemoryCropTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isDraggingMemoryCrop || !memoryCropImageSrc || e.touches.length === 0) return;
-    const newX = e.touches[0].clientX - memoryDragStart.x;
-    const newY = e.touches[0].clientY - memoryDragStart.y;
-    setMemoryCropOffset({ x: newX, y: newY });
+    const rawX = e.touches[0].clientX - memoryDragStart.x;
+    const rawY = e.touches[0].clientY - memoryDragStart.y;
+    const rect = memoryCropViewportRef.current?.getBoundingClientRect();
+    const vw = rect?.width || 440;
+    const vh = rect?.height || (vw * 9) / 16;
+    const clamped = clampMemoryCropOffset(
+      { x: rawX, y: rawY },
+      memoryCropScale,
+      memoryImageDimensions,
+      { width: vw, height: vh }
+    );
+    setMemoryCropOffset(clamped);
   };
 
   const handleMemoryCropTouchEnd = () => {
@@ -732,12 +784,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     if (!memoryCropImageSrc) return;
 
     const canvas = document.createElement("canvas");
-    canvas.width = 960;
-    canvas.height = 540;
+    const targetW = 1280;
+    const targetH = 720;
+    canvas.width = targetW;
+    canvas.height = targetH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, 960, 540);
+    ctx.clearRect(0, 0, targetW, targetH);
 
     const img = new Image();
     img.onload = () => {
@@ -745,27 +799,44 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       const vw = rect?.width || 440;
       const vh = rect?.height || (vw * 9 / 16);
 
-      const iw = memoryImageDimensions.width || vw;
-      const ih = memoryImageDimensions.height || vh;
+      const baseW = memoryImageDimensions.width || vw;
+      const baseH = memoryImageDimensions.height || vh;
 
-      const visualWidth = iw * memoryCropScale;
-      const visualHeight = ih * memoryCropScale;
-      const visualLeft = memoryCropOffset.x - (visualWidth - iw) / 2;
-      const visualTop = memoryCropOffset.y - (visualHeight - ih) / 2;
+      // Scaled dimensions in viewport
+      const scaledW = baseW * memoryCropScale;
+      const scaledH = baseH * memoryCropScale;
 
-      const scaleFactor = 960 / vw;
+      // Ensure clamped offset matching the viewport preview
+      const clampedOffset = clampMemoryCropOffset(
+        memoryCropOffset,
+        memoryCropScale,
+        { width: baseW, height: baseH },
+        { width: vw, height: vh }
+      );
 
-      const canvasLeft = visualLeft * scaleFactor;
-      const canvasTop = visualTop * scaleFactor;
-      const canvasWidth = visualWidth * scaleFactor;
-      const canvasHeight = visualHeight * scaleFactor;
+      // In viewport coords, image center is at (vw/2 + clampedOffset.x, vh/2 + clampedOffset.y)
+      const centerX = vw / 2 + clampedOffset.x;
+      const centerY = vh / 2 + clampedOffset.y;
 
-      ctx.drawImage(img, canvasLeft, canvasTop, canvasWidth, canvasHeight);
+      // Top-left of image in viewport:
+      const imageLeft = centerX - scaledW / 2;
+      const imageTop = centerY - scaledH / 2;
 
-      const croppedDataURL = canvas.toDataURL("image/jpeg", 0.9);
+      // Ratio from viewport to high-res canvas (16:9)
+      const scaleFactor = targetW / vw;
+
+      // Canvas destination coordinates
+      const canvasX = imageLeft * scaleFactor;
+      const canvasY = imageTop * scaleFactor;
+      const canvasW = scaledW * scaleFactor;
+      const canvasH = scaledH * scaleFactor;
+
+      ctx.drawImage(img, canvasX, canvasY, canvasW, canvasH);
+
+      const croppedDataURL = canvas.toDataURL("image/jpeg", 0.92);
       setMemoryFormImageUrl(croppedDataURL);
       setMemoryCropImageSrc(null);
-      triggerAlert("تصویر خاطره با موفقیت در نسبت ۱۶:۹ برش داده شد! 📸✨");
+      triggerAlert("تصویر خاطره با موفقیت و کادربندی دقیق ۱۶:۹ برش داده شد! 📸✨");
     };
     img.src = memoryCropImageSrc;
   };
@@ -1390,19 +1461,46 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       setIsUploadingMemoryImage(true);
       
       let processedImg = memoryFormImageUrl;
+      let processedRawImg = memoryRawImageSrc || memoryFormImageUrl;
+
+      const uploadTasks: Promise<void>[] = [];
+
       if (processedImg && processedImg.startsWith("data:image")) {
-        try {
-          processedImg = await compressImage(processedImg);
-          const uploadRes = await fetchFromPhpApi('uploadImage', {
-            image: processedImg,
-            folder: 'memories'
-          });
-          if (uploadRes && uploadRes.status === 'success' && uploadRes.url) {
-            processedImg = uploadRes.url;
+        uploadTasks.push((async () => {
+          try {
+            const comp = await compressImage(processedImg);
+            const uploadRes = await fetchFromPhpApi('uploadImage', {
+              image: comp,
+              folder: 'memories'
+            });
+            if (uploadRes && uploadRes.status === 'success' && uploadRes.url) {
+              processedImg = uploadRes.url;
+            }
+          } catch (uploadErr) {
+            console.warn("Cropped memory image upload note:", uploadErr);
           }
-        } catch (uploadErr) {
-          console.warn("Memory image upload fallback note:", uploadErr);
-        }
+        })());
+      }
+
+      if (processedRawImg && processedRawImg.startsWith("data:image")) {
+        uploadTasks.push((async () => {
+          try {
+            const comp = await compressImage(processedRawImg);
+            const uploadRes = await fetchFromPhpApi('uploadImage', {
+              image: comp,
+              folder: 'memories'
+            });
+            if (uploadRes && uploadRes.status === 'success' && uploadRes.url) {
+              processedRawImg = uploadRes.url;
+            }
+          } catch (uploadErr) {
+            console.warn("Raw memory image upload note:", uploadErr);
+          }
+        })());
+      }
+
+      if (uploadTasks.length > 0) {
+        await Promise.all(uploadTasks);
       }
 
       const memoryPayload = {
@@ -1410,6 +1508,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         title: memoryFormTitle.trim(),
         date: memoryFormDate,
         imageUrl: processedImg || "",
+        rawImageUrl: processedRawImg || processedImg || "",
         content: memoryFormContent.trim(),
         createdBy: userProfile.uid,
         createdByName: userProfile.displayName || "پارتنر"
@@ -4063,17 +4162,21 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   onTouchStart={handleMemoryCropTouchStart}
                   onTouchMove={handleMemoryCropTouchMove}
                   onTouchEnd={handleMemoryCropTouchEnd}
-                  className="w-full h-full relative cursor-grab active:cursor-grabbing flex items-center justify-center"
+                  className="w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden"
                 >
                   <img
                     src={memoryCropImageSrc}
                     alt="Memory crop preview"
-                    className="absolute pointer-events-none max-w-none origin-center"
+                    draggable={false}
+                    className="absolute pointer-events-none select-none max-w-none"
                     style={{
+                      left: "50%",
+                      top: "50%",
                       width: memoryImageDimensions.width ? `${memoryImageDimensions.width}px` : "auto",
                       height: memoryImageDimensions.height ? `${memoryImageDimensions.height}px` : "auto",
-                      transform: `translate(${memoryCropOffset.x}px, ${memoryCropOffset.y}px) scale(${memoryCropScale})`,
-                      transition: isDraggingMemoryCrop ? "none" : "transform 0.1s ease-out"
+                      transform: `translate(-50%, -50%) translate(${memoryCropOffset.x}px, ${memoryCropOffset.y}px) scale(${memoryCropScale})`,
+                      transformOrigin: "center center",
+                      transition: isDraggingMemoryCrop ? "none" : "transform 0.05s ease-out"
                     }}
                     onLoad={(e) => {
                       const img = e.currentTarget;
@@ -4096,10 +4199,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         h = vw / imgRatio;
                       }
                       setMemoryImageDimensions({ width: w, height: h });
-                      setMemoryCropOffset({
-                        x: (vw - w) / 2,
-                        y: (vh - h) / 2
-                      });
+                      setMemoryCropOffset({ x: 0, y: 0 });
                       setMemoryCropScale(1);
                     }}
                   />
@@ -4118,9 +4218,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   </div>
 
                   {/* Badge */}
-                  <div className="absolute bottom-2.5 left-2.5 bg-[#1B1B1A]/80 text-[10px] text-[#FAF6EC] font-bold px-2.5 py-1 rounded-full pointer-events-none flex items-center gap-1">
+                  <div className="absolute bottom-2.5 left-2.5 bg-[#1B1B1A]/80 text-[10px] text-[#FAF6EC] font-bold px-2.5 py-1 rounded-full pointer-events-none flex items-center gap-1 backdrop-blur-xs">
                     <Sparkles className="w-3 h-3 text-[#F6DC6B]" />
-                    <span>قاب استاندارد خاطرات (۱۶:۹)</span>
+                    <span>قاب ۱۶:۹ بدون حاشیه خالی</span>
                   </div>
                 </div>
               </div>
@@ -4133,29 +4233,30 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     <button
                       type="button"
                       onClick={() => {
-                        const rect = memoryCropViewportRef.current?.getBoundingClientRect();
-                        const vw = rect?.width || 440;
-                        const vh = rect?.height || (vw * 9) / 16;
-                        const w = memoryImageDimensions.width || vw;
-                        const h = memoryImageDimensions.height || vh;
-                        setMemoryCropOffset({
-                          x: (vw - w) / 2,
-                          y: (vh - h) / 2
-                        });
+                        setMemoryCropOffset({ x: 0, y: 0 });
                         setMemoryCropScale(1);
                       }}
-                      className="text-[#1B1B1A] underline text-[11px] cursor-pointer"
+                      className="text-[#1B1B1A] underline text-[11px] cursor-pointer font-bold"
                     >
-                      بازنشانی موقعیت
+                      بازنشانی موقعیت و زوم
                     </button>
                   </div>
                   <input
                     type="range"
                     min="1"
-                    max="4"
-                    step="0.05"
+                    max="3"
+                    step="0.02"
                     value={memoryCropScale}
-                    onChange={(e) => setMemoryCropScale(parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const newScale = parseFloat(e.target.value);
+                      setMemoryCropScale(newScale);
+                      const rect = memoryCropViewportRef.current?.getBoundingClientRect();
+                      const vw = rect?.width || 440;
+                      const vh = rect?.height || (vw * 9) / 16;
+                      setMemoryCropOffset((prev) =>
+                        clampMemoryCropOffset(prev, newScale, memoryImageDimensions, { width: vw, height: vh })
+                      );
+                    }}
                     className="w-full accent-[#1B1B1A] cursor-pointer"
                   />
                 </div>
@@ -4211,13 +4312,33 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
               <div className="space-y-4">
                 {selectedMemory.imageUrl && (
-                  <div className="rounded-[24px] overflow-hidden border border-[#E8E2D4] aspect-video bg-[#EFECE2] relative">
+                  <div
+                    onClick={() =>
+                      setLightboxImage({
+                        src: selectedMemory.rawImageUrl || selectedMemory.imageUrl,
+                        title: selectedMemory.title,
+                        date: selectedMemory.date
+                      })
+                    }
+                    className="rounded-[24px] overflow-hidden border border-[#E8E2D4] aspect-video bg-[#EFECE2] relative cursor-pointer group shadow-xs hover:border-[#1B1B1A] transition-all"
+                    title="برای مشاهده عکس کامل و بدون برش کلیک کنید"
+                  >
                     <img
                       src={selectedMemory.imageUrl}
                       alt={selectedMemory.title}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
+                    <div className="absolute inset-0 bg-[#1B1B1A]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                      <span className="px-4 py-2 bg-[#FAF6EC] text-[#1B1B1A] text-xs font-black rounded-full shadow-lg flex items-center gap-1.5 backdrop-blur-xs">
+                        <Maximize2 className="w-3.5 h-3.5 stroke-[2] text-[#EC407A]" />
+                        <span>مشاهده عکس کامل بدون برش</span>
+                      </span>
+                    </div>
+                    <div className="absolute bottom-2.5 right-2.5 bg-[#1B1B1A]/75 text-[#FAF6EC] px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 backdrop-blur-xs group-hover:opacity-0 transition-opacity pointer-events-none">
+                      <Maximize2 className="w-3 h-3 stroke-[2]" />
+                      <span>اندازه کامل</span>
+                    </div>
                   </div>
                 )}
 
@@ -4385,6 +4506,79 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 </button>
               </div>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- FULLSCREEN UNCROPPED LIGHTBOX MODAL --- */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <div
+            className="fixed inset-0 bg-[#1B1B1A]/95 backdrop-blur-md flex flex-col items-center justify-between p-3 sm:p-5 z-[120]"
+            dir="rtl"
+            onClick={() => setLightboxImage(null)}
+          >
+            {/* Top Navigation Bar */}
+            <div
+              className="w-full max-w-5xl flex items-center justify-between text-white py-2 px-1 z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2.5 truncate ml-3">
+                <span className="font-black text-sm sm:text-base text-[#FAF6EC] truncate">
+                  {lightboxImage.title}
+                </span>
+                {lightboxImage.date && (
+                  <span className="text-[11px] font-bold text-[#A6A297] bg-white/10 px-2.5 py-0.5 rounded-full shrink-0">
+                    {toPersianDigits(lightboxImage.date)}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={lightboxImage.src}
+                  download={`memory-${Date.now()}.jpg`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 text-[#FAF6EC] flex items-center justify-center transition-colors cursor-pointer"
+                  title="دانلود تصویر"
+                >
+                  <Download className="w-4 h-4 stroke-[2]" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setLightboxImage(null)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 text-[#FAF6EC] flex items-center justify-center transition-colors cursor-pointer"
+                  title="بستن (Esc)"
+                >
+                  <X className="w-5 h-5 stroke-[2]" />
+                </button>
+              </div>
+            </div>
+
+            {/* Main Image Container */}
+            <div
+              className="flex-1 w-full max-w-5xl flex items-center justify-center p-1 sm:p-3 relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.img
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                src={lightboxImage.src}
+                alt={lightboxImage.title}
+                referrerPolicy="no-referrer"
+                className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl select-none"
+              />
+            </div>
+
+            {/* Bottom Caption Hint */}
+            <div
+              className="w-full text-center text-[11px] text-[#A6A297] font-medium py-1.5 z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span>نمایش عکس کامل و بدون برش خاطره • برای بستن در هر نقطه کلیک کنید یا کلید Esc را بزنید</span>
+            </div>
           </div>
         )}
       </AnimatePresence>

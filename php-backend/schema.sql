@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS `memories` (
   `title` varchar(255) NOT NULL,
   `date` varchar(64) NOT NULL,
   `imageUrl` longtext DEFAULT NULL,
+  `rawImageUrl` longtext DEFAULT NULL,
   `content` text NOT NULL,
   `reactions` longtext DEFAULT NULL,
   `createdBy` varchar(64) NOT NULL,

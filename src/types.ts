@@ -167,6 +167,7 @@ export interface Memory {
   title: string;
   date: string; // format (e.g. YYYY-MM-DD or Jalali date string)
   imageUrl: string;
+  rawImageUrl?: string;
   content: string;
   createdBy: string;
   createdByName: string;
