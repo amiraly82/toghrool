@@ -537,23 +537,6 @@ export default function AuthAndPairing({
                       </>
                     )}
                   </button>
-
-                  {/* Dedicated Secondary Button for Forgot Password */}
-                  <div className="pt-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthMode('forgot_request');
-                        setError("");
-                        setInfoMessage("");
-                        if (email) setOtpSentEmail(email.toLowerCase().trim());
-                      }}
-                      className="w-full py-2.5 rounded-full border border-dashed border-[#C5BDAA] hover:border-[#1B1B1A] hover:bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Key className="w-3.5 h-3.5 text-[#EC407A]" />
-                      <span>بازیابی رمز عبور از طریق ایمیل</span>
-                    </button>
-                  </div>
                 </form>
               )}
 
