@@ -276,20 +276,24 @@ function buildToghroolEmailTemplate($title, $heading, $bodyText, $otpCode) {
 </html>';
 }
 
-// Deliver UTF-8 HTML Email via Localhost Authenticated SMTP Exim (Port 25)
+// Deliver UTF-8 HTML Email via Mizbanfa Dedicated Mail Server (mail.mizbanfalocal.com:587)
 function sendToghroolEmail($toEmail, $subject, $htmlContent) {
     $senderName = "طغرل | Toghrool";
     $fromEmail = "toghrool@amiralyeasy.ir";
-    $smtpPass = "Toghrool_Email@2026";
+    $smtpHost = "mail.mizbanfalocal.com";
+    $smtpPort = 587;
+    $smtpUser = "toghrool@amiralyeasy.ir";
+    $smtpPass = '$6*4#AqC$Aq5Gb';
 
-    $fp = @fsockopen('127.0.0.1', 25, $errno, $errstr, 8);
+    $fp = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 8);
     if (!$fp) {
-        error_log("SMTP connection error ($errno): $errstr");
+        error_log("Dedicated SMTP connection error ($errno): $errstr");
         return false;
     }
 
     $read = function() use ($fp) {
         $res = '';
+        stream_set_timeout($fp, 6);
         while ($line = fgets($fp, 512)) {
             $res .= $line;
             if (isset($line[3]) && $line[3] === ' ') break;
@@ -304,16 +308,19 @@ function sendToghroolEmail($toEmail, $subject, $htmlContent) {
     $write('EHLO amiralyeasy.ir');
     $read();
 
-    // Authenticate with created cPanel email credentials
+    // Authenticate with dedicated Mizbanfa mail credentials
     $write('AUTH LOGIN');
     $read();
-    $write(base64_encode($fromEmail));
+    $write(base64_encode($smtpUser));
     $read();
     $write(base64_encode($smtpPass));
     $authRes = $read();
 
     if (strpos($authRes, '235') === false) {
-        error_log("SMTP AUTH notice: " . trim($authRes));
+        error_log("Dedicated SMTP AUTH failed: " . trim($authRes));
+        $write('QUIT');
+        fclose($fp);
+        return false;
     }
 
     $write("MAIL FROM:<{$fromEmail}>");
@@ -324,7 +331,7 @@ function sendToghroolEmail($toEmail, $subject, $htmlContent) {
     if (strpos($rcptRes, '250') === false) {
         $write('QUIT');
         fclose($fp);
-        error_log("SMTP RCPT rejected: " . trim($rcptRes));
+        error_log("Dedicated SMTP RCPT rejected: " . trim($rcptRes));
         return false;
     }
 
@@ -354,7 +361,7 @@ function sendToghroolEmail($toEmail, $subject, $htmlContent) {
 
     $success = (strpos($dataRes, '250') !== false);
     if (!$success) {
-        error_log("SMTP DATA failed: " . trim($dataRes));
+        error_log("Dedicated SMTP DATA failed: " . trim($dataRes));
     }
     return $success;
 }
