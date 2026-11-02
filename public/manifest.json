@@ -1,0 +1,51 @@
+{
+  "name": "طغرل | اپلیکیشن اشتراکی زوجین و سلامت",
+  "short_name": "طغرل",
+  "description": "فضای اختصاصی دونفره، لیست آرزوها، خاطرات و پریود ترکر هوشمند طغرل",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#FAF6EC",
+  "theme_color": "#FAF6EC",
+  "lang": "fa",
+  "dir": "rtl",
+  "categories": ["lifestyle", "health", "social"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "پریود ترکر",
+      "short_name": "چرخه سلامت",
+      "description": "مشاهده وضعیت چرخه و روزهای باروری",
+      "url": "/?tab=tracker&source=pwa",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "لیست آرزوها",
+      "short_name": "آرزوها",
+      "description": "مشاهده و ثبت آرزوهای مشترک",
+      "url": "/?tab=wishlist&source=pwa",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

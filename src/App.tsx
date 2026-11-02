@@ -5,6 +5,7 @@ import { UserProfile, FemaleOnboardingHealthData } from "./types";
 import AuthAndPairing from "./components/AuthAndPairing";
 import Dashboard from "./components/Dashboard";
 import FemaleOnboardingTour from "./components/FemaleOnboardingTour";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { Heart, RefreshCw, Key, ArrowRight, HeartHandshake, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { fetchFromPhpApi } from "./apiClient";
@@ -504,6 +505,9 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* PWA Install Prompt for Android & Mobile */}
+      <PWAInstallPrompt />
     </div>
   );
 }

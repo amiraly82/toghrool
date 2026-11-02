@@ -104,7 +104,7 @@ def main():
     # 3. Upload root files
     print(f"[3/4] Uploading root files to {cpanel_dir}...")
     root_files = {}
-    for fname in ['index.html', 'version.json', 'server.cjs', 'server.cjs.map']:
+    for fname in ['index.html', 'version.json', 'server.cjs', 'server.cjs.map', 'manifest.json', 'sw.js']:
         fpath = os.path.join(dist_dir, fname)
         if os.path.exists(fpath):
             with open(fpath, 'rb') as f:
@@ -120,6 +120,17 @@ def main():
     upload_res_root = upload_files(cpanel_dir, root_files)
     print(f"Uploaded {len(root_files)} root files (status: {upload_res_root.get('status')})")
 
+    # Ensure folders
+    def mkdir_safe(d):
+        url = f'{cpanel_url}{sec_token}/execute/Fileman/mkdir'
+        opener.open(urllib.request.Request(url, data=urllib.parse.urlencode({'dir': f'{cpanel_dir}/{d}'}).encode()))
+
+    for udir in ['uploads', 'uploads/avatars', 'uploads/memories', 'icons']:
+        try:
+            mkdir_safe(udir)
+        except Exception:
+            pass
+
     # 4. Upload assets
     print(f"[4/4] Uploading assets to {cpanel_dir}/assets...")
     asset_files = {}
@@ -134,16 +145,18 @@ def main():
     upload_res_assets = upload_files(f'{cpanel_dir}/assets', asset_files)
     print(f"Uploaded {len(asset_files)} asset files (status: {upload_res_assets.get('status')})")
 
-    # Ensure uploads folders
-    def mkdir_safe(d):
-        url = f'{cpanel_url}{sec_token}/execute/Fileman/mkdir'
-        opener.open(urllib.request.Request(url, data=urllib.parse.urlencode({'dir': d}).encode()))
-
-    for udir in ['uploads', 'uploads/avatars', 'uploads/memories']:
-        try:
-            mkdir_safe(f'{cpanel_dir}/{udir}')
-        except Exception:
-            pass
+    # 5. Upload PWA Icons
+    dist_icons = os.path.join(dist_dir, 'icons')
+    if os.path.exists(dist_icons):
+        icon_files = {}
+        for fname in os.listdir(dist_icons):
+            fpath = os.path.join(dist_icons, fname)
+            if os.path.isfile(fpath):
+                with open(fpath, 'rb') as f:
+                    icon_files[fname] = f.read()
+        if icon_files:
+            upload_res_icons = upload_files(f'{cpanel_dir}/icons', icon_files)
+            print(f"Uploaded {len(icon_files)} PWA icon files (status: {upload_res_icons.get('status')})")
 
     print("\n✅ Deployment completed successfully to https://toghrool.ir !")
 

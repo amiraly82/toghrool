@@ -5,7 +5,7 @@ import {
   Heart, Plus, Trash2, Calendar as CalendarIcon, BookOpen, Film, ShoppingBag, MapPin, Compass, 
   Send, ExternalLink, Flame, Sparkles, LogOut, CheckCircle, Bell, BellOff, RefreshCw, ChevronLeft, ChevronRight, 
   MessageCircleHeart, X, Edit2, User, Palette, Layers, Pizza, Coffee, Music, Smile, Camera, Gift, Settings,
-  Droplet, HeartHandshake, Search, Wallet
+  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download
 } from "lucide-react";
 
 import FinanceSection from "./FinanceSection";
@@ -261,6 +261,13 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   });
   const [showCycleOnCalendar, setShowCycleOnCalendar] = useState<boolean>(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isStandalone] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true
+    );
+  });
 
   useEffect(() => {
     if (userProfile) {
@@ -1751,6 +1758,19 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             >
               <CalendarIcon className="w-4 h-4 stroke-[1.7]" />
             </button>
+
+            {/* Install PWA Button (Hidden when running as installed standalone app) */}
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install"))}
+                className="h-10 px-3 sm:px-3.5 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] transition-colors cursor-pointer flex items-center justify-center gap-1.5 text-xs font-bold shrink-0"
+                title="نصب وب‌اپلیکیشن روی گوشی"
+              >
+                <Smartphone className="w-4 h-4 stroke-[2] text-[#EC407A]" />
+                <span className="hidden sm:inline">نصب اپ</span>
+              </button>
+            )}
 
             {/* Browser Notifications Toggle */}
             <button
@@ -3537,6 +3557,35 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       className="px-3.5 py-1.5 bg-[#F9C6B8] hover:bg-[#F2B1A0] text-[#1B1B1A] text-[11px] font-bold rounded-full transition-colors cursor-pointer"
                     >
                       قطع اتصال
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* PWA App Installation Section */}
+              {!cropImageSrc && !isStandalone && (
+                <div className="mt-6 pt-4 border-t border-[#E8E2D4] text-right" dir="rtl">
+                  <h4 className="text-xs font-black text-[#1B1B1A] mb-2.5">نسخه وب‌اپلیکیشن (PWA)</h4>
+                  <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F6C3E5] to-[#EC407A] flex items-center justify-center text-white shrink-0 shadow-xs">
+                        <Smartphone className="w-4 h-4 stroke-[1.8]" />
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-black text-[#1B1B1A]">نصب اپلیکیشن روی گوشی</p>
+                        <p className="text-[10px] text-[#78746B] mt-0.5">اجرای تمام‌صفحه و دسترسی سریع بدون مرورگر</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowProfileModal(false);
+                        window.dispatchEvent(new CustomEvent("open-pwa-install"));
+                      }}
+                      className="px-3.5 py-2 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-[11px] font-bold rounded-full transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#F6DC6B]" />
+                      <span>نصب برنامه</span>
                     </button>
                   </div>
                 </div>
