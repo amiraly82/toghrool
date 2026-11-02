@@ -479,16 +479,7 @@ export default function AuthAndPairing({
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between mr-1">
-                      <label className="text-xs font-bold text-[#1B1B1A]">رمز عبور</label>
-                      <button
-                        type="button"
-                        onClick={() => { setAuthMode('forgot_request'); setError(""); setInfoMessage(""); }}
-                        className="text-[11px] font-bold text-[#78746B] hover:text-[#EC407A] transition-colors cursor-pointer"
-                      >
-                        فراموشی رمز عبور؟
-                      </button>
-                    </div>
+                    <label className="text-xs font-bold text-[#1B1B1A] block mr-1">رمز عبور</label>
                     <div className="relative">
                       <input
                         type="password"
@@ -503,10 +494,27 @@ export default function AuthAndPairing({
                     </div>
                   </div>
 
+                  {/* Prominent Forgot Password Link right under password */}
+                  <div className="flex items-center justify-between px-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('forgot_request');
+                        setError("");
+                        setInfoMessage("");
+                        if (email) setOtpSentEmail(email.toLowerCase().trim());
+                      }}
+                      className="text-xs font-bold text-[#78746B] hover:text-[#EC407A] transition-colors cursor-pointer flex items-center gap-1.5 py-1"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-[#EC407A]" />
+                      <span>رمز عبور خود را فراموش کرده‌اید؟ بازیابی رمز</span>
+                    </button>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={authLoading}
-                    className="w-full py-3.5 mt-2 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold rounded-full text-sm transition-colors active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full py-3.5 mt-2 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold rounded-full text-sm transition-colors active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-sm"
                   >
                     {authLoading ? (
                       <div className="w-5 h-5 border-2 border-[#FAF6EC] border-t-transparent rounded-full animate-spin" />
@@ -517,6 +525,23 @@ export default function AuthAndPairing({
                       </>
                     )}
                   </button>
+
+                  {/* Dedicated Secondary Button for Forgot Password */}
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('forgot_request');
+                        setError("");
+                        setInfoMessage("");
+                        if (email) setOtpSentEmail(email.toLowerCase().trim());
+                      }}
+                      className="w-full py-2.5 rounded-full border border-dashed border-[#C5BDAA] hover:border-[#1B1B1A] hover:bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Key className="w-3.5 h-3.5 text-[#EC407A]" />
+                      <span>بازیابی رمز عبور از طریق ایمیل</span>
+                    </button>
+                  </div>
                 </form>
               )}
 
