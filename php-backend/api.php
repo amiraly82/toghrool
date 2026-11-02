@@ -279,7 +279,7 @@ function buildToghroolEmailTemplate($title, $heading, $bodyText, $otpCode) {
 // Deliver UTF-8 HTML Email via Localhost SMTP Exim (Port 25)
 function sendToghroolEmail($toEmail, $subject, $htmlContent) {
     $senderName = "طغرل | Toghrool";
-    $fromEmail = "noreply@toghrool.ir";
+    $fromEmail = "toghrool@amiralyeasy.ir";
 
     $fp = @fsockopen('127.0.0.1', 25, $errno, $errstr, 5);
     if (!$fp) {
@@ -300,7 +300,7 @@ function sendToghroolEmail($toEmail, $subject, $htmlContent) {
     };
 
     $read();
-    $write('HELO toghrool.ir');
+    $write('HELO amiralyeasy.ir');
     $read();
     $write("MAIL FROM:<{$fromEmail}>");
     $read();
