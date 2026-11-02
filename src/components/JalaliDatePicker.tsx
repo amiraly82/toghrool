@@ -217,7 +217,7 @@ export default function JalaliDatePicker({
                 <select
                   value={viewMonth}
                   onChange={(e) => handleMonthChange(parseInt(e.target.value, 10))}
-                  className="bg-[#EFECE2] hover:bg-[#E5E0D2] text-sm font-bold text-[#1B1B1A] cursor-pointer focus:outline-none text-center px-3 py-1.5 rounded-full transition-colors"
+                  className="bg-[#EFECE2] hover:bg-[#E5E0D2] text-sm font-bold text-[#1B1B1A] cursor-pointer focus:outline-none text-center px-2.5 py-1.5 rounded-full transition-colors"
                 >
                   {JALALI_MONTHS.map((m, idx) => (
                     <option key={m} value={idx + 1}>
@@ -229,7 +229,7 @@ export default function JalaliDatePicker({
                 <select
                   value={viewYear}
                   onChange={(e) => handleYearChange(parseInt(e.target.value, 10))}
-                  className="bg-[#EFECE2] hover:bg-[#E5E0D2] text-sm font-bold text-[#1B1B1A] cursor-pointer focus:outline-none text-center px-3 py-1.5 rounded-full transition-colors"
+                  className="bg-[#EFECE2] hover:bg-[#E5E0D2] text-sm font-bold text-[#1B1B1A] cursor-pointer focus:outline-none text-center px-2.5 py-1.5 rounded-full transition-colors"
                 >
                   {yearsRange.map((y) => (
                     <option key={y} value={y}>
@@ -237,6 +237,21 @@ export default function JalaliDatePicker({
                     </option>
                   ))}
                 </select>
+
+                {(viewYear !== todayJy || viewMonth !== todayJm) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewYear(todayJy);
+                      setViewMonth(todayJm);
+                    }}
+                    className="px-2.5 py-1.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1 shrink-0 shadow-sm"
+                    title="پرش به ماه و تاریخ امروز"
+                  >
+                    <CalendarIcon className="w-3 h-3 stroke-[2]" />
+                    <span>امروز</span>
+                  </button>
+                )}
               </div>
 
               <button

@@ -1619,6 +1619,13 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     }
   };
 
+  const currentActualToday = getTehranDate();
+  const [actualTodayJy, actualTodayJm] = gregorianToJalali(
+    currentActualToday.getFullYear(),
+    currentActualToday.getMonth() + 1,
+    currentActualToday.getDate()
+  );
+
   const daysInMonth = getJalaliDaysInMonth(currentJalaliYear, currentJalaliMonth);
   // Get Gregorian day of 1st day of current Jalali month to find weekday index
   const [gFirstY, gFirstM, gFirstD] = jalaliToGregorian(currentJalaliYear, currentJalaliMonth, 1);
@@ -2457,9 +2464,28 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <ChevronRight className="w-5 h-5 stroke-[1.8]" />
                 </button>
 
-                <h3 className="text-lg sm:text-xl font-black text-[#1B1B1A]">
-                  {JALALI_MONTHS[currentJalaliMonth - 1]} {toPersianDigits(currentJalaliYear)}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg sm:text-xl font-black text-[#1B1B1A]">
+                    {JALALI_MONTHS[currentJalaliMonth - 1]} {toPersianDigits(currentJalaliYear)}
+                  </h3>
+                  {(currentJalaliYear !== actualTodayJy || currentJalaliMonth !== actualTodayJm) && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      type="button"
+                      onClick={() => {
+                        setCurrentJalaliYear(actualTodayJy);
+                        setCurrentJalaliMonth(actualTodayJm);
+                      }}
+                      className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
+                      title="بازگشت به تاریخ امروز"
+                    >
+                      <CalendarIcon className="w-3.5 h-3.5 stroke-[2]" />
+                      <span>برو به امروز</span>
+                    </motion.button>
+                  )}
+                </div>
 
                 <button
                   onClick={nextMonth}

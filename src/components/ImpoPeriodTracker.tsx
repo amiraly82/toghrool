@@ -1614,9 +1614,28 @@ export default function ImpoPeriodTracker({
                     <ChevronRight className="w-4 h-4 stroke-[1.8]" />
                   </button>
 
-                  <h3 className="text-base sm:text-lg font-bold text-[#1B1B1A]">
-                    {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-[#1B1B1A]">
+                      {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
+                    </h3>
+                    {(calendarYear !== todayJy || calendarMonth !== todayJm) && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        type="button"
+                        onClick={() => {
+                          setCalendarYear(todayJy);
+                          setCalendarMonth(todayJm);
+                        }}
+                        className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
+                        title="بازگشت به تاریخ امروز"
+                      >
+                        <CalendarIcon className="w-3.5 h-3.5 stroke-[2]" />
+                        <span>برو به امروز</span>
+                      </motion.button>
+                    )}
+                  </div>
 
                   <button
                     type="button"
