@@ -1628,7 +1628,7 @@ export default function ImpoPeriodTracker({
                           setCalendarYear(todayJy);
                           setCalendarMonth(todayJm);
                         }}
-                        className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
+                        className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm shrink-0 whitespace-nowrap"
                         title="بازگشت به تاریخ امروز"
                       >
                         <CalendarIcon className="w-3.5 h-3.5 stroke-[2]" />
