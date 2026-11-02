@@ -166,7 +166,45 @@ function requireAuth($pdo) {
         ]);
         exit();
     }
+    sanitizeUserForResponse($user);
     return $user;
+}
+
+// Sanitize user object for JSON client responses
+function sanitizeUserForResponse(&$user) {
+    if (!$user) return;
+    unset($user['passwordHash']);
+    $user['onboardingCompleted'] = !empty($user['onboardingCompleted']);
+    if (!empty($user['onboardingHealthData']) && is_string($user['onboardingHealthData'])) {
+        $decoded = json_decode($user['onboardingHealthData'], true);
+        if ($decoded !== null) {
+            $user['onboardingHealthData'] = $decoded;
+        }
+    }
+}
+
+// Automatically ensure users table has onboarding & gender columns
+function ensureUserSchema($pdo) {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    try {
+        $colsStmt = $pdo->query("SHOW COLUMNS FROM `users`");
+        $existingCols = $colsStmt ? $colsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+
+        if (!in_array('gender', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `gender` varchar(16) DEFAULT 'female'");
+        }
+        if (!in_array('onboardingCompleted', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `onboardingCompleted` tinyint(1) NOT NULL DEFAULT 0");
+        }
+        if (!in_array('onboardingHealthData', $existingCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `onboardingHealthData` json DEFAULT NULL");
+        }
+    } catch (Exception $e) {
+        error_log("User schema check notice: " . $e->getMessage());
+    }
 }
 
 // Automatically ensure period tracker tables and columns exist (self-healing migration)
@@ -299,6 +337,7 @@ switch ($action) {
     // AUTHENTICATION & SESSIONS
     // ----------------------------------------------------
     case 'register':
+        ensureUserSchema($pdo);
         $email = strtolower(trim($input['email'] ?? ''));
         $password = (string)($input['password'] ?? '');
         $displayName = trim($input['displayName'] ?? '');
@@ -306,6 +345,7 @@ switch ($action) {
         if (!in_array($gender, ['female', 'male'], true)) {
             $gender = 'female';
         }
+        $onboardingCompleted = ($gender === 'male') ? 1 : 0;
 
         if (!$email || !$password || !$displayName) {
             http_response_code(400);
@@ -332,8 +372,8 @@ switch ($action) {
         $coupleCode = generateCoupleCode();
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-        $stmt = $pdo->prepare("INSERT INTO users (uid, email, displayName, coupleCode, passwordHash, gender) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$uid, $email, $displayName, $coupleCode, $passwordHash, $gender]);
+        $stmt = $pdo->prepare("INSERT INTO users (uid, email, displayName, coupleCode, passwordHash, gender, onboardingCompleted) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$uid, $email, $displayName, $coupleCode, $passwordHash, $gender, $onboardingCompleted]);
 
         // Generate 32-byte (64 hex char) random raw token & store sha256
         $rawToken = bin2hex(random_bytes(32));
@@ -341,9 +381,10 @@ switch ($action) {
         $tStmt = $pdo->prepare("INSERT INTO auth_tokens (token_hash, uid, createdAt, expiresAt, lastUsedAt) VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), NOW())");
         $tStmt->execute([$tokenHash, $uid]);
 
-        $stmt = $pdo->prepare("SELECT uid, email, displayName, coupleCode, partnerEmail, partnerUid, coupleId, photoURL, gender FROM users WHERE uid = ?");
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE uid = ?");
         $stmt->execute([$uid]);
         $user = $stmt->fetch();
+        sanitizeUserForResponse($user);
 
         echo json_encode([
             'status' => 'success',
@@ -416,6 +457,7 @@ switch ($action) {
         $tStmt->execute([$tokenHash, $user['uid']]);
 
         unset($user['passwordHash']);
+        sanitizeUserForResponse($user);
         echo json_encode([
             'status' => 'success',
             'token' => $rawToken,
@@ -539,14 +581,97 @@ switch ($action) {
             $stmt->execute([$displayName, $uid]);
         }
 
-        $stmt = $pdo->prepare("SELECT uid, email, displayName, coupleCode, partnerEmail, partnerUid, coupleId, photoURL, gender FROM users WHERE uid = ?");
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE uid = ?");
         $stmt->execute([$uid]);
         $updatedUser = $stmt->fetch();
+        sanitizeUserForResponse($updatedUser);
 
         echo json_encode([
             'status' => 'success',
             'user' => $updatedUser,
             'message' => 'پروفایل با موفقیت به‌روزرسانی شد.'
+        ]);
+        break;
+
+    case 'saveOnboarding':
+        ensureUserSchema($pdo);
+        ensurePeriodSchema($pdo);
+        $user = requireAuth($pdo);
+        $uid = $user['uid'];
+        $targetId = !empty($user['coupleId']) ? $user['coupleId'] : $uid;
+
+        $healthData = $input['onboardingHealthData'] ?? [];
+        $cycleLength = (int)($input['cycleLength'] ?? ($healthData['cycleLength'] ?? 28));
+        $periodLength = (int)($input['periodLength'] ?? ($healthData['periodLength'] ?? 7));
+        $lastPeriodStartDate = trim($input['lastPeriodStartDate'] ?? ($healthData['lastPeriodStartDate'] ?? date('Y-m-d')));
+
+        if ($cycleLength < 20 || $cycleLength > 60) $cycleLength = 28;
+        if ($periodLength < 2 || $periodLength > 15) $periodLength = 7;
+
+        // Calculate BMI if height and weight present
+        $heightCm = (float)($healthData['heightCm'] ?? 170);
+        $weightKg = (float)($healthData['weightKg'] ?? 70);
+        if ($heightCm > 0 && $weightKg > 0) {
+            $heightM = $heightCm / 100.0;
+            $healthData['bmi'] = round($weightKg / ($heightM * $heightM), 1);
+        }
+        $healthData['completedAt'] = date('Y-m-d H:i:s');
+
+        // 1. Update user record
+        $jsonHealth = json_encode($healthData, JSON_UNESCAPED_UNICODE);
+        $uStmt = $pdo->prepare("UPDATE users SET onboardingCompleted = 1, onboardingHealthData = ?, gender = 'female' WHERE uid = ?");
+        $uStmt->execute([$jsonHealth, $uid]);
+
+        // 2. Save Period Settings for user / couple
+        $stmt = $pdo->prepare("
+            INSERT INTO couple_period_settings 
+            (coupleId, trackerOwnerUid, cycleLength, periodLength, lastPeriodStartDate, goalMode, birthDate, viewMode, updatedBy, updatedAt)
+            VALUES (?, ?, ?, ?, ?, 'track', '2000-01-01', 'circular', ?, NOW())
+            ON DUPLICATE KEY UPDATE
+            trackerOwnerUid = COALESCE(trackerOwnerUid, VALUES(trackerOwnerUid)),
+            cycleLength = VALUES(cycleLength),
+            periodLength = VALUES(periodLength),
+            lastPeriodStartDate = VALUES(lastPeriodStartDate),
+            updatedBy = VALUES(updatedBy),
+            updatedAt = NOW()
+        ");
+        $stmt->execute([$targetId, $uid, $cycleLength, $periodLength, $lastPeriodStartDate, $uid]);
+
+        // 3. Seed initial period logs for periodLength consecutive days
+        try {
+            $startTs = strtotime($lastPeriodStartDate);
+            if ($startTs) {
+                for ($dayOffset = 0; $dayOffset < $periodLength; $dayOffset++) {
+                    $logDate = date('Y-m-d', strtotime("+$dayOffset day", $startTs));
+                    $logId = 'log_' . md5($targetId . '_' . $logDate);
+                    $isStart = ($dayOffset === 0) ? 1 : 0;
+
+                    $logStmt = $pdo->prepare("
+                        INSERT INTO couple_period_logs
+                        (id, coupleId, date, isPeriodDay, isPeriodStart, flow, waterGlasses, loggedByUid, loggedByName, createdAt)
+                        VALUES (?, ?, ?, 1, ?, 'medium', 4, ?, ?, NOW())
+                        ON DUPLICATE KEY UPDATE
+                        isPeriodDay = 1,
+                        isPeriodStart = VALUES(isPeriodStart),
+                        flow = VALUES(flow)
+                    ");
+                    $logStmt->execute([$logId, $targetId, $logDate, $isStart, $uid, $user['displayName'] ?? 'پارتنر']);
+                }
+            }
+        } catch (Exception $logEx) {
+            error_log("Failed to seed onboarding period logs: " . $logEx->getMessage());
+        }
+
+        // Return updated user
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE uid = ?");
+        $stmt->execute([$uid]);
+        $updatedUser = $stmt->fetch();
+        sanitizeUserForResponse($updatedUser);
+
+        echo json_encode([
+            'status' => 'success',
+            'user' => $updatedUser,
+            'message' => 'اطلاعات سلامت و چرخه با موفقیت ذخیره شد.'
         ]);
         break;
 
@@ -627,6 +752,24 @@ switch ($action) {
             $partner['email'],
             $partner['displayName']
         ]);
+
+        // Migrate solo period settings & logs to shared coupleId
+        try {
+            ensurePeriodSchema($pdo);
+            $pdo->prepare("
+                INSERT IGNORE INTO couple_period_settings 
+                (coupleId, trackerOwnerUid, cycleLength, periodLength, lastPeriodStartDate, goalMode, birthDate, viewMode, updatedBy)
+                SELECT ?, trackerOwnerUid, cycleLength, periodLength, lastPeriodStartDate, goalMode, birthDate, viewMode, updatedBy
+                FROM couple_period_settings 
+                WHERE coupleId IN (?, ?) 
+                ORDER BY updatedAt DESC LIMIT 1
+            ")->execute([$coupleId, $myUid, $partner['uid']]);
+
+            $pdo->prepare("UPDATE IGNORE couple_period_logs SET coupleId = ? WHERE coupleId IN (?, ?)")
+                ->execute([$coupleId, $myUid, $partner['uid']]);
+        } catch (Exception $migEx) {
+            error_log("Couple period sync notice: " . $migEx->getMessage());
+        }
 
         echo json_encode(['status' => 'success', 'coupleId' => $coupleId]);
         break;

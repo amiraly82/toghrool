@@ -2507,6 +2507,45 @@ export default function ImpoPeriodTracker({
                   />
                 </div>
 
+                {/* Onboarding Health Profile Card */}
+                {userProfile.onboardingHealthData && (
+                  <div className="p-4 bg-[#FFFDF8] rounded-[24px] border border-[#E8E2D4] space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#1B1B1A]">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-[#EC407A]" />
+                        اطلاعات سلامت و تناسب اندام
+                      </span>
+                      {userProfile.onboardingHealthData.bmi && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] bg-[#FAF6EC] border border-[#E8E2D4] text-[#1B1B1A]">
+                          BMI: {toPersianDigits(userProfile.onboardingHealthData.bmi)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-[#78746B] pt-1 font-medium">
+                      <div>قد: {toPersianDigits(userProfile.onboardingHealthData.heightCm)} سانتی‌متر</div>
+                      <div>وزن: {toPersianDigits(userProfile.onboardingHealthData.weightKg)} کیلوگرم</div>
+                      <div>
+                        نظم پریود: {
+                          userProfile.onboardingHealthData.cycleRegularity === 'regular' 
+                            ? 'منظم' 
+                            : userProfile.onboardingHealthData.cycleRegularity === 'irregular'
+                            ? 'نامنظم'
+                            : 'نامشخص'
+                        }
+                      </div>
+                      <div>
+                        پیشگیری: {
+                          userProfile.onboardingHealthData.contraceptionMethod === 'condom' ? 'کاندوم' :
+                          userProfile.onboardingHealthData.contraceptionMethod === 'pills' ? 'قرص' :
+                          userProfile.onboardingHealthData.contraceptionMethod === 'natural' ? 'طبیعی' :
+                          userProfile.onboardingHealthData.contraceptionMethod === 'iud' ? 'IUD' :
+                          userProfile.onboardingHealthData.contraceptionMethod === 'emergency' ? 'اورژانسی' : 'سایر'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-3 flex gap-2.5">
                   <button
                     type="submit"

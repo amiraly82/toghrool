@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "./firebase";
-import { UserProfile } from "./types";
+import { UserProfile, FemaleOnboardingHealthData } from "./types";
 import AuthAndPairing from "./components/AuthAndPairing";
 import Dashboard from "./components/Dashboard";
+import FemaleOnboardingTour from "./components/FemaleOnboardingTour";
 import { Heart, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { fetchFromPhpApi } from "./apiClient";
@@ -271,6 +272,42 @@ export default function App() {
     }
   };
 
+  // Complete female onboarding tour & persist health profile
+  const handleOnboardingComplete = async (data: FemaleOnboardingHealthData) => {
+    try {
+      const res = await fetchFromPhpApi('saveOnboarding', {
+        onboardingHealthData: data,
+        cycleLength: data.cycleLength,
+        periodLength: data.periodLength,
+        lastPeriodStartDate: data.lastPeriodStartDate
+      });
+      if (res && res.status === 'success' && res.user) {
+        handleUpdateUserProfile(res.user);
+      } else {
+        const updated: UserProfile = {
+          ...userProfile!,
+          onboardingCompleted: true,
+          onboardingHealthData: data
+        };
+        handleUpdateUserProfile(updated);
+      }
+    } catch (err) {
+      console.error("Save onboarding failed:", err);
+      const updated: UserProfile = {
+        ...userProfile!,
+        onboardingCompleted: true,
+        onboardingHealthData: data
+      };
+      handleUpdateUserProfile(updated);
+    }
+  };
+
+  const isFemalePendingOnboarding = Boolean(
+    userProfile &&
+    userProfile.gender === 'female' &&
+    !userProfile.onboardingCompleted
+  );
+
   return (
     <div className="min-h-screen bg-[#FAF6EC] text-[#1B1B1A] font-sans selection:bg-[#F6C3E5] selection:text-[#1B1B1A] overflow-x-hidden">
       <AnimatePresence mode="wait">
@@ -314,10 +351,54 @@ export default function App() {
               تلاش دوباره
             </button>
           </motion.div>
-        ) : !firebaseUser || !userProfile || !userProfile.coupleId ? (
-          /* Authentication & Pairing flow */
+        ) : !firebaseUser || !userProfile ? (
+          /* Authentication flow */
           <motion.div
             key="auth"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <AuthAndPairing 
+              userProfile={userProfile} 
+              loading={loading} 
+              onRefreshProfile={handleRefreshProfile}
+              onRegisteredFemale={(femaleUser) => {
+                handleUpdateUserProfile(femaleUser);
+              }}
+            />
+          </motion.div>
+        ) : isFemalePendingOnboarding ? (
+          /* Interactive Female Health & Cycle Onboarding Tour */
+          <motion.div
+            key="female-onboarding"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3 }}
+          >
+            <FemaleOnboardingTour
+              userProfile={userProfile}
+              onComplete={handleOnboardingComplete}
+              onSkip={() => {
+                handleOnboardingComplete({
+                  cycleRegularity: 'regular',
+                  contraceptionIntent: 'not_in_relationship',
+                  healthConditions: ['none'],
+                  heightCm: 170,
+                  weightKg: 70,
+                  periodLength: 7,
+                  cycleLength: 28,
+                  lastPeriodStartDate: new Date().toISOString().slice(0, 10),
+                  completedAt: new Date().toISOString()
+                });
+              }}
+            />
+          </motion.div>
+        ) : !userProfile.coupleId ? (
+          /* Pairing view (Logged in, but no couple connected yet) */
+          <motion.div
+            key="pairing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

@@ -10,8 +10,25 @@ export interface UserProfile {
   isCustomUser?: boolean;
   photoURL?: string;
   gender?: 'female' | 'male';
+  onboardingCompleted?: boolean;
+  onboardingHealthData?: FemaleOnboardingHealthData;
   isOnline?: boolean;
   lastActiveAt?: number;
+}
+
+export interface FemaleOnboardingHealthData {
+  cycleRegularity: 'regular' | 'irregular' | 'unknown';
+  contraceptionIntent: 'not_in_relationship' | 'preventing';
+  contraceptionMethod?: 'condom' | 'natural' | 'pills' | 'iud' | 'emergency' | 'other';
+  fertilityAwareness?: 'yes_less_stress' | 'unaware_active' | 'dont_know_safe_days';
+  healthConditions: string[];
+  heightCm: number;
+  weightKg: number;
+  periodLength: number;
+  cycleLength: number;
+  lastPeriodStartDate: string; // YYYY-MM-DD
+  bmi?: number;
+  completedAt?: string;
 }
 
 export interface CoupleSpace {

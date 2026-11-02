@@ -13,6 +13,11 @@ CREATE TABLE IF NOT EXISTS `auth_tokens` (
   KEY `idx_expires` (`expiresAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 1.1 Alter users table for Onboarding & Gender
+ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `gender` varchar(16) DEFAULT 'female';
+ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `onboardingCompleted` tinyint(1) NOT NULL DEFAULT 0;
+ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `onboardingHealthData` json DEFAULT NULL;
+
 -- 2. Table: rate_limits
 CREATE TABLE IF NOT EXISTS `rate_limits` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,

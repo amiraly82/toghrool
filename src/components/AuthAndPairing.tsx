@@ -25,13 +25,15 @@ interface AuthAndPairingProps {
   userProfile: UserProfile | null;
   loading: boolean;
   onRefreshProfile: () => void;
+  onRegisteredFemale?: (user: UserProfile) => void;
 }
 
-export default function AuthAndPairing({ userProfile, loading, onRefreshProfile }: AuthAndPairingProps) {
+export default function AuthAndPairing({ userProfile, loading, onRefreshProfile, onRegisteredFemale }: AuthAndPairingProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [gender, setGender] = useState<'female' | 'male'>('female');
   const [error, setError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [partnerCode, setPartnerCode] = useState("");
@@ -51,11 +53,12 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
 
     try {
       if (isSignUp) {
-        // Try PHP API registration
+        // Try PHP API registration with gender
         const res = await fetchFromPhpApi('register', { 
           email: emailLower, 
           password, 
-          displayName: name
+          displayName: name,
+          gender
         });
         if (res && res.status === 'success' && res.user) {
           localStorage.setItem("custom_user_session", JSON.stringify({
@@ -68,7 +71,11 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
           if (res.user.gender) {
             localStorage.setItem(`impo_partner_role_${res.user.uid}`, res.user.gender);
           }
-          onRefreshProfile();
+          if (res.user.gender === 'female' && onRegisteredFemale) {
+            onRegisteredFemale(res.user);
+          } else {
+            onRefreshProfile();
+          }
           setAuthLoading(false);
           return;
         } else if (res && res.status === 'error' && res.message && !res.message.includes('HTTP error') && !res.message.includes('fetch')) {
@@ -231,20 +238,84 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
                 )}
 
                 {isSignUp && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#1B1B1A] block mr-1">نام یا لقب شما</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="مثلاً امیر یا سارا"
-                        className="w-full pl-4 pr-10 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-sm text-[#1B1B1A] placeholder:text-[#8E8A80] text-right font-medium outline-none transition-colors"
-                        required
-                      />
-                      <User className="absolute right-3.5 top-3.5 w-4 h-4 text-[#78746B] stroke-[1.7]" />
+                  <>
+                    {/* Gender Selection Cards */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-[#1B1B1A] block mr-1">
+                        جنسیت شما
+                      </label>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setGender('female')}
+                          className={`p-3 rounded-2xl border text-right transition-all flex items-center justify-between cursor-pointer ${
+                            gender === 'female'
+                              ? 'bg-[#FFF0F7] border-[#EC407A] text-[#1B1B1A] shadow-sm ring-1 ring-[#EC407A]'
+                              : 'bg-[#EFECE2]/70 border-transparent text-[#78746B] hover:bg-[#EFECE2]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                              gender === 'female' ? 'bg-[#EC407A] text-white shadow-sm' : 'bg-[#E5E0D2] text-[#78746B]'
+                            }`}>
+                              <Sparkles className="w-4 h-4 stroke-[2]" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-[#1B1B1A]">خانم</div>
+                              <div className="text-[10px] text-[#78746B]">پریود ترکر و سلامت</div>
+                            </div>
+                          </div>
+                          {gender === 'female' && (
+                            <div className="w-4 h-4 rounded-full bg-[#EC407A] text-white flex items-center justify-center text-[10px] font-bold">
+                              ✓
+                            </div>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setGender('male')}
+                          className={`p-3 rounded-2xl border text-right transition-all flex items-center justify-between cursor-pointer ${
+                            gender === 'male'
+                              ? 'bg-[#F2F4F7] border-[#1B1B1A] text-[#1B1B1A] shadow-sm ring-1 ring-[#1B1B1A]'
+                              : 'bg-[#EFECE2]/70 border-transparent text-[#78746B] hover:bg-[#EFECE2]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                              gender === 'male' ? 'bg-[#1B1B1A] text-white shadow-sm' : 'bg-[#E5E0D2] text-[#78746B]'
+                            }`}>
+                              <User className="w-4 h-4 stroke-[2]" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-[#1B1B1A]">آقا</div>
+                              <div className="text-[10px] text-[#78746B]">همراهی و مراقبت</div>
+                            </div>
+                          </div>
+                          {gender === 'male' && (
+                            <div className="w-4 h-4 rounded-full bg-[#1B1B1A] text-white flex items-center justify-center text-[10px] font-bold">
+                              ✓
+                            </div>
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-[#1B1B1A] block mr-1">نام یا لقب شما</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="مثلاً امیر یا سارا"
+                          className="w-full pl-4 pr-10 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-sm text-[#1B1B1A] placeholder:text-[#8E8A80] text-right font-medium outline-none transition-colors"
+                          required
+                        />
+                        <User className="absolute right-3.5 top-3.5 w-4 h-4 text-[#78746B] stroke-[1.7]" />
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <div className="space-y-1.5">
