@@ -1,21 +1,66 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  Droplet, Calendar as CalendarIcon, Heart, Sparkles, Activity, ShieldAlert, 
-  Baby, Moon, Sun, Zap, Smile, Frown, Meh, HeartPulse, Check, Info, Settings, 
-  Plus, Trash2, ChevronLeft, ChevronRight, Share2, FileText, AlertCircle, RefreshCw, 
-  BarChart3, HelpCircle, Eye, EyeOff, Coffee, HeartHandshake, CheckCircle2, MessageCircleHeart, Send, X, Edit2, Download
+import {
+  Droplet,
+  Calendar as CalendarIcon,
+  Heart,
+  Sparkles,
+  Activity,
+  ShieldAlert,
+  ShieldCheck,
+  Baby,
+  Zap,
+  HeartPulse,
+  Info,
+  Settings,
+  Plus,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  AlertCircle,
+  BarChart3,
+  Eye,
+  Coffee,
+  HeartHandshake,
+  CheckCircle2,
+  MessageCircleHeart,
+  Send,
+  X,
+  Download,
+  Brain,
+  Dna
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { UserProfile, ImpoPeriodSettings, ImpoDailyLog, CycleGoalMode, PeriodSharingSettings } from "../types";
-import { 
-  calculateCycleStatus, predictFutureCycles, calculateBiorhythm, daysBetween,
-  extractCycleHistory, estimateCycleLength, predictCycle, formatDateRangePersian,
-  CycleStatusResult, PredictedCycle, BiorhythmResult, CyclePredictionResult 
+import {
+  UserProfile,
+  ImpoPeriodSettings,
+  ImpoDailyLog,
+  CycleGoalMode,
+  PeriodSharingSettings
+} from "../types";
+import {
+  calculateCycleStatus,
+  predictFutureCycles,
+  calculateBiorhythm,
+  daysBetween,
+  extractCycleHistory,
+  predictCycle,
+  CycleStatusResult,
+  PredictedCycle,
+  BiorhythmResult,
+  CyclePredictionResult
 } from "../utils/impoCycleEngine";
-import { 
-  formatPersianDate, toPersianDigits, gregorianToJalali, jalaliToGregorian, 
-  getDaysInJalaliMonth, JALALI_MONTHS, JALALI_WEEKDAYS, getTehranDate, toGregorianIsoString 
+import {
+  formatPersianDate,
+  toPersianDigits,
+  gregorianToJalali,
+  jalaliToGregorian,
+  getDaysInJalaliMonth,
+  JALALI_MONTHS,
+  JALALI_WEEKDAYS,
+  getTehranDate,
+  toGregorianIsoString
 } from "../utils/jalali";
 import { fetchFromPhpApi } from "../apiClient";
 import JalaliDatePicker from "./JalaliDatePicker";
@@ -23,170 +68,136 @@ import JalaliDatePicker from "./JalaliDatePicker";
 interface ImpoPeriodTrackerProps {
   userProfile: UserProfile;
   onSendPoke?: (message: string, tag: string) => void;
-  onUpdateGender?: (gender: 'female' | 'male') => void;
+  onUpdateGender?: (gender: "female" | "male") => void;
+  openLogTrigger?: number;
 }
 
 // Flow Level Options
 const FLOW_OPTIONS = [
-  { id: 'none', label: 'بدون خونریزی', icon: '⚪' },
-  { id: 'spotting', label: 'لکه‌بینی', icon: '💧' },
-  { id: 'light', label: 'خفیف', icon: '🩸' },
-  { id: 'medium', label: 'متوسط', icon: '🩸🩸' },
-  { id: 'heavy', label: 'شدید', icon: '🩸🩸🩸' }
+  { id: "none", label: "بدون خونریزی", icon: "⚪" },
+  { id: "spotting", label: "لکه‌بینی", icon: "💧" },
+  { id: "light", label: "خفیف", icon: "🩸" },
+  { id: "medium", label: "متوسط", icon: "🩸🩸" },
+  { id: "heavy", label: "شدید", icon: "🩸🩸🩸" }
 ];
 
 // Mood Options
 const MOOD_OPTIONS = [
-  { id: 'happy', label: 'شاد و پرانرژی', icon: '🥰' },
-  { id: 'calm', label: 'آرام و راضی', icon: '🧘‍♀️' },
-  { id: 'moody', label: 'نوسان خلق', icon: '🎭' },
-  { id: 'sensitive', label: 'حساس و زودرنج', icon: '🥺' },
-  { id: 'anxious', label: 'مضطرب و نگران', icon: '😰' },
-  { id: 'tired', label: 'خسته و بی‌انرژی', icon: '🥱' },
-  { id: 'angry', label: 'کلافه یا عصبی', icon: '😤' }
+  { id: "happy", label: "شاد و پرانرژی", icon: "🥰" },
+  { id: "calm", label: "آرام و راضی", icon: "🧘‍♀️" },
+  { id: "moody", label: "نوسان خلق", icon: "🎭" },
+  { id: "sensitive", label: "حساس و زودرنج", icon: "🥺" },
+  { id: "anxious", label: "مضطرب و نگران", icon: "😰" },
+  { id: "tired", label: "خسته و بی‌انرژی", icon: "🥱" },
+  { id: "angry", label: "کلافه یا عصبی", icon: "😤" }
 ];
 
 // Physical Symptoms Options
 const SYMPTOM_OPTIONS = [
-  { id: 'cramps', label: 'دل‌پیچه و کرامپ', icon: '⚡' },
-  { id: 'backache', label: 'کمردرد', icon: '🦴' },
-  { id: 'headache', label: 'سردرد / میگرن', icon: '🤕' },
-  { id: 'tender_breasts', label: 'حساسیت پستان', icon: '🌸' },
-  { id: 'bloating', label: 'نفخ و ورم شکم', icon: '🎈' },
-  { id: 'nausea', label: 'حالت تهوع', icon: '🤢' },
-  { id: 'acne', label: 'آکنه و جوش پوستی', icon: '✨' },
-  { id: 'sweet_cravings', label: 'هوس شیرینی', icon: '🍫' }
+  { id: "cramps", label: "دل‌پیچه و کرامپ", icon: "⚡" },
+  { id: "backache", label: "کمردرد", icon: "🦴" },
+  { id: "headache", label: "سردرد / میگرن", icon: "🤕" },
+  { id: "tender_breasts", label: "حساسیت پستان", icon: "🌸" },
+  { id: "bloating", label: "نفخ و ورم شکم", icon: "🎈" },
+  { id: "nausea", label: "حالت تهوع", icon: "🤢" },
+  { id: "acne", label: "آکنه و جوش پوستی", icon: "✨" },
+  { id: "sweet_cravings", label: "هوس شیرینی", icon: "🍫" }
 ];
 
 // Cervical Discharge Options
 const DISCHARGE_OPTIONS = [
-  { id: 'none', label: 'خشک / بدون ترشح' },
-  { id: 'sticky', label: 'چسبناک' },
-  { id: 'creamy', label: 'کرمی و شیری' },
-  { id: 'watery', label: 'آبکی و لغزنده' },
-  { id: 'clear', label: 'شفاف کشسان (سفیده تخم‌مرغ) 🥚' }
+  { id: "none", label: "خشک / بدون ترشح" },
+  { id: "sticky", label: "چسبناک" },
+  { id: "creamy", label: "کرمی و شیری" },
+  { id: "watery", label: "آبکی و لغزنده" },
+  { id: "clear", label: "شفاف کشسان (سفیده تخم‌مرغ) 🥚" }
 ];
 
 // Intimacy Options
 const SEX_OPTIONS = [
-  { id: 'none', label: 'بدون رابطه', icon: '🚫' },
-  { id: 'protected', label: 'رابطه محافظت‌شده (کاندوم/قرص)', icon: '🛡️' },
-  { id: 'unprotected', label: 'رابطه محافظت‌نشده', icon: '💖' }
+  { id: "none", label: "بدون رابطه", icon: "🚫" },
+  { id: "protected", label: "رابطه محافظت‌شده (کاندوم/قرص)", icon: "🛡️" },
+  { id: "unprotected", label: "رابطه محافظت‌نشده", icon: "💖" }
 ];
 
 // Ovulation Test Options
 const OVULATION_TEST_OPTIONS = [
-  { id: 'none', label: 'ثبت‌نشده', icon: '⚪' },
-  { id: 'negative', label: 'منفی (خط کم‌رنگ)', icon: '➖' },
-  { id: 'positive_weak', label: 'مثبت ضعیف', icon: '🟡' },
-  { id: 'positive_peak', label: 'مثبت اوج (تخمک‌گذاری)', icon: '🟣' }
+  { id: "none", label: "ثبت‌نشده", icon: "⚪" },
+  { id: "negative", label: "منفی (خط کم‌رنگ)", icon: "➖" },
+  { id: "positive_weak", label: "مثبت ضعیف", icon: "🟡" },
+  { id: "positive_peak", label: "مثبت اوج (تخمک‌گذاری)", icon: "🟣" }
 ];
 
 // Pregnancy Test Options
 const PREGNANCY_TEST_OPTIONS = [
-  { id: 'none', label: 'تست نداده‌ام', icon: '⚪' },
-  { id: 'negative', label: 'منفی (یک خط)', icon: '➖' },
-  { id: 'positive', label: 'مثبت (دو خط / باردار)', icon: '👶' }
+  { id: "none", label: "تست نداده‌ام", icon: "⚪" },
+  { id: "negative", label: "منفی (یک خط)", icon: "➖" },
+  { id: "positive", label: "مثبت (دو خط / باردار)", icon: "👶" }
 ];
 
+// SVG Polar Helpers (0 deg = 12 o'clock, clockwise)
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad)
+  };
+}
 
-// Helper phase styling for calendar strip
-const getPhaseStyle = (phase: string) => {
-  switch (phase) {
-    case 'period':
-      return {
-        cardBg: 'bg-[#F9CCD8] text-[#7D243C] border-transparent',
-        selectedBg: 'bg-[#F9CCD8] text-[#7D243C] border-[#7D243C] ring-2 ring-[#7D243C]/20',
-        badge: 'bg-white/60 text-[#7D243C]',
-        icon: '🩸',
-        shortLabel: 'پریود'
-      };
-    case 'due':
-      return {
-        cardBg: 'bg-[#F9CCD8] text-[#7D243C] border-transparent',
-        selectedBg: 'bg-[#F9CCD8] text-[#7D243C] border-[#7D243C] ring-2 ring-[#7D243C]/20',
-        badge: 'bg-white/60 text-[#7D243C]',
-        icon: '⏳',
-        shortLabel: 'موعد'
-      };
-    case 'delayed':
-      return {
-        cardBg: 'bg-[#F9CCD8] text-[#7D243C] border-transparent',
-        selectedBg: 'bg-[#F9CCD8] text-[#7D243C] border-[#7D243C] ring-2 ring-[#7D243C]/20',
-        badge: 'bg-white/60 text-[#7D243C]',
-        icon: '⚠️',
-        shortLabel: 'تاخیر'
-      };
-    case 'ovulation':
-      return {
-        cardBg: 'bg-[#1B9AAA] text-white border-transparent',
-        selectedBg: 'bg-[#1B9AAA] text-white border-[#0E545B] ring-2 ring-[#1B9AAA]/30',
-        badge: 'bg-white/25 text-white',
-        icon: '🥚',
-        shortLabel: 'تخمک‌گذاری'
-      };
-    case 'fertile':
-      return {
-        cardBg: 'bg-[#C8EEF2] text-[#0E545B] border-transparent',
-        selectedBg: 'bg-[#C8EEF2] text-[#0E545B] border-[#0E545B] ring-2 ring-[#1B9AAA]/20',
-        badge: 'bg-white/60 text-[#0E545B]',
-        icon: '✨',
-        shortLabel: 'باروری'
-      };
-    case 'pms':
-      return {
-        cardBg: 'bg-[#E2D2FE] text-[#4A2574] border-transparent',
-        selectedBg: 'bg-[#E2D2FE] text-[#4A2574] border-[#4A2574] ring-2 ring-[#4A2574]/20',
-        badge: 'bg-white/60 text-[#4A2574]',
-        icon: '⚡',
-        shortLabel: 'PMS'
-      };
-    default:
-      return {
-        cardBg: 'bg-[#F7F7F7] text-[#1E1E1E] border-transparent',
-        selectedBg: 'bg-[#E5E5E5] text-[#1E1E1E] border-[#222222]',
-        badge: 'bg-white/80 text-slate-700',
-        icon: '🌱',
-        shortLabel: 'عادی'
-      };
-  }
-};
+function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  const start = polarToCartesian(cx, cy, r, startAngle);
+  const end = polarToCartesian(cx, cy, r, endAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+}
 
-export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGender }: ImpoPeriodTrackerProps) {
-  // Navigation sub-tab inside period tracker: 'dashboard' | 'predictions' | 'history'
-  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'predictions' | 'history'>('dashboard');
+export default function ImpoPeriodTracker({
+  userProfile,
+  onSendPoke,
+  onUpdateGender,
+  openLogTrigger
+}: ImpoPeriodTrackerProps) {
+  const [activeSubTab, setActiveSubTab] = useState<"dashboard" | "predictions" | "history">("dashboard");
+  const [viewMode, setViewMode] = useState<"circular" | "calendar">("circular");
 
-  // View Mode: Circular (Impo Circle) or Calendar (Monthly Squircle Calendar)
-  const [viewMode, setViewMode] = useState<'circular' | 'calendar'>('circular');
-
-  // Storage Key for Shared Couple Space
   const storageKey = userProfile.coupleId || userProfile.uid;
 
   // Period Settings State
   const [settings, setSettings] = useState<ImpoPeriodSettings>(() => {
-    const cached = localStorage.getItem(`impo_period_settings_${storageKey}`) || localStorage.getItem(`impo_period_settings_${userProfile.uid}`);
+    const cached =
+      localStorage.getItem(`impo_period_settings_${storageKey}`) ||
+      localStorage.getItem(`impo_period_settings_${userProfile.uid}`);
     if (cached) {
-      try { return JSON.parse(cached); } catch {}
+      try {
+        return JSON.parse(cached);
+      } catch {}
     }
     return {
       cycleLength: 28,
       periodLength: 5,
       lastPeriodStartDate: toGregorianIsoString(new Date()),
-      goalMode: 'track',
-      birthDate: '2000-01-01',
-      viewMode: 'circular'
+      goalMode: "track",
+      birthDate: "2000-01-01",
+      viewMode: "circular"
     };
   });
 
-  const [hasConfigured, setHasConfigured] = useState<boolean>(() => {
-    return !!(localStorage.getItem(`impo_period_configured_${storageKey}`) || localStorage.getItem(`impo_period_configured_${userProfile.uid}`));
+  const [, setHasConfigured] = useState<boolean>(() => {
+    return !!(
+      localStorage.getItem(`impo_period_configured_${storageKey}`) ||
+      localStorage.getItem(`impo_period_configured_${userProfile.uid}`)
+    );
   });
 
   // Daily Logs State
   const [logs, setLogs] = useState<ImpoDailyLog[]>(() => {
-    const cached = localStorage.getItem(`impo_period_logs_${storageKey}`) || localStorage.getItem(`impo_period_logs_${userProfile.uid}`);
+    const cached =
+      localStorage.getItem(`impo_period_logs_${storageKey}`) ||
+      localStorage.getItem(`impo_period_logs_${userProfile.uid}`);
     if (cached) {
-      try { return JSON.parse(cached); } catch {}
+      try {
+        return JSON.parse(cached);
+      } catch {}
     }
     return [];
   });
@@ -214,7 +225,9 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     const targetId = userProfile.coupleId || userProfile.uid;
     const cached = localStorage.getItem(`impo_period_sharing_${targetId}`);
     if (cached) {
-      try { return JSON.parse(cached); } catch {}
+      try {
+        return JSON.parse(cached);
+      } catch {}
     }
     return {
       sharePhase: true,
@@ -235,11 +248,11 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     if (settings.trackerOwnerUid) {
       return settings.trackerOwnerUid === userProfile.uid;
     }
-    return userProfile.gender !== 'male';
+    return userProfile.gender !== "male";
   }, [settings.trackerOwnerUid, userProfile.uid, userProfile.gender]);
 
   const effectiveIsOwner: boolean = isOwner && !isPreviewingAsPartner;
-  const partnerRole: 'female' | 'male' = effectiveIsOwner ? 'female' : 'male';
+  const partnerRole: "female" | "male" = effectiveIsOwner ? "female" : "male";
 
   const [showCareModal, setShowCareModal] = useState(false);
   const [customCareMessage, setCustomCareMessage] = useState("");
@@ -247,10 +260,14 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
   // Settings Form State
   const [formCycleLength, setFormCycleLength] = useState<number>(settings.cycleLength || 28);
   const [formPeriodLength, setFormPeriodLength] = useState<number>(settings.periodLength || 5);
-  const [formLastPeriodDate, setFormLastPeriodDate] = useState<string>(settings.lastPeriodStartDate || toGregorianIsoString(new Date()));
-  const [formGoalMode, setFormGoalMode] = useState<CycleGoalMode>(settings.goalMode || 'track');
+  const [formLastPeriodDate, setFormLastPeriodDate] = useState<string>(
+    settings.lastPeriodStartDate || toGregorianIsoString(new Date())
+  );
+  const [formGoalMode, setFormGoalMode] = useState<CycleGoalMode>(settings.goalMode || "track");
   const [formBirthDate, setFormBirthDate] = useState<string>(settings.birthDate || "2000-01-01");
-  const [formClaimOwner, setFormClaimOwner] = useState<boolean>(settings.trackerOwnerUid ? settings.trackerOwnerUid === userProfile.uid : userProfile.gender !== 'male');
+  const [formClaimOwner, setFormClaimOwner] = useState<boolean>(
+    settings.trackerOwnerUid ? settings.trackerOwnerUid === userProfile.uid : userProfile.gender !== "male"
+  );
 
   const showSettingsModalRef = useRef(showSettingsModal);
   const isSavingSettingsRef = useRef(false);
@@ -260,29 +277,29 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       setFormCycleLength(settings.cycleLength || 28);
       setFormPeriodLength(settings.periodLength || 5);
       setFormLastPeriodDate(settings.lastPeriodStartDate || toGregorianIsoString(new Date()));
-      setFormGoalMode(settings.goalMode || 'track');
+      setFormGoalMode(settings.goalMode || "track");
       setFormBirthDate(settings.birthDate || "2000-01-01");
     }
   }, [showSettingsModal]);
 
   // Log Form State
-  const [logFormFlow, setLogFormFlow] = useState<any>('none');
+  const [logFormFlow, setLogFormFlow] = useState<any>("none");
   const [logFormIsPeriodStart, setLogFormIsPeriodStart] = useState<boolean>(false);
   const [logFormMoods, setLogFormMoods] = useState<string[]>([]);
   const [logFormSymptoms, setLogFormSymptoms] = useState<string[]>([]);
-  const [logFormDischarge, setLogFormDischarge] = useState<any>('none');
-  const [logFormSex, setLogFormSex] = useState<any>('none');
-  const [logFormOvulationKit, setLogFormOvulationKit] = useState<any>('none');
-  const [logFormPregnancyTest, setLogFormPregnancyTest] = useState<any>('none');
+  const [logFormDischarge, setLogFormDischarge] = useState<any>("none");
+  const [logFormSex, setLogFormSex] = useState<any>("none");
+  const [logFormOvulationKit, setLogFormOvulationKit] = useState<any>("none");
+  const [logFormPregnancyTest, setLogFormPregnancyTest] = useState<any>("none");
   const [logFormSharePregnancyTest, setLogFormSharePregnancyTest] = useState<boolean>(false);
   const [logFormWater, setLogFormWater] = useState<number>(4);
   const [logFormNotes, setLogFormNotes] = useState<string>("");
 
   // Current Calendar View Month/Year
   const todayTehran = getTehranDate();
-  const [todayJy, todayJm, todayJd] = gregorianToJalali(
-    todayTehran.getFullYear(), 
-    todayTehran.getMonth() + 1, 
+  const [todayJy, todayJm] = gregorianToJalali(
+    todayTehran.getFullYear(),
+    todayTehran.getMonth() + 1,
     todayTehran.getDate()
   );
   const [calendarYear, setCalendarYear] = useState<number>(todayJy);
@@ -296,29 +313,30 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     const fetchTrackerData = async () => {
       if (isSavingSettingsRef.current) return;
       try {
-        const res = await fetchFromPhpApi('getPeriodData', {
-          coupleId: userProfile.coupleId || '',
+        const res = await fetchFromPhpApi("getPeriodData", {
+          coupleId: userProfile.coupleId || "",
           uid: userProfile.uid
         });
 
-        if (isMounted && !isSavingSettingsRef.current && res && res.status === 'success') {
+        if (isMounted && !isSavingSettingsRef.current && res && res.status === "success") {
           if (res.settings) {
-            // Preserve locally saved custom birthDate if server still has default '2000-01-01'
-            const localRaw = localStorage.getItem(`impo_period_settings_${targetId}`) || localStorage.getItem(`impo_period_settings_${userProfile.uid}`);
+            const localRaw =
+              localStorage.getItem(`impo_period_settings_${targetId}`) ||
+              localStorage.getItem(`impo_period_settings_${userProfile.uid}`);
             let localBirthDate: string | undefined;
             if (localRaw) {
               try {
                 const parsedLocal = JSON.parse(localRaw);
-                if (parsedLocal?.birthDate && parsedLocal.birthDate !== '2000-01-01') {
+                if (parsedLocal?.birthDate && parsedLocal.birthDate !== "2000-01-01") {
                   localBirthDate = parsedLocal.birthDate;
                 }
               } catch {}
             }
 
             const effectiveBirthDate =
-              (res.settings.birthDate && res.settings.birthDate !== '2000-01-01')
+              res.settings.birthDate && res.settings.birthDate !== "2000-01-01"
                 ? res.settings.birthDate
-                : (localBirthDate || res.settings.birthDate || '2000-01-01');
+                : localBirthDate || res.settings.birthDate || "2000-01-01";
 
             const mergedSettings: ImpoPeriodSettings = {
               ...res.settings,
@@ -335,14 +353,13 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
               setFormCycleLength(mergedSettings.cycleLength || 28);
               setFormPeriodLength(mergedSettings.periodLength || 5);
               setFormLastPeriodDate(mergedSettings.lastPeriodStartDate || toGregorianIsoString(new Date()));
-              setFormGoalMode(mergedSettings.goalMode || 'track');
+              setFormGoalMode(mergedSettings.goalMode || "track");
               setFormBirthDate(mergedSettings.birthDate || "2000-01-01");
             }
 
-            // If server had default birthDate but local had user's custom birthDate, sync it up to server
-            if (localBirthDate && res.settings.birthDate === '2000-01-01') {
-              fetchFromPhpApi('savePeriodSettings', {
-                coupleId: userProfile.coupleId || '',
+            if (localBirthDate && res.settings.birthDate === "2000-01-01") {
+              fetchFromPhpApi("savePeriodSettings", {
+                coupleId: userProfile.coupleId || "",
                 uid: userProfile.uid,
                 settings: mergedSettings
               }).catch(() => {});
@@ -364,13 +381,11 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       }
     };
 
-    // Immediate initial sync
     fetchTrackerData();
 
-    // Regular interval polling for live partner updates
     const syncInterval = setInterval(fetchTrackerData, 4000);
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         fetchTrackerData();
       }
     };
@@ -385,136 +400,48 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     };
   }, [userProfile.uid, userProfile.coupleId]);
 
-  // 1) History extraction: builds consecutive intervals from period start logs & settings
   const cycleHistory = useMemo(() => {
     return extractCycleHistory(logs, settings);
   }, [logs, settings]);
 
-  // 2 & 3) Honest Bayesian prediction result (next start, ovulation, fertile window ranges)
   const cyclePrediction: CyclePredictionResult = useMemo(() => {
     return predictCycle(cycleHistory, logs, new Date(), settings, 2);
   }, [cycleHistory, logs, settings]);
 
-  // Cycle Calculations based on engine (incorporates Bayesian estimated cycle length)
   const cycleStatus: CycleStatusResult = useMemo(() => {
     return calculateCycleStatus(settings, new Date(), Math.round(cyclePrediction.estimatedCycleLength));
   }, [settings, cyclePrediction.estimatedCycleLength]);
 
-  // Calendar Strip State (for viewMode === 'flat')
-  const [stripSelectedDate, setStripSelectedDate] = useState<string>(toGregorianIsoString(new Date()));
-  const [stripWeekOffset, setStripWeekOffset] = useState<number>(0);
-  const [stripMode, setStripMode] = useState<'timeline' | 'cycle'>('timeline');
-
-  // Status for selected date on the calendar strip
-  const stripSelectedStatus: CycleStatusResult = useMemo(() => {
-    try {
-      const d = new Date(stripSelectedDate + 'T12:00:00');
-      return calculateCycleStatus(settings, d);
-    } catch {
-      return cycleStatus;
-    }
-  }, [settings, stripSelectedDate, cycleStatus]);
-
-  // Strip days calculation based on Jalali calendar
-  const stripDays = useMemo(() => {
-    const results: Array<{
-      date: Date;
-      iso: string;
-      jy: number;
-      jm: number;
-      jd: number;
-      weekday: string;
-      status: CycleStatusResult;
-      isToday: boolean;
-      isSelected: boolean;
-      hasLog: boolean;
-    }> = [];
-
-    const todayIso = toGregorianIsoString(new Date());
-
-    if (stripMode === 'timeline') {
-      // 15 days window centered on current anchor
-      const baseTime = new Date().getTime() + stripWeekOffset * 7 * 86400000;
-      for (let offset = -5; offset <= 9; offset++) {
-        const d = new Date(baseTime + offset * 86400000);
-        const iso = toGregorianIsoString(d);
-        const [jy, jm, jd] = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
-        const weekday = JALALI_WEEKDAYS[(d.getDay() + 1) % 7];
-        const status = calculateCycleStatus(settings, d);
-        results.push({
-          date: d,
-          iso,
-          jy,
-          jm,
-          jd,
-          weekday,
-          status,
-          isToday: iso === todayIso,
-          isSelected: iso === stripSelectedDate,
-          hasLog: logs.some(l => l.date === iso)
-        });
-      }
-    } else {
-      // Entire current cycle mapped to actual calendar days
-      const lastStart = new Date(settings.lastPeriodStartDate + 'T00:00:00');
-      const now = new Date();
-      const diffDays = daysBetween(settings.lastPeriodStartDate, now);
-      const cycleLen = cycleStatus.cycleLength || 28;
-      const cycleIdx = diffDays >= 0 ? Math.floor(diffDays / cycleLen) : 0;
-      const cycleStartDate = new Date(lastStart);
-      cycleStartDate.setDate(cycleStartDate.getDate() + cycleIdx * cycleLen);
-
-      for (let i = 0; i < cycleLen; i++) {
-        const d = new Date(cycleStartDate);
-        d.setDate(d.getDate() + i);
-        const iso = toGregorianIsoString(d);
-        const [jy, jm, jd] = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
-        const weekday = JALALI_WEEKDAYS[(d.getDay() + 1) % 7];
-        const status = calculateCycleStatus(settings, d);
-        results.push({
-          date: d,
-          iso,
-          jy,
-          jm,
-          jd,
-          weekday,
-          status,
-          isToday: iso === todayIso,
-          isSelected: iso === stripSelectedDate,
-          hasLog: logs.some(l => l.date === iso)
-        });
-      }
-    }
-
-    return results;
-  }, [settings, stripWeekOffset, stripMode, stripSelectedDate, cycleStatus.cycleLength, logs]);
-
-  // Future cycle predictions (honest ranges for next 2 cycles)
   const predictions: PredictedCycle[] = useMemo(() => {
     return predictFutureCycles(settings, 2, logs);
   }, [settings, logs]);
+
+  const biorhythm: BiorhythmResult | null = useMemo(() => {
+    return calculateBiorhythm(settings.birthDate);
+  }, [settings.birthDate]);
 
   // Quick 1-click role selection for first-time visitors
   const [roleConfirmed, setRoleConfirmed] = useState<boolean>(() => {
     return !!localStorage.getItem(`impo_partner_role_${userProfile.uid}`);
   });
 
-  const handleSelectQuickRole = async (selectedGender: 'female' | 'male') => {
+  const handleSelectQuickRole = async (selectedGender: "female" | "male") => {
     localStorage.setItem(`impo_partner_role_${userProfile.uid}`, selectedGender);
     setRoleConfirmed(true);
     if (onUpdateGender) {
       onUpdateGender(selectedGender);
     }
     try {
-      await fetchFromPhpApi('updateProfile', {
+      await fetchFromPhpApi("updateProfile", {
+        uid: userProfile.uid,
         displayName: userProfile.displayName,
-        avatarUrl: userProfile.avatarUrl || '',
+        photoURL: userProfile.photoURL || "",
         gender: selectedGender
       });
     } catch (e) {
       console.warn("Role gender sync notice:", e);
     }
-    if (selectedGender === 'female' && !settings.trackerOwnerUid) {
+    if (selectedGender === "female" && !settings.trackerOwnerUid) {
       const targetId = userProfile.coupleId || userProfile.uid;
       const updatedSettings: ImpoPeriodSettings = {
         ...settings,
@@ -524,48 +451,47 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       setFormClaimOwner(true);
       localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(updatedSettings));
       try {
-        await fetchFromPhpApi('savePeriodSettings', {
-          coupleId: userProfile.coupleId || '',
+        await fetchFromPhpApi("savePeriodSettings", {
+          coupleId: userProfile.coupleId || "",
           uid: userProfile.uid,
           settings: updatedSettings
         });
       } catch (e) {}
-      showNotice("نقش شما به عنوان صاحب ترکر سلامت ثبت شد 🌸");
-    } else if (selectedGender === 'male') {
+      showNotice("نقش شما به عنوان صاحب ترکر سلامت ثبت شد");
+    } else if (selectedGender === "male") {
       setFormClaimOwner(false);
-      showNotice("حالت همراهی عاطفی و مراقبت از پارتنر فعال شد 💖");
+      showNotice("حالت همراهی عاطفی و مراقبت از پارتنر فعال شد");
     }
   };
 
-  // Open log modal for specific date
   const handleOpenLogModal = (dateStr: string) => {
     if (!effectiveIsOwner && !sharing.allowPartnerLogging) {
-      showNotice("امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است 🔒");
+      showNotice("امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است");
       return;
     }
     setSelectedLogDate(dateStr);
-    const existing = logs.find(l => l.date === dateStr);
+    const existing = logs.find((l) => l.date === dateStr);
     if (existing) {
-      setLogFormFlow(existing.flow || 'none');
+      setLogFormFlow(existing.flow || "none");
       setLogFormIsPeriodStart(existing.isPeriodStart || false);
       setLogFormMoods(existing.moods || []);
       setLogFormSymptoms(existing.symptoms || []);
-      setLogFormDischarge(existing.discharge || 'none');
-      setLogFormSex(existing.sex || 'none');
-      setLogFormOvulationKit(existing.ovulationTestResult || 'none');
-      setLogFormPregnancyTest(existing.pregnancyTestResult || 'none');
+      setLogFormDischarge(existing.discharge || "none");
+      setLogFormSex(existing.sex || "none");
+      setLogFormOvulationKit(existing.ovulationTestResult || "none");
+      setLogFormPregnancyTest(existing.pregnancyTestResult || "none");
       setLogFormSharePregnancyTest(existing.sharePregnancyTestWithPartner || false);
       setLogFormWater(existing.waterGlasses || 4);
       setLogFormNotes(existing.notes || "");
     } else {
-      setLogFormFlow('none');
+      setLogFormFlow("none");
       setLogFormIsPeriodStart(false);
       setLogFormMoods([]);
       setLogFormSymptoms([]);
-      setLogFormDischarge('none');
-      setLogFormSex('none');
-      setLogFormOvulationKit('none');
-      setLogFormPregnancyTest('none');
+      setLogFormDischarge("none");
+      setLogFormSex("none");
+      setLogFormOvulationKit("none");
+      setLogFormPregnancyTest("none");
       setLogFormSharePregnancyTest(false);
       setLogFormWater(4);
       setLogFormNotes("");
@@ -573,24 +499,31 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     setShowLogModal(true);
   };
 
-  // Quick Action: "I got my period today!"
+  useEffect(() => {
+    if (openLogTrigger && openLogTrigger > 0) {
+      if (!effectiveIsOwner && !sharing.allowPartnerLogging) {
+        setShowCareModal(true);
+      } else {
+        handleOpenLogModal(toGregorianIsoString(new Date()));
+      }
+    }
+  }, [openLogTrigger]);
+
   const handleQuickGotPeriodToday = async () => {
     if (!effectiveIsOwner && !sharing.allowPartnerLogging) {
-      showNotice("امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است 🔒");
+      showNotice("امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است");
       return;
     }
     const todayStr = toGregorianIsoString(new Date());
     const targetId = userProfile.coupleId || userProfile.uid;
-    
-    // Trigger celebration / confetti
+
     confetti({
-      particleCount: 50,
+      particleCount: 45,
       spread: 60,
-      origin: { y: 0.6 }
+      origin: { y: 0.6 },
+      colors: ["#F6C3E5", "#F6DC6B", "#A7B86C", "#B8CEF4"]
     });
 
-    // 5) Remove old moving average: settings.cycleLength is retained solely as the initial prior.
-    // Recording period start automatically updates history and recomputes Bayesian estimates.
     const updatedSettings: ImpoPeriodSettings = {
       ...settings,
       lastPeriodStartDate: todayStr
@@ -598,6 +531,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
     setSettings(updatedSettings);
     localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(updatedSettings));
+    localStorage.setItem(`impo_period_settings_${userProfile.uid}`, JSON.stringify(updatedSettings));
     localStorage.setItem(`impo_period_configured_${targetId}`, "true");
 
     const todayLog: ImpoDailyLog = {
@@ -605,28 +539,27 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       date: todayStr,
       isPeriodDay: true,
       isPeriodStart: true,
-      flow: 'medium',
-      moods: ['tired'],
-      symptoms: ['cramps'],
+      flow: "medium",
+      moods: ["tired"],
+      symptoms: ["cramps"],
       loggedByUid: userProfile.uid,
       loggedByName: userProfile.displayName,
       createdAt: new Date().toISOString()
     };
 
-    const filtered = logs.filter(l => l.date !== todayStr);
+    const filtered = logs.filter((l) => l.date !== todayStr);
     const updatedLogs = [todayLog, ...filtered].sort((a, b) => b.date.localeCompare(a.date));
     setLogs(updatedLogs);
     localStorage.setItem(`impo_period_logs_${targetId}`, JSON.stringify(updatedLogs));
 
-    // Persist to Host MySQL & trigger partner sync
     try {
-      await fetchFromPhpApi('savePeriodSettings', {
-        coupleId: userProfile.coupleId || '',
+      await fetchFromPhpApi("savePeriodSettings", {
+        coupleId: userProfile.coupleId || "",
         uid: userProfile.uid,
         settings: updatedSettings
       });
-      await fetchFromPhpApi('savePeriodLog', {
-        coupleId: userProfile.coupleId || '',
+      await fetchFromPhpApi("savePeriodLog", {
+        coupleId: userProfile.coupleId || "",
         uid: userProfile.uid,
         log: todayLog
       });
@@ -635,11 +568,10 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     }
   };
 
-  // Save Settings
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (settings.trackerOwnerUid && !effectiveIsOwner) {
-      showNotice("تنها صاحب ترکر مجاز به تغییر تنظیمات است 🔒");
+      showNotice("تنها صاحب ترکر مجاز به تغییر تنظیمات است");
       return;
     }
     const targetId = userProfile.coupleId || userProfile.uid;
@@ -670,8 +602,8 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
     isSavingSettingsRef.current = true;
     try {
-      await fetchFromPhpApi('savePeriodSettings', {
-        coupleId: userProfile.coupleId || '',
+      await fetchFromPhpApi("savePeriodSettings", {
+        coupleId: userProfile.coupleId || "",
         uid: userProfile.uid,
         settings: updatedSettings
       });
@@ -682,14 +614,13 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     }
   };
 
-  // Save Sharing Settings (Owner only)
   const handleSaveSharingSettings = async (newSharing: PeriodSharingSettings) => {
     setSharing(newSharing);
     const targetId = userProfile.coupleId || userProfile.uid;
     localStorage.setItem(`impo_period_sharing_${targetId}`, JSON.stringify(newSharing));
     try {
-      await fetchFromPhpApi('savePeriodSharing', {
-        coupleId: userProfile.coupleId || '',
+      await fetchFromPhpApi("savePeriodSharing", {
+        coupleId: userProfile.coupleId || "",
         uid: userProfile.uid,
         sharing: newSharing
       });
@@ -698,26 +629,25 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     }
   };
 
-  // Export period data (JSON download)
   const handleExportData = async () => {
     setIsExporting(true);
     try {
-      const res = await fetchFromPhpApi('exportMyPeriodData', {
-        coupleId: userProfile.coupleId || '',
+      const res = await fetchFromPhpApi("exportMyPeriodData", {
+        coupleId: userProfile.coupleId || "",
         uid: userProfile.uid
       });
-      if (res && res.status === 'success' && res.data) {
+      if (res && res.status === "success" && res.data) {
         const jsonStr = JSON.stringify(res.data, null, 2);
-        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const blob = new Blob([jsonStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = `toghrool_period_data_${toGregorianIsoString(new Date())}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showNotice("فایل پشتیبان با موفقیت دانلود شد 📥");
+        showNotice("فایل پشتیبان با موفقیت دانلود شد");
       } else {
         showNotice(res?.message || "خطا در دریافت فایل خروجی.");
       }
@@ -729,17 +659,17 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     }
   };
 
-  // Delete all period health data
   const handleDeleteAllData = async () => {
     setIsDeletingAll(true);
     try {
-      const res = await fetchFromPhpApi('deleteMyPeriodData', {
-        coupleId: userProfile.coupleId || '',
+      const res = await fetchFromPhpApi("deleteMyPeriodData", {
+        coupleId: userProfile.coupleId || "",
         uid: userProfile.uid
       });
-      if (res && res.status === 'success') {
+      if (res && res.status === "success") {
         const targetId = userProfile.coupleId || userProfile.uid;
         localStorage.removeItem(`impo_period_settings_${targetId}`);
+        localStorage.removeItem(`impo_period_settings_${userProfile.uid}`);
         localStorage.removeItem(`impo_period_logs_${targetId}`);
         localStorage.removeItem(`impo_period_sharing_${targetId}`);
         localStorage.removeItem(`impo_period_configured_${targetId}`);
@@ -748,15 +678,15 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
           cycleLength: 28,
           periodLength: 5,
           lastPeriodStartDate: toGregorianIsoString(new Date()),
-          goalMode: 'track',
-          birthDate: '2000-01-01',
-          viewMode: 'circular'
+          goalMode: "track",
+          birthDate: "2000-01-01",
+          viewMode: "circular"
         });
         setHasConfigured(false);
         setShowDeleteAllConfirmModal(false);
         setShowSharingModal(false);
         setShowSettingsModal(false);
-        showNotice("تمام اطلاعات ترکر با موفقیت از سرور حذف شد 🗑️");
+        showNotice("تمام اطلاعات ترکر با موفقیت از سرور حذف شد");
       } else {
         showNotice(res?.message || "خطا در حذف اطلاعات.");
       }
@@ -768,7 +698,6 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     }
   };
 
-  // Save Daily Log
   const handleSaveDailyLog = async (e: React.FormEvent) => {
     e.preventDefault();
     const targetId = userProfile.coupleId || userProfile.uid;
@@ -776,18 +705,18 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     const newLog: ImpoDailyLog = {
       id: `log_${Date.now()}`,
       date: selectedLogDate,
-      isPeriodDay: logFormFlow !== 'none' || logFormIsPeriodStart,
+      isPeriodDay: logFormFlow !== "none" || logFormIsPeriodStart,
       isPeriodStart: logFormIsPeriodStart,
-      flow: effectiveIsOwner ? logFormFlow : 'none',
+      flow: effectiveIsOwner ? logFormFlow : "none",
       moods: effectiveIsOwner ? logFormMoods : [],
       symptoms: effectiveIsOwner ? logFormSymptoms : [],
-      discharge: effectiveIsOwner ? logFormDischarge : 'none',
-      sex: effectiveIsOwner ? logFormSex : 'none',
-      ovulationTestResult: effectiveIsOwner ? logFormOvulationKit : 'none',
-      pregnancyTestResult: effectiveIsOwner ? logFormPregnancyTest : 'none',
+      discharge: effectiveIsOwner ? logFormDischarge : "none",
+      sex: effectiveIsOwner ? logFormSex : "none",
+      ovulationTestResult: effectiveIsOwner ? logFormOvulationKit : "none",
+      pregnancyTestResult: effectiveIsOwner ? logFormPregnancyTest : "none",
       sharePregnancyTestWithPartner: effectiveIsOwner ? logFormSharePregnancyTest : false,
       waterGlasses: effectiveIsOwner ? logFormWater : 4,
-      notes: effectiveIsOwner ? logFormNotes : '',
+      notes: effectiveIsOwner ? logFormNotes : "",
       loggedByUid: userProfile.uid,
       loggedByName: userProfile.displayName,
       createdAt: new Date().toISOString()
@@ -801,9 +730,10 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       };
       setSettings(updatedSettings);
       localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(updatedSettings));
+      localStorage.setItem(`impo_period_settings_${userProfile.uid}`, JSON.stringify(updatedSettings));
     }
 
-    const filtered = logs.filter(l => l.date !== selectedLogDate);
+    const filtered = logs.filter((l) => l.date !== selectedLogDate);
     const updatedLogs = [newLog, ...filtered].sort((a, b) => b.date.localeCompare(a.date));
     setLogs(updatedLogs);
     localStorage.setItem(`impo_period_logs_${targetId}`, JSON.stringify(updatedLogs));
@@ -812,14 +742,14 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
     try {
       if (logFormIsPeriodStart && effectiveIsOwner) {
-        await fetchFromPhpApi('savePeriodSettings', {
-          coupleId: userProfile.coupleId || '',
+        await fetchFromPhpApi("savePeriodSettings", {
+          coupleId: userProfile.coupleId || "",
           uid: userProfile.uid,
           settings: updatedSettings
         });
       }
-      await fetchFromPhpApi('savePeriodLog', {
-        coupleId: userProfile.coupleId || '',
+      await fetchFromPhpApi("savePeriodLog", {
+        coupleId: userProfile.coupleId || "",
         uid: userProfile.uid,
         log: newLog
       });
@@ -828,38 +758,29 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
     }
   };
 
-  // Delete Log
   const handleDeleteLog = async (logId: string) => {
     if (!effectiveIsOwner) {
-      showNotice("تنها صاحب ترکر مجاز به حذف لاگ است 🔒");
+      showNotice("تنها صاحب ترکر مجاز به حذف لاگ است");
       return;
     }
     const targetId = userProfile.coupleId || userProfile.uid;
-    const targetLog = logs.find(l => l.id === logId);
-    const updated = logs.filter(l => l.id !== logId);
+    const targetLog = logs.find((l) => l.id === logId);
+    const updated = logs.filter((l) => l.id !== logId);
     setLogs(updated);
     localStorage.setItem(`impo_period_logs_${targetId}`, JSON.stringify(updated));
 
     try {
-      await fetchFromPhpApi('deletePeriodLog', {
-        coupleId: userProfile.coupleId || '',
+      await fetchFromPhpApi("deletePeriodLog", {
+        coupleId: userProfile.coupleId || "",
         uid: userProfile.uid,
         id: logId,
-        date: targetLog?.date || ''
+        date: targetLog?.date || ""
       });
     } catch (e) {
       console.warn("Host log delete notice:", e);
     }
   };
 
-  // -------------------------------------------------------------
-  // CALCULATIONS FOR 360 DEGREE IMPO CIRCULAR WHEEL
-  // -------------------------------------------------------------
-  const wheelRadius = 120;
-  const wheelStroke = 18;
-  const wheelCircumference = 2 * Math.PI * wheelRadius;
-
-  // Degrees and arcs for segments on 360 circle
   const safeCycleLength = cycleStatus.cycleLength;
   const safePeriodLength = cycleStatus.periodLength;
   const safeOvulationDay = cycleStatus.ovulationDay;
@@ -867,37 +788,105 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
   const safeFertileEnd = cycleStatus.fertileEndDay;
   const safePmsStart = cycleStatus.pmsStartDay;
 
-  // Angle per day
-  const degPerDay = 360 / safeCycleLength;
-
-  // Pointer position on circle (0 deg is top: 12 o'clock)
-  const currentPointerAngleDeg = Math.min(360, (cycleStatus.currentCycleDay - 1) * degPerDay);
-  const pointerRad = ((currentPointerAngleDeg - 90) * Math.PI) / 180;
-  const pointerX = 150 + wheelRadius * Math.cos(pointerRad);
-  const pointerY = 150 + wheelRadius * Math.sin(pointerRad);
-
-  // Liquid Wave height calculation (0 to 100%)
-  const liquidHeightPercent = cycleStatus.isDelayed 
-    ? 90 
-    : Math.min(88, Math.max(15, (cycleStatus.currentCycleDay / safeCycleLength) * 85));
-
-  // Partner support message sender
   const handlePartnerPoke = (msg: string) => {
     if (onSendPoke) {
-      onSendPoke(msg, 'impo_period_support');
+      onSendPoke(msg, "impo_period_support");
     }
     confetti({
       particleCount: 30,
       spread: 50,
-      origin: { y: 0.7 }
+      origin: { y: 0.7 },
+      colors: ["#F6C3E5", "#F6DC6B", "#A7B86C", "#B8CEF4"]
     });
   };
+
+  // Ring geometry (exact Soft Pastel Minimalist Capsule Ring + Circular Nodes)
+  const ringCx = 160;
+  const ringCy = 160;
+  const ringR = 116;
+
+  const yellowIconPos = polarToCartesian(ringCx, ringCy, ringR, 15);
+  const sageIconPos = polarToCartesian(ringCx, ringCy, ringR, 89);
+  const pinkIconPos = polarToCartesian(ringCx, ringCy, ringR, 143);
+  const blueIconPos = polarToCartesian(ringCx, ringCy, ringR, 247);
+  const sageNodePos = polarToCartesian(ringCx, ringCy, ringR, 271);
+  const yellowMiniIconPos = polarToCartesian(ringCx, ringCy, ringR, 294);
+  const blueNodePos = polarToCartesian(ringCx, ringCy, ringR, 329);
+  const pinkNodePos = polarToCartesian(ringCx, ringCy, ringR, 350);
+
+  // Active phase angle highlight
+  const activePhaseMarkerAngle = useMemo(() => {
+    switch (cycleStatus.phase) {
+      case "period":
+      case "due":
+      case "delayed":
+        return 166;
+      case "follicular":
+        return 102;
+      case "fertile":
+        return 232;
+      case "ovulation":
+        return 271;
+      case "pms":
+      case "luteal":
+      default:
+        return 38;
+    }
+  }, [cycleStatus.phase]);
+  const activeMarkerPos = polarToCartesian(ringCx, ringCy, ringR - 29, activePhaseMarkerAngle);
+
+  // Normalize biorhythm -100..100 into 0..10 editorial score
+  const bioMetrics = useMemo(() => {
+    const physPct = biorhythm ? Math.round((biorhythm.physical + 100) / 2) : 78;
+    const emoPct = biorhythm ? Math.round((biorhythm.emotional + 100) / 2) : 84;
+    const intPct = biorhythm ? Math.round((biorhythm.intellectual + 100) / 2) : 72;
+    const cyclePct = cycleStatus.progressPercent;
+
+    return [
+      {
+        id: "cycle",
+        label: "پیشرفت چرخه فعلی",
+        pct: cyclePct,
+        score: (cyclePct / 10).toFixed(1),
+        color: "#F6C3E5",
+        bgClass: "bg-[#F6C3E5]",
+        Icon: HeartPulse
+      },
+      {
+        id: "physical",
+        label: "ریتم انرژی جسمانی",
+        pct: physPct,
+        score: (physPct / 10).toFixed(1),
+        color: "#F6DC6B",
+        bgClass: "bg-[#F6DC6B]",
+        Icon: Dna
+      },
+      {
+        id: "emotional",
+        label: "تعادل عاطفی و روحی",
+        pct: emoPct,
+        score: (emoPct / 10).toFixed(1),
+        color: "#A7B86C",
+        bgClass: "bg-[#A7B86C]",
+        Icon: Heart
+      },
+      {
+        id: "intellectual",
+        label: "تمرکز و شادابی ذهنی",
+        pct: intPct,
+        score: (intPct / 10).toFixed(1),
+        color: "#B8CEF4",
+        bgClass: "bg-[#B8CEF4]",
+        Icon: Brain
+      }
+    ];
+  }, [biorhythm, cycleStatus.progressPercent]);
 
   return (
     <div className="space-y-6" dir="rtl">
       {trackerToast && (
-        <div className="fixed bottom-20 sm:bottom-6 right-6 bg-slate-900/95 text-white border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-2.5 shadow-2xl z-50">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="fixed bottom-24 sm:bottom-6 right-6 bg-[#1B1B1A] text-[#FAF6EC] px-5 py-3 rounded-full flex items-center gap-2.5 z-50">
+          <CheckCircle2 className="w-4 h-4 text-[#A7B86C] shrink-0 stroke-[2]" />
           <span className="text-xs font-bold">{trackerToast}</span>
         </div>
       )}
@@ -905,33 +894,33 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       {/* 1-Click First-Visit Role Selector Card */}
       {!roleConfirmed && !settings.trackerOwnerUid && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-rose-50 via-pink-50 to-indigo-50 border border-pink-200/80 rounded-3xl p-5 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4"
+          className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[28px] p-5 flex flex-col sm:flex-row items-center justify-between gap-4"
         >
           <div className="text-right space-y-1">
-            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-rose-500" />
-              خوش آمدید! نحوه استفاده شما از تقویم سلامت چیست؟
+            <h3 className="text-sm font-bold text-[#1B1B1A] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#1B1B1A] stroke-[1.7]" />
+              نحوه استفاده شما از تقویم سلامت طغرل چیست؟
             </h3>
-            <p className="text-xs text-slate-600 font-medium leading-relaxed">
-              با انتخاب نقش خود، ظاهر و ابزارهای این بخش دقیقاً متناسب با شما تنظیم می‌شود (در هر زمان از پروفایل نیز قابل تغییر است).
+            <p className="text-xs text-[#78746B] font-medium leading-relaxed">
+              با انتخاب نقش خود، ظاهر و ابزارهای این بخش متناسب با شما تنظیم می‌شود.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
             <button
               type="button"
-              onClick={() => handleSelectQuickRole('female')}
-              className="flex-1 sm:flex-initial px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-2xl text-xs font-black shadow-md shadow-rose-200 cursor-pointer transition-all"
+              onClick={() => handleSelectQuickRole("female")}
+              className="flex-1 sm:flex-initial px-5 py-2.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
             >
-              👩 چرخه خودم را ثبت می‌کنم
+              چرخه خودم را ثبت می‌کنم
             </button>
             <button
               type="button"
-              onClick={() => handleSelectQuickRole('male')}
-              className="flex-1 sm:flex-initial px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl text-xs font-black shadow-md shadow-indigo-200 cursor-pointer transition-all"
+              onClick={() => handleSelectQuickRole("male")}
+              className="flex-1 sm:flex-initial px-5 py-2.5 bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] rounded-full text-xs font-bold cursor-pointer transition-colors"
             >
-              👨 همراه پارتنرم هستم
+              همراه پارتنرم هستم
             </button>
           </div>
         </motion.div>
@@ -939,982 +928,890 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
       {/* Partner View Preview Banner for Owner */}
       {isPreviewingAsPartner && (
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white px-4 py-3 rounded-2xl flex items-center justify-between shadow-lg text-xs font-black">
+        <div className="bg-[#F6DC6B] text-[#1B1B1A] px-5 py-3.5 rounded-[24px] flex items-center justify-between gap-3 text-xs font-bold">
           <div className="flex items-center gap-2">
-            <Eye className="w-4 h-4" />
-            <span>در حال مشاهده پیش‌نمایش دیدگاه پارتنر — فیلدهای غیرمجاز بر اساس قوانین حریم خصوصی پنهان شده‌اند</span>
+            <Eye className="w-4 h-4 stroke-[1.8] shrink-0" />
+            <span>پیش‌نمایش دیدگاه پارتنر فعال است — فیلدهای خصوصی پنهان شده‌اند</span>
           </div>
           <button
             type="button"
             onClick={() => setIsPreviewingAsPartner(false)}
-            className="bg-white text-amber-800 px-3 py-1 rounded-xl hover:bg-amber-50 transition-all cursor-pointer font-black shadow-xs"
+            className="bg-[#1B1B1A] text-[#FAF6EC] px-4 py-1.5 rounded-full hover:bg-[#2F2E2C] transition-colors cursor-pointer font-bold shrink-0"
           >
-            خروج از پیش‌نمایش ✕
+            خروج از پیش‌نمایش
           </button>
         </div>
       )}
 
-      {/* ----------------------------------------------------------------- */}
-      {/* TOP HEADER: BRANDING, GOAL MODE SELECTOR & QUICK BUTTONS */}
-      {/* ----------------------------------------------------------------- */}
-      <div className="glass-card rounded-3xl p-5 border border-pink-100/80 bg-white/60 backdrop-blur-xl shadow-lg">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className={`w-11 h-11 shrink-0 rounded-2xl ${partnerRole === 'male' ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 shadow-indigo-200' : 'bg-gradient-to-tr from-rose-500 to-pink-500 shadow-rose-200'} text-white flex items-center justify-center shadow-md`}>
-              {partnerRole === 'male' ? (
-                <HeartHandshake className="w-5 h-5 fill-white" />
-              ) : (
-                <Droplet className="w-5 h-5 fill-white" />
-              )}
-            </div>
-            <div className="text-right">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-slate-800">
-                  {partnerRole === 'male' ? "همراهی و مراقبت از پارتنر 💖" : "تقویم قاعدگی و سلامت من 🌸"}
-                </h2>
-                {settings.goalMode !== 'track' && (
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                    partnerRole === 'male' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-rose-100 text-rose-700 border-rose-200'
-                  }`}>
-                    {settings.goalMode === 'pregnancy' ? 'اقدام به بارداری 👶' : 'پیشگیری طبیعی 🛡️'}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                {partnerRole === 'male' 
-                  ? "اطلاع از وضعیت چرخه پارتنر و راهکارهای همدلی روزانه" 
-                  : "محاسبه هوشمند چرخه، تخمک‌گذاری و همراهی عاطفی دونفره"
-                }
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Buttons differentiated by Partner Role */}
-          {partnerRole === 'male' ? (
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-              {/* Quick Care Action for Male Partner */}
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowCareModal(true)}
-                className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs rounded-2xl shadow-md shadow-indigo-200 flex items-center gap-2 cursor-pointer transition-all"
-                title="ارسال توجه، محبت و همراهی به پارتنر"
-              >
-                <Heart className="w-4 h-4 fill-white" />
-                ارسال محبت ویژه 💖
-              </motion.button>
-
-              {/* Log on behalf of partner (only if allowed) */}
-              {sharing.allowPartnerLogging && (
-                <button
-                  onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-                  className="px-3.5 py-2.5 bg-white/80 hover:bg-white text-slate-700 font-bold text-xs rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
-                  title="ثبت علائم به درخواست پارتنر"
-                >
-                  <Plus className="w-4 h-4 text-indigo-500" />
-                  ثبت علائم ✍️
-                </button>
-              )}
-
-              {/* Settings */}
-              <button
-                onClick={() => setShowSettingsModal(true)}
-                className="p-2.5 bg-white/80 hover:bg-white text-slate-600 rounded-2xl border border-slate-200/80 shadow-sm cursor-pointer transition-all"
-                title="تنظیمات چرخه"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-              {/* Quick Button: Got Period Today */}
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleQuickGotPeriodToday}
-                className="px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-black text-xs rounded-2xl shadow-md shadow-rose-200 flex items-center gap-2 cursor-pointer transition-all"
-                title="ثبت شروع پریود جدید از امروز"
-              >
-                <Droplet className="w-4 h-4 fill-white" />
-                امروز پریود شدم!
-              </motion.button>
-
-              {/* Quick Log Button */}
-              <button
-                onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-                className="px-3.5 py-2.5 bg-white/80 hover:bg-white text-slate-700 font-bold text-xs rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <Plus className="w-4 h-4 text-rose-500" />
-                ثبت علائم
-              </button>
-
-              {/* Sharing & Privacy Button (Owner only) */}
-              <button
-                type="button"
-                onClick={() => setShowSharingModal(true)}
-                className="p-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-2xl border border-purple-200/80 shadow-sm flex items-center justify-center cursor-pointer transition-all"
-                title="تنظیمات حریم خصوصی و اشتراک با پارتنر"
-              >
-                <ShieldAlert className="w-4 h-4 text-purple-600" />
-              </button>
-
-              {/* Settings Modal Button */}
-              <button
-                onClick={() => setShowSettingsModal(true)}
-                className="p-2.5 bg-white/80 hover:bg-white text-slate-600 rounded-2xl border border-slate-200/80 shadow-sm cursor-pointer transition-all"
-                title="تنظیمات چرخه"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* SUB-TABS NAVIGATION */}
-        <div className="flex items-center gap-2 mt-4 pt-3.5 border-t border-slate-200/50 overflow-x-auto scrollbar-none">
+      {/* Minimalist Top Bar: Sub-Tabs + View Mode Switcher */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Sub-Tabs Pill Bar */}
+        <div className="flex items-center gap-1.5 bg-[#EFECE2] p-1.5 rounded-full overflow-x-auto no-scrollbar">
           <button
-            onClick={() => setActiveSubTab('dashboard')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeSubTab === 'dashboard'
-                ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-                : 'bg-white/50 text-slate-600 hover:bg-white/80'
+            onClick={() => setActiveSubTab("dashboard")}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              activeSubTab === "dashboard"
+                ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                : "text-[#78746B] hover:text-[#1B1B1A]"
             }`}
           >
-            <Activity className="w-3.5 h-3.5" />
-            داشبورد و تقویم
+            <Activity className="w-3.5 h-3.5 stroke-[1.8]" />
+            چرخه سلامت
           </button>
 
           <button
-            onClick={() => setActiveSubTab('predictions')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeSubTab === 'predictions'
-                ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-                : 'bg-white/50 text-slate-600 hover:bg-white/80'
+            onClick={() => setActiveSubTab("predictions")}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              activeSubTab === "predictions"
+                ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                : "text-[#78746B] hover:text-[#1B1B1A]"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 stroke-[1.8]" />
             پیش‌بینی دوره‌ها
           </button>
 
           <button
-            onClick={() => setActiveSubTab('history')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeSubTab === 'history'
-                ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-                : 'bg-white/50 text-slate-600 hover:bg-white/80'
+            onClick={() => setActiveSubTab("history")}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              activeSubTab === "history"
+                ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                : "text-[#78746B] hover:text-[#1B1B1A]"
             }`}
           >
-            <BarChart3 className="w-3.5 h-3.5" />
-            تاریخچه علائم ({toPersianDigits(logs.length)})
+            <BarChart3 className="w-3.5 h-3.5 stroke-[1.8]" />
+            تاریخچه ({toPersianDigits(logs.length)})
           </button>
         </div>
+
+        {/* Circular vs Calendar Toggle (Only on Dashboard sub-tab) */}
+        {activeSubTab === "dashboard" && (
+          <div className="flex items-center bg-[#EFECE2] p-1.5 rounded-full text-xs font-bold">
+            <button
+              onClick={() => setViewMode("circular")}
+              className={`px-4 py-1.5 rounded-full transition-colors cursor-pointer ${
+                viewMode === "circular"
+                  ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                  : "text-[#78746B] hover:text-[#1B1B1A]"
+              }`}
+            >
+              چرخه دایره‌ای
+            </button>
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={`px-4 py-1.5 rounded-full transition-colors cursor-pointer ${
+                viewMode === "calendar"
+                  ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                  : "text-[#78746B] hover:text-[#1B1B1A]"
+              }`}
+            >
+              نمای تقویمی
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ----------------------------------------------------------------- */}
-      {/* SUB-TAB 1: MAIN CYCLE DASHBOARD */}
-      {/* ----------------------------------------------------------------- */}
-      {activeSubTab === 'dashboard' && (
+      {/* ================================================================= */}
+      {/* SUB-TAB 1: MAIN CYCLE DASHBOARD (EXACT EDITORIAL WELLNESS LAYOUT) */}
+      {/* ================================================================= */}
+      {activeSubTab === "dashboard" && (
         <div className="space-y-6">
-          {/* Main Visual Card: 360 Degree Impo Wheel or Flat Bar */}
-          <div className="glass-card rounded-3xl p-6 border border-white/60 relative overflow-hidden bg-white/70">
-            {/* View Mode Toggle Switch */}
-            <div className="flex items-center justify-between mb-4">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border ${cycleStatus.stageColor.badgeBg}`}>
-                <span className="w-2 h-2 rounded-full animate-ping bg-current" />
-                {cycleStatus.phaseTitle}
-              </span>
+          {/* HERO VISUAL: Segmented Pastel Capsule Ring OR Squircle Monthly Calendar */}
+          <div className="flex flex-col items-center">
+            {viewMode === "circular" ? (
+              <div className="relative w-[310px] h-[310px] sm:w-[340px] sm:h-[340px] flex items-center justify-center select-none">
+                <svg className="w-full h-full" viewBox="0 0 320 320">
+                  {/* 1. Butter Yellow Capsule (PMS & Luteal Care: 14° -> 64°) */}
+                  <path
+                    d={describeArc(ringCx, ringCy, ringR, 14, 64)}
+                    fill="none"
+                    stroke="#F6DC6B"
+                    strokeWidth="33"
+                    strokeLinecap="round"
+                  />
+                  {/* Monoline Shield Icon inside Yellow Capsule */}
+                  <g transform={`translate(${yellowIconPos.x - 9}, ${yellowIconPos.y - 9})`}>
+                    <path
+                      d="M9 1.8L3 4.3v4.4c0 4.1 2.6 7.8 6 9.1 3.4-1.3 6-5 6-9.1V4.3L9 1.8z"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M6.7 9.3l1.6 1.6 3.2-3.2"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </g>
 
-              <div className="flex items-center bg-slate-100 p-1 rounded-xl text-[11px] font-bold">
-                <button
-                  onClick={() => setViewMode('circular')}
-                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                    viewMode === 'circular' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500'
-                  }`}
-                >
-                  چرخه دایره‌ای
-                </button>
-                <button
-                  onClick={() => setViewMode('calendar')}
-                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                    viewMode === 'calendar' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500'
-                  }`}
-                >
-                  نمای تقویمی
-                </button>
-              </div>
-            </div>
+                  {/* 2. Sage Olive Capsule (Follicular Energy: 86° -> 118°) */}
+                  <path
+                    d={describeArc(ringCx, ringCy, ringR, 86, 118)}
+                    fill="none"
+                    stroke="#A7B86C"
+                    strokeWidth="33"
+                    strokeLinecap="round"
+                  />
+                  {/* Monoline Organic Vitality Icon inside Sage Capsule */}
+                  <g transform={`translate(${sageIconPos.x - 9}, ${sageIconPos.y - 9})`}>
+                    <path
+                      d="M9 3c3.5 0 6 2.5 6 6 0 4.2-6 7.5-6 7.5S3 13.2 3 9c0-3.5 2.5-6 6-6z"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M9 6.5v5"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </g>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Left/Center: Visual Wheel / Monthly Squircle Calendar */}
-              <div className="lg:col-span-6 flex flex-col items-center justify-center">
-                {viewMode === 'circular' ? (
-                  <>
-                    {/* ----------------- 360° IMPO CIRCLE WITH LIQUID WAVE ----------------- */}
-                    <div className="relative w-[300px] h-[300px] flex items-center justify-center">
-                      <svg className="w-full h-full transform -rotate-90 drop-shadow-sm" viewBox="0 0 300 300">
-                        <defs>
-                          {/* Gradient for Period */}
-                          <linearGradient id="impoPeriodGrad" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stopColor="#F43F5E" />
-                            <stop offset="100%" stopColor="#BE123C" />
-                          </linearGradient>
-                          {/* Gradient for Fertile */}
-                          <linearGradient id="impoFertileGrad" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stopColor="#8B5CF6" />
-                            <stop offset="100%" stopColor="#6D28D9" />
-                          </linearGradient>
-                          {/* Gradient for Ovulation */}
-                          <linearGradient id="impoOvulationGrad" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stopColor="#D946EF" />
-                            <stop offset="100%" stopColor="#A21CAF" />
-                          </linearGradient>
-                          {/* Gradient for PMS */}
-                          <linearGradient id="impoPmsGrad" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stopColor="#F59E0B" />
-                            <stop offset="100%" stopColor="#D97706" />
-                          </linearGradient>
-                          {/* Gradient for Follicular */}
-                          <linearGradient id="impoFollicularGrad" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stopColor="#10B981" />
-                            <stop offset="100%" stopColor="#047857" />
-                          </linearGradient>
+                  {/* 3. Pastel Pink Capsule (Period Phase: 140° -> 192°) */}
+                  <path
+                    d={describeArc(ringCx, ringCy, ringR, 140, 192)}
+                    fill="none"
+                    stroke="#F6C3E5"
+                    strokeWidth="33"
+                    strokeLinecap="round"
+                  />
+                  {/* Monoline Heart + Coral Dot (Exact Reference Detail) */}
+                  <g transform={`translate(${pinkIconPos.x - 9}, ${pinkIconPos.y - 9})`}>
+                    <path
+                      d="M9 15.6s-6.2-3.9-6.2-8c0-2.1 1.6-3.6 3.5-3.6 1.2 0 2.2.6 2.7 1.5.5-.9 1.5-1.5 2.7-1.5 1.9 0 3.5 1.5 3.5 3.6 0 4.1-6.2 8-6.2 8z"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="15.2" cy="3.8" r="1.8" fill="#D94E4E" />
+                  </g>
 
-                          {/* Liquid Wave Clip Path */}
-                          <clipPath id="circleLiquidClip">
-                            <circle cx="150" cy="150" r={wheelRadius - 15} />
-                          </clipPath>
-                        </defs>
+                  {/* 4. Powder Blue Capsule (Fertile Window: 214° -> 250°) */}
+                  <path
+                    d={describeArc(ringCx, ringCy, ringR, 214, 250)}
+                    fill="none"
+                    stroke="#B8CEF4"
+                    strokeWidth="33"
+                    strokeLinecap="round"
+                  />
+                  {/* Monoline Brain/Calm Icon inside Blue Capsule */}
+                  <g transform={`translate(${blueIconPos.x - 9}, ${blueIconPos.y - 9})`}>
+                    <circle
+                      cx="6.8"
+                      cy="9"
+                      r="3.6"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.4"
+                    />
+                    <circle
+                      cx="11.2"
+                      cy="9"
+                      r="3.6"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.4"
+                    />
+                  </g>
 
-                        {/* Base Track Circle */}
-                        <circle
-                          cx="150"
-                          cy="150"
-                          r={wheelRadius}
-                          className="stroke-slate-100 fill-white"
-                          strokeWidth={wheelStroke}
-                        />
+                  {/* 5. Sage Circular Node (Ovulation Peak at 271°) */}
+                  <circle cx={sageNodePos.x} cy={sageNodePos.y} r="16.5" fill="#A7B86C" />
+                  <g transform={`translate(${sageNodePos.x - 8}, ${sageNodePos.y - 8})`}>
+                    <path
+                      d="M8 2.2l1.6 3.6L13.2 7l-3.6 1.6L8 12.2 6.4 8.6 2.8 7l3.6-1.2L8 2.2z"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
+                    />
+                  </g>
 
-                        {/* 1. Period Arc Segment */}
-                        <circle
-                          cx="150"
-                          cy="150"
-                          r={wheelRadius}
-                          fill="none"
-                          stroke="url(#impoPeriodGrad)"
-                          strokeWidth={wheelStroke}
-                          strokeDasharray={`${(safePeriodLength / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
-                          strokeDashoffset="0"
-                          strokeLinecap="round"
-                          className="opacity-90"
-                        />
+                  {/* 6. Butter Yellow Mini-Capsule (Biorhythm / Endocrine at 292° -> 308°) */}
+                  <path
+                    d={describeArc(ringCx, ringCy, ringR, 292, 308)}
+                    fill="none"
+                    stroke="#F6DC6B"
+                    strokeWidth="33"
+                    strokeLinecap="round"
+                  />
+                  <g transform={`translate(${yellowMiniIconPos.x - 8}, ${yellowMiniIconPos.y - 8})`}>
+                    <path
+                      d="M5 2.5c0 3.5 6 3.5 6 7s-6 3.5-6 7M11 2.5c0 3.5-6 3.5-6 7s6 3.5 6 7"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  </g>
 
-                        {/* 2. Fertile Window Arc Segment */}
-                        <circle
-                          cx="150"
-                          cy="150"
-                          r={wheelRadius}
-                          fill="none"
-                          stroke="url(#impoFertileGrad)"
-                          strokeWidth={wheelStroke}
-                          strokeDasharray={`${((safeFertileEnd - safeFertileStart + 1) / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
-                          strokeDashoffset={`-${((safeFertileStart - 1) / safeCycleLength) * wheelCircumference}`}
-                          strokeLinecap="round"
-                          className="opacity-80"
-                        />
+                  {/* 7. Powder Blue Circular Node (329°) */}
+                  <circle cx={blueNodePos.x} cy={blueNodePos.y} r="16.5" fill="#B8CEF4" />
+                  <g transform={`translate(${blueNodePos.x - 8}, ${blueNodePos.y - 8})`}>
+                    <path
+                      d="M4.5 11.5l7-7M3.5 9.5a2 2 0 112 2M10.5 4.5a2 2 0 112 2"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  </g>
 
-                        {/* 3. PMS Arc Segment */}
-                        <circle
-                          cx="150"
-                          cy="150"
-                          r={wheelRadius}
-                          fill="none"
-                          stroke="url(#impoPmsGrad)"
-                          strokeWidth={wheelStroke}
-                          strokeDasharray={`${((safeCycleLength - safePmsStart + 1) / safeCycleLength) * wheelCircumference} ${wheelCircumference}`}
-                          strokeDashoffset={`-${((safePmsStart - 1) / safeCycleLength) * wheelCircumference}`}
-                          strokeLinecap="round"
-                          className="opacity-75"
-                        />
+                  {/* 8. Pastel Pink Circular Node (350°) */}
+                  <circle cx={pinkNodePos.x} cy={pinkNodePos.y} r="16.5" fill="#F6C3E5" />
+                  <g transform={`translate(${pinkNodePos.x - 8}, ${pinkNodePos.y - 8})`}>
+                    <path
+                      d="M8 2.8C8 2.8 3.5 7.5 3.5 10.3a4.5 4.5 0 009 0C12.5 7.5 8 2.8 8 2.8z"
+                      fill="none"
+                      stroke="#1B1B1A"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
+                    />
+                  </g>
 
-                        {/* Animated Current Day Progress Glow */}
-                        <circle
-                          cx="150"
-                          cy="150"
-                          r={wheelRadius}
-                          fill="none"
-                          stroke={cycleStatus.stageColor.primary}
-                          strokeWidth={wheelStroke + 4}
-                          strokeDasharray={`4 ${wheelCircumference}`}
-                          strokeDashoffset={`-${((cycleStatus.currentCycleDay - 1) / safeCycleLength) * wheelCircumference}`}
-                          className="opacity-40 animate-pulse"
-                        />
+                  {/* Subtle Active Phase Indicator Dot inside the Ring */}
+                  <circle
+                    cx={activeMarkerPos.x}
+                    cy={activeMarkerPos.y}
+                    r="4"
+                    fill="#1B1B1A"
+                  />
+                </svg>
 
-                        {/* Liquid Wave in Center of Wheel (Impo Cycle Wave) */}
-                        <g clipPath="url(#circleLiquidClip)">
-                          <rect x="0" y="0" width="300" height="300" fill="#FFF5F7" />
-                          
-                          {/* Animated Liquid Wave Path */}
-                          <motion.path
-                            d={`M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`}
-                            fill={cycleStatus.stageColor.light}
-                            animate={{
-                              d: [
-                                `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`,
-                                `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) + 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`,
-                                `M 0 ${300 - (liquidHeightPercent * 2.8)} Q 75 ${300 - (liquidHeightPercent * 2.8) - 10} 150 ${300 - (liquidHeightPercent * 2.8)} T 300 ${300 - (liquidHeightPercent * 2.8)} L 300 300 L 0 300 Z`
-                              ]
-                            }}
-                            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                          />
-                        </g>
-                      </svg>
-
-                      {/* Floating Glow Pointer for Current Day */}
-                      <div 
-                        className="absolute w-5 h-5 rounded-full border-2 border-white shadow-lg pointer-events-none transition-all duration-700"
-                        style={{
-                          backgroundColor: cycleStatus.stageColor.primary,
-                          left: `${pointerX - 10}px`,
-                          top: `${pointerY - 10}px`
-                        }}
-                      >
-                        <div className="w-full h-full rounded-full animate-ping opacity-60 bg-current" />
-                      </div>
-
-                      {/* Center Typography (Exact Impo Style) */}
-                      <div className="absolute flex flex-col items-center justify-center text-center p-4 z-10 pointer-events-none">
-                        {cycleStatus.diffDays >= 90 ? (
-                          <>
-                            <span className="text-xs font-black text-amber-600">عدم قاعدگی طولانی</span>
-                            <span className="text-lg font-black text-slate-800 mt-1">مشورت با پزشک</span>
-                            <span className="text-[10px] font-bold text-slate-500 mt-0.5">بیش از ۹۰ روز</span>
-                          </>
-                        ) : cycleStatus.diffDays >= 45 ? (
-                          <>
-                            <span className="text-xs font-black text-rose-500">پایان دوره انتظار</span>
-                            <span className="text-lg font-black text-slate-800 mt-1">ثبت پریود جدید</span>
-                            <span className="text-[10px] font-bold text-slate-500 mt-0.5">{toPersianDigits(cycleStatus.diffDays)} روز از شروع قبلی</span>
-                          </>
-                        ) : cycleStatus.phase === 'due' ? (
-                          <>
-                            <span className="text-xs font-black text-rose-500 animate-pulse">
-                              {partnerRole === 'male' ? 'موعد پریود پارتنر' : 'موعد پریود'}
-                            </span>
-                            <span className="text-3xl font-black text-rose-600 mt-0.5">امروز</span>
-                            <span className="text-[10px] font-bold text-slate-500 mt-0.5">زمان مورد انتظار</span>
-                          </>
-                        ) : cycleStatus.isDelayed ? (
-                          <>
-                            <span className="text-xs font-black text-red-500 animate-pulse">
-                              {partnerRole === 'male' ? 'تاخیر پریود پارتنر' : 'تاخیر پریود'}
-                            </span>
-                            <span className="text-4xl font-black text-red-600 mt-0.5">
-                              {toPersianDigits(cycleStatus.delayedDays)}
-                            </span>
-                            <span className="text-xs font-black text-slate-500 mt-0.5">روز تاخیر</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[11px] font-black text-slate-400">
-                              {partnerRole === 'male' ? 'روز چرخه پارتنر' : 'روز چرخه'}
-                            </span>
-                            <span className="text-4xl font-black text-slate-800 tracking-tight mt-0.5">
-                              {toPersianDigits(cycleStatus.currentCycleDay)}
-                            </span>
-                            <span className="text-[11px] font-black text-slate-500 mt-0.5">
-                              از {toPersianDigits(safeCycleLength)} روز
-                            </span>
-                          </>
-                        )}
-
-                        <div className="mt-2.5 flex items-center gap-1 text-[10px] font-black text-rose-500 bg-white/90 px-2.5 py-0.5 rounded-full shadow-xs border border-rose-100">
-                          <span>
-                            {cycleStatus.phase === 'due'
-                              ? (partnerRole === 'male' ? 'امروز موعد پریود پارتنر است' : 'امروز موعد مورد انتظار است')
-                              : cycleStatus.diffDays >= 90
-                              ? 'نیاز به بررسی توسط پزشک'
-                              : cycleStatus.diffDays >= 45
-                              ? 'پیشنهاد ثبت چرخه جدید'
-                              : partnerRole === 'male'
-                              ? (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا موعد بعدی پارتنر` : `${toPersianDigits(cycleStatus.delayedDays)} روز تاخیر`)
-                              : (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا پریود بعدی` : `${toPersianDigits(cycleStatus.delayedDays)} روز تاخیر`)
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Color Legend (Impo Phase Palette) */}
-                    <div className="flex flex-wrap items-center justify-center gap-3 mt-4 text-[10px] font-black text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                        قاعدگی ({toPersianDigits(safePeriodLength)} روز)
+                {/* Center Editorial Hero Typography (Exact Match to "8.8 / your health score (i)") */}
+                <div className="absolute flex flex-col items-center justify-center text-center px-6 z-10">
+                  {cycleStatus.diffDays >= 90 ? (
+                    <>
+                      <span className="text-xl font-bold text-[#1B1B1A]">مشورت با پزشک</span>
+                      <span className="text-xs text-[#78746B] mt-1">بیش از ۹۰ روز توقف چرخه</span>
+                    </>
+                  ) : cycleStatus.diffDays >= 45 ? (
+                    <>
+                      <span className="text-[52px] font-bold leading-none text-[#1B1B1A]">
+                        {toPersianDigits(cycleStatus.diffDays)}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        فاز امن / فولیکولار
+                      <span className="text-xs text-[#78746B] mt-2">روز از شروع دوره قبلی</span>
+                    </>
+                  ) : cycleStatus.isDelayed ? (
+                    <>
+                      <span className="text-[60px] font-bold leading-none text-[#D94E4E]">
+                        {toPersianDigits(cycleStatus.delayedDays)}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                        پنجره باروری
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-500" />
-                        روز تخمک‌گذاری (روز {toPersianDigits(safeOvulationDay)})
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                        دوران PMS
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  /* ----------------- SQUIRCLE MONTHLY CALENDAR VIEW ----------------- */
-                  <div className="w-full bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-xs space-y-5" dir="rtl">
-                    {/* Top Navigation Header: < Month Year > */}
-                    <div className="flex items-center justify-between px-2">
                       <button
                         type="button"
-                        onClick={() => {
-                          if (calendarMonth === 1) {
-                            setCalendarMonth(12);
-                            setCalendarYear(y => y - 1);
-                          } else {
-                            setCalendarMonth(m => m - 1);
-                          }
-                        }}
-                        className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-[#1A1A1A]"
-                        title="ماه قبل"
+                        onClick={() => setShowSettingsModal(true)}
+                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
                       >
-                        <ChevronRight className="w-5 h-5 stroke-[2]" />
-                      </button>
-
-                      <h3 className="text-base sm:text-lg font-bold text-[#1A1A1A]">
-                        {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
-                      </h3>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (calendarMonth === 12) {
-                            setCalendarMonth(1);
-                            setCalendarYear(y => y + 1);
-                          } else {
-                            setCalendarMonth(m => m + 1);
-                          }
-                        }}
-                        className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-[#1A1A1A]"
-                        title="ماه بعد"
-                      >
-                        <ChevronLeft className="w-5 h-5 stroke-[2]" />
-                      </button>
-                    </div>
-
-                    {/* Weekday Names Header */}
-                    <div className="grid grid-cols-7 gap-2 sm:gap-2.5 text-center text-xs font-medium text-[#757575]">
-                      {JALALI_WEEKDAYS.map(day => (
-                        <span key={day}>{day}</span>
-                      ))}
-                    </div>
-
-                    {/* Calendar Days Grid */}
-                    {(() => {
-                      const daysInMonth = getDaysInJalaliMonth(calendarYear, calendarMonth);
-                      const [firstGy, firstGm, firstGd] = jalaliToGregorian(calendarYear, calendarMonth, 1);
-                      const firstDateGregorian = new Date(firstGy, firstGm - 1, firstGd);
-                      const jsDay = firstDateGregorian.getDay();
-                      const firstDayOfWeekOffset = (jsDay + 1) % 7;
-
-                      const daysArray = [];
-                      for (let i = 0; i < firstDayOfWeekOffset; i++) {
-                        daysArray.push(null);
-                      }
-                      for (let d = 1; d <= daysInMonth; d++) {
-                        daysArray.push(d);
-                      }
-
-                      return (
-                        <div className="grid grid-cols-7 gap-2 sm:gap-2.5">
-                          {daysArray.map((day, idx) => {
-                            if (day === null) {
-                              return <div key={`empty_${idx}`} className="aspect-square" />;
-                            }
-
-                            const [gy, gm, gd] = jalaliToGregorian(calendarYear, calendarMonth, day);
-                            const cellDate = new Date(gy, gm - 1, gd);
-                            const cellIso = toGregorianIsoString(cellDate);
-                            const isToday = cellIso === toGregorianIsoString(new Date());
-
-                            const diffFromStart = daysBetween(settings.lastPeriodStartDate, cellDate);
-                            let cellCycleDay = 0;
-                            if (diffFromStart >= 0) {
-                              cellCycleDay = (diffFromStart % safeCycleLength) + 1;
-                            }
-
-                            const isPeriodDay = cellCycleDay >= 1 && cellCycleDay <= safePeriodLength;
-                            const isOvulationDay = cellCycleDay === safeOvulationDay;
-                            const isFertileDay = cellCycleDay >= safeFertileStart && cellCycleDay <= safeFertileEnd;
-                            const isPmsDay = cellCycleDay >= safePmsStart && cellCycleDay <= safeCycleLength;
-
-                            const hasLog = logs.some(l => l.date === cellIso);
-
-                            let tileColorClass = "bg-[#F7F7F7] text-[#1E1E1E] hover:bg-[#EFEFEF]";
-                            if (isPeriodDay) {
-                              tileColorClass = "bg-[#F9CCD8] text-[#7D243C]";
-                            } else if (isOvulationDay) {
-                              tileColorClass = "bg-[#1B9AAA] text-white";
-                            } else if (isFertileDay) {
-                              tileColorClass = "bg-[#C8EEF2] text-[#0E545B]";
-                            } else if (isPmsDay) {
-                              tileColorClass = "bg-[#E2D2FE] text-[#4A2574]";
-                            }
-
-                            return (
-                              <motion.button
-                                type="button"
-                                key={day}
-                                whileTap={{ scale: 0.96 }}
-                                onClick={() => handleOpenLogModal(cellIso)}
-                                className={`aspect-square rounded-[15px] sm:rounded-[18px] flex flex-col items-center justify-center transition-all cursor-pointer relative select-none ${tileColorClass} ${
-                                  isToday ? 'border-2 border-dashed border-[#222222]' : ''
-                                }`}
-                              >
-                                <span className="text-sm font-bold leading-none">
-                                  {toPersianDigits(day)}
-                                </span>
-                                {isToday && (
-                                  <span className="text-[9px] sm:text-[10px] font-bold leading-none mt-1">
-                                    امروز
-                                  </span>
-                                )}
-                                {hasLog && (
-                                  <span
-                                    className={`w-1.5 h-1.5 rounded-full absolute top-1.5 left-1.5 ${
-                                      isOvulationDay ? 'bg-white' : 'bg-[#1B9AAA]'
-                                    }`}
-                                    title="گزارش ثبت‌شده"
-                                  />
-                                )}
-                              </motion.button>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-
-                    {/* Bottom Legend (Exact Match to Reference Design) */}
-                    <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 text-[11px] sm:text-xs font-bold text-[#1E1E1E]">
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-[#F9CCD8] inline-block" />
-                        <span>دوره پریود</span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-[#E2D2FE] inline-block" />
-                        <span>دوره PMS</span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-[#C8EEF2] inline-block" />
-                        <span>دوره باروری</span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-[#1B9AAA] inline-block" />
-                        <span>روز تخمک گذاری</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Right: Detailed Status Cards & Insights (Differentiated by Role) */}
-              <div className="lg:col-span-6 space-y-4 text-right">
-                {cycleStatus.diffDays >= 90 ? (
-                  /* ================= 90+ DAYS CEILING: ONLY DOCTOR MESSAGE ================= */
-                  <div className="bg-amber-50/90 border-2 border-amber-300 rounded-3xl p-6 text-right shadow-sm space-y-3">
-                    <div className="flex items-center gap-2.5 text-amber-900 font-black text-base">
-                      <span className="text-2xl">🩺</span>
-                      <span>پیام سلامت: ضرورت مشورت با پزشک</span>
-                    </div>
-                    <p className="text-sm text-amber-900 font-bold leading-relaxed">
-                      اگر بیش از ۳ ماه پریود نشده‌اید یا بارداری رد شده است، با پزشک مشورت کنید.
-                    </p>
-                    <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                      طولانی شدن عدم قاعدگی نیازمند بررسی دقیق هورمونی و سونوگرافی توسط متخصص زنان است.
-                    </p>
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={handleQuickGotPeriodToday}
-                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
-                      >
-                        در صورت شروع پریود، همین حالا ثبتش کن 🩸
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {cycleStatus.diffDays >= 45 && (
-                      /* ================= 45-89 DAYS CEILING CARD ================= */
-                      <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 rounded-3xl p-5 text-right shadow-sm space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div>
-                            <h4 className="text-sm font-black text-rose-900 flex items-center gap-1.5">
-                              <CalendarIcon className="w-4 h-4 text-rose-600" />
-                              پریودت شروع شده؟ همین حالا ثبتش کن
-                            </h4>
-                            <p className="text-[11px] text-rose-700 font-medium mt-1">
-                              {toPersianDigits(cycleStatus.diffDays)} روز از موعد شروع قبلی سپری شده است.
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleQuickGotPeriodToday}
-                            className="px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer self-start sm:self-auto shrink-0"
-                          >
-                            ثبت پریود امروز 🩸
-                          </button>
-                        </div>
-                        <div className="pt-2 border-t border-rose-200/60">
-                          <p className="text-xs text-slate-700 font-bold leading-relaxed">
-                            اگر بیش از ۳ ماه پریود نشده‌اید یا بارداری رد شده است، با پزشک مشورت کنید.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {partnerRole === 'male' ? (
-                      /* ================= MALE COMPANION VIEW ================= */
-                      <>
-                        {/* Companion Status Card */}
-                        <div className="bg-white/85 p-5 rounded-3xl border border-indigo-100 shadow-sm space-y-2.5">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-indigo-600" />
-                              {sharing.sharePhase ? `وضعیت جسمی و روحی پارتنر در روز ${toPersianDigits(cycleStatus.currentCycleDay)} چرخه` : "وضعیت روزانه پارتنر"}
-                            </h3>
-                            <span className="text-[11px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
-                              {sharing.sharePhase ? cycleStatus.phaseTitle : "محرمانه 🔒"}
-                            </span>
-                          </div>
-
-                          <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                            {sharing.sharePhase ? (
-                              cycleStatus.phase === 'period' ? (
-                                "بدن پارتنر شما در حال خونریزی ماهانه است. احساس گرفتگی‌های عضلانی شکم و کمر، افت آهن و خستگی در این روزها شایع است. او بیش از هر چیز به استراحت، گرم نگه داشتن بدن و حمایت بدون قید و شرط شما نیاز دارد."
-                              ) : cycleStatus.phase === 'due' ? (
-                                "امروز موعد مورد انتظار برای شروع پریود پارتنر شماست. ممکن است علائمی از خستگی، حساسیت عاطفی یا گرفتگی داشته باشد. با آرامش و محبت، فضایی آرام برای او مهیا کنید."
-                              ) : cycleStatus.phase === 'delayed' ? (
-                                `پریود پارتنر شما ${toPersianDigits(cycleStatus.delayedDays)} روز به تاخیر افتاده است. استرس و نوسانات هورمونی شایع‌ترین علل هستند. آرامش‌بخش‌ترین تکیه‌گاه او باشید.`
-                              ) : cycleStatus.phase === 'pms' ? (
-                                "پارتنر شما در روزهای حساس PMS (پیش‌قاعدگی) قرار دارد. به دلیل تغییرات هورمونی، احساس دل‌نازکی، کم‌حوصلگی ناگهانی یا اضطراب کاملاً طبیعی است. درک و آرامش شما در این روزها معجزه می‌کند."
-                              ) : cycleStatus.phase === 'ovulation' ? (
-                                "پارتنر شما در اوج روز تخمک‌گذاری و شادابی این ماه است. زمان طلایی برای خلق لحظات شیرین، شام دونفره و ابراز عشق عمیق."
-                              ) : cycleStatus.phase === 'fertile' ? (
-                                "پارتنر شما در پنجره باروری قرار دارد. سطح انرژی بدنی او رو به اوج است."
-                              ) : (
-                                "پارتنر شما در فاز پرانرژی و باانگیزه قرار دارد. زمان عالی برای ورزش، پیاده‌روی دونفره و تفریحات مشترک."
-                              )
-                            ) : (
-                              "پارتنر شما نمایش فازهای چرخه را خصوصی‌سازی کرده است. با آرامش، احترام به حریم خصوصی و ابراز محبت همیشگی، همراه و تکیه‌گاه او باشید."
-                            )}
-                          </p>
-
-                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
-                        <div className="bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/60">
-                          <span className="text-[10px] font-bold text-slate-500 block mb-0.5">شانس باروری پارتنر:</span>
-                          <span className="text-xs font-black text-indigo-700 flex items-center gap-1">
-                            <Baby className="w-3.5 h-3.5" />
-                            {sharing.shareFertileWindow ? cycleStatus.chanceOfPregnancy : "محرمانه 🔒"}
-                          </span>
-                        </div>
-
-                        <div className="bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/60">
-                          <span className="text-[10px] font-bold text-slate-500 block mb-0.5">موعد بعدی پریود پارتنر:</span>
-                          <span className="text-xs font-black text-purple-700">
-                            {sharing.shareNextPeriod 
-                              ? (cycleStatus.daysUntilNextPeriod > 0 ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز دیگر` : 'هم‌اکنون در موعد')
-                              : "محرمانه 🔒"
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Golden Companion Empathy Guide */}
-                    <div className="bg-gradient-to-r from-indigo-50/90 to-purple-50/90 p-4.5 rounded-3xl border border-indigo-100/80 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-black text-indigo-900 flex items-center gap-1.5">
-                          <HeartHandshake className="w-4 h-4 text-indigo-600" />
-                          راهنمای طلایی همراهی امروز 🌟 (چگونه بهترین همراه باشیم؟):
-                        </h4>
-                        <span className="text-[10px] font-bold text-indigo-600 bg-white/80 px-2 py-0.5 rounded-lg border border-indigo-100">
-                          توصیه تخصصی طغرل
+                        <span>
+                          {partnerRole === "male" ? "روز تاخیر پارتنر" : "روز تاخیر قاعدگی"}
                         </span>
-                      </div>
-                      <p className="text-[11px] text-indigo-950 leading-relaxed font-semibold">
-                        {sharing.sharePhase 
-                          ? cycleStatus.partnerTip 
-                          : "با همدلی، صبوری و احترام به فضای شخصی، بدون استرس در کنار پارتنرتان باشید. احساس امنیت عاطفی بهترین هدیه شما در این روزهاست."
+                        <Info className="w-3.5 h-3.5 stroke-[1.6]" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[64px] sm:text-[72px] font-bold leading-none tracking-tight text-[#1B1B1A]">
+                        {toPersianDigits(cycleStatus.currentCycleDay)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowSettingsModal(true)}
+                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
+                        title="مشاهده و ویرایش تنظیمات چرخه"
+                      >
+                        <span>
+                          {partnerRole === "male"
+                            ? `روز چرخه پارتنر از ${toPersianDigits(safeCycleLength)}`
+                            : `روز چرخه از ${toPersianDigits(safeCycleLength)} روز`}
+                        </span>
+                        <Info className="w-3.5 h-3.5 stroke-[1.6]" />
+                      </button>
+                    </>
+                  )}
+
+                  {(effectiveIsOwner || sharing.sharePhase) && (
+                    <span className="mt-2.5 px-3 py-1 rounded-full bg-[#EFECE2] text-[#1B1B1A] text-[11px] font-bold">
+                      {cycleStatus.phase === "due"
+                        ? "موعد مورد انتظار امروز"
+                        : cycleStatus.daysUntilNextPeriod > 0
+                        ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز تا موعد بعدی`
+                        : cycleStatus.phaseTitle}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* ----------------- SQUIRCLE MONTHLY CALENDAR VIEW ----------------- */
+              <div className="w-full max-w-xl bg-[#FFFDF8] rounded-[30px] p-5 sm:p-6 border border-[#E8E2D4] space-y-5" dir="rtl">
+                {/* Top Navigation Header: < Month Year > */}
+                <div className="flex items-center justify-between px-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (calendarMonth === 1) {
+                        setCalendarMonth(12);
+                        setCalendarYear((y) => y - 1);
+                      } else {
+                        setCalendarMonth((m) => m - 1);
+                      }
+                    }}
+                    className="w-10 h-10 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] hover:bg-[#EFECE2] flex items-center justify-center transition-colors cursor-pointer text-[#1B1B1A]"
+                    title="ماه قبل"
+                  >
+                    <ChevronRight className="w-4 h-4 stroke-[1.8]" />
+                  </button>
+
+                  <h3 className="text-base sm:text-lg font-bold text-[#1B1B1A]">
+                    {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (calendarMonth === 12) {
+                        setCalendarMonth(1);
+                        setCalendarYear((y) => y + 1);
+                      } else {
+                        setCalendarMonth((m) => m + 1);
+                      }
+                    }}
+                    className="w-10 h-10 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] hover:bg-[#EFECE2] flex items-center justify-center transition-colors cursor-pointer text-[#1B1B1A]"
+                    title="ماه بعد"
+                  >
+                    <ChevronLeft className="w-4 h-4 stroke-[1.8]" />
+                  </button>
+                </div>
+
+                {/* Weekday Names Header */}
+                <div className="grid grid-cols-7 gap-2 sm:gap-2.5 text-center text-xs font-medium text-[#78746B]">
+                  {JALALI_WEEKDAYS.map((day) => (
+                    <span key={day}>{day}</span>
+                  ))}
+                </div>
+
+                {/* Calendar Days Grid (Squircle Tiles in Warm Pastel Palette) */}
+                {(() => {
+                  const daysInMonth = getDaysInJalaliMonth(calendarYear, calendarMonth);
+                  const [firstGy, firstGm, firstGd] = jalaliToGregorian(calendarYear, calendarMonth, 1);
+                  const firstDateGregorian = new Date(firstGy, firstGm - 1, firstGd);
+                  const jsDay = firstDateGregorian.getDay();
+                  const firstDayOfWeekOffset = (jsDay + 1) % 7;
+
+                  const daysArray = [];
+                  for (let i = 0; i < firstDayOfWeekOffset; i++) {
+                    daysArray.push(null);
+                  }
+                  for (let d = 1; d <= daysInMonth; d++) {
+                    daysArray.push(d);
+                  }
+
+                  return (
+                    <div className="grid grid-cols-7 gap-2 sm:gap-2.5">
+                      {daysArray.map((day, idx) => {
+                        if (day === null) {
+                          return <div key={`empty_${idx}`} className="aspect-square" />;
                         }
-                      </p>
+
+                        const [gy, gm, gd] = jalaliToGregorian(calendarYear, calendarMonth, day);
+                        const cellDate = new Date(gy, gm - 1, gd);
+                        const cellIso = toGregorianIsoString(cellDate);
+                        const isToday = cellIso === toGregorianIsoString(new Date());
+
+                        const diffFromStart = daysBetween(settings.lastPeriodStartDate, cellDate);
+                        let cellCycleDay = 0;
+                        if (diffFromStart >= 0) {
+                          cellCycleDay = (diffFromStart % safeCycleLength) + 1;
+                        }
+
+                        const isPeriodDay = cellCycleDay >= 1 && cellCycleDay <= safePeriodLength;
+                        const isOvulationDay = cellCycleDay === safeOvulationDay;
+                        const isFertileDay = cellCycleDay >= safeFertileStart && cellCycleDay <= safeFertileEnd;
+                        const isPmsDay = cellCycleDay >= safePmsStart && cellCycleDay <= safeCycleLength;
+
+                        const hasLog = logs.some((l) => l.date === cellIso);
+
+                        let tileColorClass = "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]";
+                        if (isPeriodDay) {
+                          tileColorClass = "bg-[#F6C3E5] text-[#1B1B1A]";
+                        } else if (isOvulationDay) {
+                          tileColorClass = "bg-[#A7B86C] text-[#1B1B1A]";
+                        } else if (isFertileDay) {
+                          tileColorClass = "bg-[#DCE6B5] text-[#1B1B1A]";
+                        } else if (isPmsDay) {
+                          tileColorClass = "bg-[#B8CEF4] text-[#1B1B1A]";
+                        }
+
+                        return (
+                          <motion.button
+                            type="button"
+                            key={day}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={() => handleOpenLogModal(cellIso)}
+                            className={`aspect-square rounded-[15px] sm:rounded-[18px] flex flex-col items-center justify-center transition-colors cursor-pointer relative select-none ${tileColorClass} ${
+                              isToday ? "border-[1.8px] border-dashed border-[#1B1B1A]" : ""
+                            }`}
+                          >
+                            <span className="text-sm font-bold leading-none">
+                              {toPersianDigits(day)}
+                            </span>
+                            {isToday && (
+                              <span className="text-[9px] sm:text-[10px] font-bold leading-none mt-1">
+                                امروز
+                              </span>
+                            )}
+                            {hasLog && (
+                              <span
+                                className="w-1.5 h-1.5 rounded-full absolute top-1.5 left-1.5 bg-[#1B1B1A]"
+                                title="گزارش ثبت‌شده"
+                              />
+                            )}
+                          </motion.button>
+                        );
+                      })}
                     </div>
+                  );
+                })()}
 
-                    {/* Quick Care Actions (1-Click Pokes for Male Partner) */}
-                    <div className="bg-white/85 p-4 rounded-3xl border border-slate-100 shadow-xs space-y-2.5">
-                      <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                        <Heart className="w-3.5 h-3.5 text-rose-500" />
-                        اقدام سریع مراقبت و توجه (با یک کلیک برای پارتنر ارسال می‌شود):
-                      </h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handlePartnerPoke("برات یک فنجان دمنوش گرم و نبات آماده کنم عزیزم؟ ☕")}
-                          className="p-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 rounded-xl text-[11px] font-bold text-rose-800 flex items-center gap-1.5 transition-all cursor-pointer text-right"
-                        >
-                          <span>☕</span>
-                          <span>پیشنهاد دمنوش گرم</span>
-                        </button>
+                {/* Bottom 4-Dot Horizontal Legend */}
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-4 text-[11px] sm:text-xs font-bold text-[#1B1B1A]">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#F6C3E5] inline-block" />
+                    <span>دوره پریود</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#B8CEF4] inline-block" />
+                    <span>دوره PMS</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#DCE6B5] inline-block" />
+                    <span>دوره باروری</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#A7B86C] inline-block" />
+                    <span>روز تخمک گذاری</span>
+                  </span>
+                </div>
+              </div>
+            )}
 
-                        <button
-                          type="button"
-                          onClick={() => handlePartnerPoke("کیسه آب گرم و جای استراحتت آماده‌ست قشنگم، بیا دراز بکش 🛋️")}
-                          className="p-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200/60 rounded-xl text-[11px] font-bold text-purple-800 flex items-center gap-1.5 transition-all cursor-pointer text-right"
-                        >
-                          <span>🛋️</span>
-                          <span>کیسه آب گرم و استراحت</span>
-                        </button>
+            {/* ACTION ROW DIRECTLY UNDER HERO (Exact Match: [ Black Pill CTA ] + Circular Sand Buttons) */}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+              {partnerRole === "male" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowCareModal(true)}
+                    className="px-6 py-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    ارسال محبت ویژه
+                  </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handlePartnerPoke("شکلات و خوراکی‌های مورد علاقه‌ت رو برات خریدم نوش جونت 🍫")}
-                          className="p-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 rounded-xl text-[11px] font-bold text-amber-800 flex items-center gap-1.5 transition-all cursor-pointer text-right"
-                        >
-                          <span>🍫</span>
-                          <span>شکلات و تنقلات محبوب</span>
-                        </button>
+                  {sharing.allowPartnerLogging && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
+                      className="w-11 h-11 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                      title="ثبت شروع پریود به درخواست پارتنر"
+                    >
+                      <HeartPulse className="w-4 h-4 stroke-[1.7]" />
+                    </button>
+                  )}
 
-                        <button
-                          type="button"
-                          onClick={() => setShowCareModal(true)}
-                          className="p-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 rounded-xl text-[11px] font-bold text-indigo-800 flex items-center gap-1.5 transition-all cursor-pointer text-right"
-                        >
-                          <span>💌</span>
-                          <span>ارسال پیام دلگرمی ویژه</span>
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  /* ================= FEMALE HEALTH VIEW ================= */
-                  <>
-                    <div className="bg-white/80 p-5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-rose-500" />
-                          وضعیت بیولوژیکی امروز شما
-                        </h3>
-                        <span className="text-[11px] font-black text-slate-400">
-                          {formatPersianDate(toGregorianIsoString(new Date()))}
-                        </span>
-                      </div>
+                  <button
+                    type="button"
+                    onClick={() => handlePartnerPoke("عزیزم همیشه کنارت هستم و به فکرتم 💕")}
+                    className="w-11 h-11 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                    title="ارسال تلنگر سریع محبت"
+                  >
+                    <Send className="w-4 h-4 stroke-[1.7]" />
+                  </button>
 
-                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                        {cycleStatus.stageDescription}
-                      </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowSettingsModal(true)}
+                    className="w-11 h-11 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                    title="تنظیمات چرخه"
+                  >
+                    <Settings className="w-4 h-4 stroke-[1.7]" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleQuickGotPeriodToday}
+                    className="px-6 py-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    امروز پریود شدم
+                  </button>
 
-                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
-                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-400 block mb-0.5">احتمال بارداری امروز:</span>
-                          <span className="text-xs font-black text-purple-700 flex items-center gap-1">
-                            <Baby className="w-3.5 h-3.5" />
-                            {cycleStatus.chanceOfPregnancy}
-                          </span>
-                        </div>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
+                    className="w-11 h-11 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                    title="ثبت علائم و احوالات امروز"
+                  >
+                    <HeartPulse className="w-4 h-4 stroke-[1.7]" />
+                  </button>
 
-                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-                          <span className="text-[10px] font-bold text-slate-400 block mb-0.5">روز تخمک‌گذاری شما:</span>
-                          <span className="text-xs font-black text-fuchsia-700">
-                            روز {toPersianDigits(safeOvulationDay)} چرخه
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSharingModal(true)}
+                    className="w-11 h-11 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                    title="حریم خصوصی و اشتراک با پارتنر"
+                  >
+                    <FileText className="w-4 h-4 stroke-[1.7]" />
+                  </button>
 
-                    {/* Self Care & Nutrition Tip */}
-                    <div className="bg-gradient-to-r from-rose-50/70 to-pink-50/70 p-4 rounded-2xl border border-rose-100 space-y-1.5">
-                      <h4 className="text-xs font-black text-rose-800 flex items-center gap-1.5">
-                        <Coffee className="w-3.5 h-3.5 text-rose-600" />
-                        توصیه خودمراقبتی و تغذیه امروز:
-                      </h4>
-                      <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
-                        {cycleStatus.selfCareTip} {cycleStatus.nutritionTip}
-                      </p>
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handlePartnerPoke(`عزیزم، امروز در ${cycleStatus.phaseTitle} هستم؛ کنارم باش 🌸`)
+                    }
+                    className="w-11 h-11 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                    title="ارسال پیام وضعیت به پارتنر"
+                  >
+                    <Send className="w-4 h-4 stroke-[1.7]" />
+                  </button>
 
-                    {/* Partner Care Insight (Special Couples Sync Feature) */}
-                    <div className="bg-gradient-to-r from-purple-50/70 to-indigo-50/70 p-4 rounded-2xl border border-purple-100 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-black text-purple-900 flex items-center gap-1.5">
-                          <HeartHandshake className="w-3.5 h-3.5 text-purple-600" />
-                          همدلی پارتنر (نسخه همراه):
-                        </h4>
-                        <span className="text-[10px] font-black text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
-                          همگام دونفره 💖
-                        </span>
-                      </div>
-
-                      <p className="text-[11px] text-purple-700 leading-relaxed font-medium">
-                        {cycleStatus.partnerTip}
-                      </p>
-
-                      <div className="pt-1 flex gap-2">
-                        <button
-                          onClick={() => handlePartnerPoke(`عزیزم، امروز در ${cycleStatus.phaseTitle} هستی؛ مراقب خودت باش 🌸`)}
-                          className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-[10px] font-black shadow-xs flex items-center gap-1 cursor-pointer transition-all"
-                        >
-                          <MessageCircleHeart className="w-3 h-3" />
-                          ارسال پیام همدلی به همسر
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setShowSettingsModal(true)}
+                    className="w-11 h-11 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                    title="تنظیمات چرخه و تاریخ تولد"
+                  >
+                    <Settings className="w-4 h-4 stroke-[1.7]" />
+                  </button>
                 </>
               )}
+            </div>
+          </div>
+
+          {/* PASTEL PINK ASSISTANT CARD (Exact Match to "Intelly assistant" Banner) */}
+          <div className="bg-[#F6C3E5] rounded-[28px] p-5 sm:p-6 relative overflow-hidden">
+            {/* Subtle Tilted Heart Watermark */}
+            <svg
+              viewBox="0 0 100 100"
+              className="w-32 h-32 absolute -bottom-7 left-4 text-[#E5ADD2] fill-current pointer-events-none rotate-[-12deg]"
+            >
+              <path d="M50 88C50 88 12 63 12 36C12 21 24 12 36 12C44 12 50 18 50 23C50 18 56 12 64 12C76 12 88 21 88 36C88 63 50 88 50 88Z" />
+            </svg>
+
+            <div className="relative z-10 space-y-2.5 max-w-2xl">
+              <span className="text-xs font-medium text-[#6B5364] block">
+                دستیار هوشمند طغرل
+              </span>
+
+              {cycleStatus.diffDays >= 90 ? (
+                <p className="text-sm sm:text-base font-bold text-[#1B1B1A] leading-relaxed">
+                  بیش از <span className="text-[#D94E4E]">۳ ماه</span> از آخرین قاعدگی گذشته است؛ لطفاً در صورت رد بارداری با متخصص زنان مشورت کنید.
+                </p>
+              ) : partnerRole === "male" ? (
+                <p className="text-sm sm:text-base font-bold text-[#1B1B1A] leading-relaxed">
+                  {userProfile.displayName} عزیز،{" "}
+                  {sharing.sharePhase ? (
+                    <>
+                      پارتنرتان امروز در{" "}
+                      <span className="text-[#D94E4E]">{cycleStatus.phaseTitle}</span> است.{" "}
+                      {cycleStatus.partnerTip}
+                    </>
+                  ) : (
+                    "با آرامش، توجه و ابراز محبت بی‌قید و شرط در کنار پارتنرتان باشید."
+                  )}
+                </p>
+              ) : (
+                <p className="text-sm sm:text-base font-bold text-[#1B1B1A] leading-relaxed">
+                  {userProfile.displayName} عزیز، امروز در{" "}
+                  <span className="text-[#D94E4E]">
+                    روز {toPersianDigits(cycleStatus.currentCycleDay)} چرخه
+                  </span>{" "}
+                  ({cycleStatus.phaseTitle}) هستی. {cycleStatus.selfCareTip}
+                </p>
+              )}
+
+              <div className="pt-1">
+                {partnerRole === "male" ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCareModal(true)}
+                    className="px-5 py-2.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    ارسال پیام همدلی
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
+                    className="px-5 py-2.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    ثبت احوالات امروز
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Quick Logs Summary Bar */}
-          <div className="glass-card rounded-3xl p-5 border border-white/60 bg-white/60 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">📝</span>
-              <div>
-                <h4 className="text-xs font-black text-slate-800">ثبت احساسات، دردها و علائم فیزیکی</h4>
-                <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                  ثبت روزانه به الگوریتم طغرل کمک می‌کند تا پیش‌بینی دقیق‌تری از چرخه‌ها و دردهای شما به دست آورد.
-                </p>
+          {/* EDITORIAL BIOMETRICS & CYCLE DETAILS ("Health systems" Style List + Care Cards) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left/Start: "Health systems" Progress List */}
+            <div className="lg:col-span-7 bg-[#FFFDF8] border border-[#E8E2D4] rounded-[28px] p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-[#1B1B1A]">شاخص‌های سلامت و بیوریتم</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowSettingsModal(true)}
+                  className="px-4 py-1.5 bg-[#1B1B1A] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer hover:bg-[#2F2E2C] transition-colors"
+                >
+                  تنظیمات
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {bioMetrics.map((m) => {
+                  const MetricIcon = m.Icon;
+                  return (
+                    <div key={m.id} className="flex items-center gap-3.5">
+                      <div
+                        className={`w-12 h-12 rounded-full ${m.bgClass} text-[#1B1B1A] flex items-center justify-center shrink-0`}
+                      >
+                        <MetricIcon className="w-5 h-5 stroke-[1.6]" />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs sm:text-sm font-bold text-[#1B1B1A] block mb-2">
+                          {m.label}
+                        </span>
+                        <div className="w-full h-3.5 bg-[#EFECE2] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${Math.max(10, m.pct)}%`, backgroundColor: m.color }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="text-left shrink-0 min-w-[68px]">
+                        <span className="text-lg font-bold text-[#1B1B1A]">
+                          {toPersianDigits(m.score)}
+                        </span>
+                        <span className="text-[11px] text-[#78746B] mr-1 font-medium">از ۱۰</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            <button
-              onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-              className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black rounded-xl shadow-xs cursor-pointer transition-all shrink-0"
-            >
-              ثبت وضعیت امروز
-            </button>
+            {/* Right/End: Clinical Summary & Quick Partner Care */}
+            <div className="lg:col-span-5 space-y-4">
+              {partnerRole === "male" ? (
+                <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[28px] p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-base font-bold text-[#1B1B1A]">مراقبت سریع یک‌کلیکی</h4>
+                    <div className="w-9 h-9 rounded-full bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center">
+                      <HeartHandshake className="w-4 h-4 stroke-[1.7]" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5 text-xs">
+                    <div className="bg-[#FAF6EC] p-3 rounded-2xl border border-[#E8E2D4]">
+                      <span className="text-[11px] text-[#78746B] block mb-1">شانس باروری:</span>
+                      <span className="font-bold text-[#1B1B1A]">
+                        {sharing.shareFertileWindow ? cycleStatus.chanceOfPregnancy : "محرمانه"}
+                      </span>
+                    </div>
+                    <div className="bg-[#FAF6EC] p-3 rounded-2xl border border-[#E8E2D4]">
+                      <span className="text-[11px] text-[#78746B] block mb-1">موعد بعدی:</span>
+                      <span className="font-bold text-[#1B1B1A]">
+                        {sharing.shareNextPeriod
+                          ? cycleStatus.daysUntilNextPeriod > 0
+                            ? `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز دیگر`
+                            : "در موعد"
+                          : "محرمانه"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePartnerPoke("برات یک فنجان دمنوش گرم و نبات آماده کنم عزیزم؟ ☕")}
+                      className="p-3 bg-[#EFECE2] hover:bg-[#F6DC6B]/60 rounded-2xl text-xs font-bold text-[#1B1B1A] flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>پیشنهاد دمنوش گرم</span>
+                      <span>☕</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePartnerPoke("کیسه آب گرم و جای استراحتت آماده‌ست قشنگم، بیا دراز بکش 🛋️")}
+                      className="p-3 bg-[#EFECE2] hover:bg-[#B8CEF4]/60 rounded-2xl text-xs font-bold text-[#1B1B1A] flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>کیسه آب گرم و استراحت</span>
+                      <span>🛋️</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePartnerPoke("شکلات و خوراکی‌های مورد علاقه‌ت رو برات خریدم نوش جونت 🍫")}
+                      className="p-3 bg-[#EFECE2] hover:bg-[#F6C3E5]/60 rounded-2xl text-xs font-bold text-[#1B1B1A] flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>شکلات و تنقلات محبوب</span>
+                      <span>🍫</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[28px] p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-base font-bold text-[#1B1B1A]">راهنمای بیولوژیکی امروز</h4>
+                    <span className="text-[11px] font-medium text-[#78746B]">
+                      {formatPersianDate(toGregorianIsoString(new Date()))}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-[#5C584F] leading-relaxed font-medium">
+                    {cycleStatus.stageDescription}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="bg-[#FAF6EC] p-3.5 rounded-2xl border border-[#E8E2D4]">
+                      <span className="text-[11px] text-[#78746B] block mb-1">احتمال بارداری:</span>
+                      <span className="text-xs font-bold text-[#1B1B1A] flex items-center gap-1.5">
+                        <Baby className="w-3.5 h-3.5 stroke-[1.7]" />
+                        {cycleStatus.chanceOfPregnancy}
+                      </span>
+                    </div>
+
+                    <div className="bg-[#FAF6EC] p-3.5 rounded-2xl border border-[#E8E2D4]">
+                      <span className="text-[11px] text-[#78746B] block mb-1">روز تخمک‌گذاری:</span>
+                      <span className="text-xs font-bold text-[#1B1B1A]">
+                        روز {toPersianDigits(safeOvulationDay)} چرخه
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#F6DC6B]/45 p-4 rounded-2xl border border-[#E6CC5A] space-y-1">
+                    <span className="text-xs font-bold text-[#1B1B1A] flex items-center gap-1.5">
+                      <Coffee className="w-3.5 h-3.5 stroke-[1.7]" />
+                      تغذیه پیشنهادی امروز
+                    </span>
+                    <p className="text-[11px] text-[#4A473E] leading-relaxed font-medium">
+                      {cycleStatus.nutritionTip}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* ----------------------------------------------------------------- */}
-      {/* SUB-TAB 2: FUTURE CYCLE PREDICTIONS */}
-      {/* ----------------------------------------------------------------- */}
-      {activeSubTab === 'predictions' && (
-        <div className="glass-card rounded-3xl p-6 border border-white/60 bg-white/70 space-y-6 text-right">
+      {/* ================================================================= */}
+      {/* SUB-TAB 2: FUTURE CYCLE PREDICTIONS                               */}
+      {/* ================================================================= */}
+      {activeSubTab === "predictions" && (
+        <div className="bg-[#FFFDF8] rounded-[28px] p-6 border border-[#E8E2D4] space-y-6 text-right">
           {cyclePrediction.isPregnant ? (
-            /* 4) Positive Pregnancy Banner */
-            <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 border-2 border-purple-200 rounded-3xl p-6 text-right shadow-sm space-y-3">
-              <div className="flex items-center gap-2.5 text-purple-900 font-black text-base">
-                <span className="text-2xl">🌸🤰</span>
-                <span>تبریک و وضعیت بارداری</span>
+            <div className="bg-[#F6C3E5] rounded-[26px] p-6 text-right space-y-2.5">
+              <div className="flex items-center gap-2 text-[#1B1B1A] font-bold text-base">
+                <span>🌸🤰</span>
+                <span>تبریک! تست بارداری مثبت ثبت شده است</span>
               </div>
-              <p className="text-sm text-purple-900 font-bold leading-relaxed">
-                {cyclePrediction.pregnancyMessage || "تست بارداری مثبت ثبت شده است. پیش‌بینی دوره‌های قاعدگی بعدی متوقف شد."}
-              </p>
-              <p className="text-xs text-purple-800 font-medium leading-relaxed">
-                جهت آغاز مراقبت‌های دوران بارداری و تعیین سن دقیق بارداری با پزشک متخصص مشورت نمایید.
+              <p className="text-xs text-[#4A3A45] leading-relaxed font-medium">
+                {cyclePrediction.pregnancyMessage ||
+                  "پیش‌بینی دوره‌های قاعدگی بعدی متوقف شد. جهت مراقبت‌های بارداری با پزشک متخصص مشورت نمایید."}
               </p>
             </div>
           ) : (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/60 p-4 rounded-2xl border border-pink-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FAF6EC] p-4 rounded-[22px] border border-[#E8E2D4]">
                 <div>
-                  <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-rose-500" />
-                    پیش‌بینی دوره‌های آتی قاعدگی و باروری (بر مبنای بازه)
+                  <h3 className="text-base font-bold text-[#1B1B1A]">
+                    پیش‌بینی دوره‌های آتی قاعدگی و باروری
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {cyclePrediction.confidence === 'low'
-                      ? "دقت برآورد اولیه است؛ بعد از ثبت چند چرخه‌ی دیگر دقیق‌تر می‌شود."
-                      : cyclePrediction.confidence === 'medium'
-                      ? "برآورد با دقت متوسط بر اساس تاریخچه چرخه‌های قبلی شما."
-                      : "برآورد با دقت بالا بر اساس نظم منظم چرخه‌های ثبت‌شده شما."}
+                  <p className="text-xs text-[#78746B] mt-1">
+                    {cyclePrediction.confidence === "low"
+                      ? "برآورد اولیه؛ پس از ثبت چند چرخه دیگر دقیق‌تر خواهد شد."
+                      : cyclePrediction.confidence === "medium"
+                      ? "برآورد با دقت متوسط بر اساس تاریخچه چرخه‌های قبلی."
+                      : "برآورد با دقت بالا بر اساس نظم چرخه‌های ثبت‌شده شما."}
                   </p>
                 </div>
-                <div className="self-start sm:self-auto shrink-0">
-                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full border ${
-                    cyclePrediction.confidence === 'high'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : cyclePrediction.confidence === 'medium'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                  }`}>
-                    {cyclePrediction.confidence === 'high' ? 'دقت بالا 🎯' : cyclePrediction.confidence === 'medium' ? 'دقت متوسط 📊' : 'برآورد اولیه ⏳'}
-                  </span>
-                </div>
+                <span
+                  className={`self-start sm:self-center text-xs font-bold px-4 py-1.5 rounded-full ${
+                    cyclePrediction.confidence === "high"
+                      ? "bg-[#A7B86C] text-[#1B1B1A]"
+                      : cyclePrediction.confidence === "medium"
+                      ? "bg-[#B8CEF4] text-[#1B1B1A]"
+                      : "bg-[#F6DC6B] text-[#1B1B1A]"
+                  }`}
+                >
+                  {cyclePrediction.confidence === "high"
+                    ? "دقت بالا"
+                    : cyclePrediction.confidence === "medium"
+                    ? "دقت متوسط"
+                    : "برآورد اولیه"}
+                </span>
               </div>
 
               {cyclePrediction.hasOvulationPeakSignal && (
-                <div className="bg-purple-50/90 border border-purple-200 text-purple-900 p-3 rounded-2xl text-xs font-bold flex items-center gap-2">
-                  <span>🎯</span>
-                  <span>کیت تخمک‌گذاری با نتیجه پیک (LH Peak) ثبت شده است؛ تاریخ تخمک‌گذاری و پریود بعدی بر این اساس دقیق‌سازی شدند.</span>
+                <div className="bg-[#DCE6B5] text-[#1B1B1A] p-4 rounded-2xl text-xs font-bold">
+                  کیت تخمک‌گذاری با نتیجه پیک ثبت شده است؛ بازه‌های تخمک‌گذاری و پریود بعدی دقیق‌سازی شدند.
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {predictions.map((p) => (
-                  <div 
-                    key={p.cycleIndex} 
-                    className="bg-white p-5 rounded-2xl border border-pink-100 shadow-sm relative overflow-hidden space-y-4"
+                  <div
+                    key={p.cycleIndex}
+                    className="bg-[#FAF6EC] p-5 rounded-[24px] border border-[#E8E2D4] space-y-4"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">
-                        {p.cycleIndex === 1 && p.isDelayed ? "دوره جاری (دارای تاخیر)" : `دوره ${toPersianDigits(p.cycleIndex)} آینده`}
+                      <span className="text-xs font-bold text-[#1B1B1A] bg-[#F6C3E5] px-3.5 py-1 rounded-full">
+                        {p.cycleIndex === 1 && p.isDelayed
+                          ? "دوره جاری (دارای تاخیر)"
+                          : `دوره ${toPersianDigits(p.cycleIndex)} آینده`}
                       </span>
-                      <span className="text-[11px] font-black">
-                        {p.isDelayed ? (
-                          <span className="text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
-                            {toPersianDigits(p.delayedDays)} روز تاخیر ⚠️
-                          </span>
-                        ) : p.daysUntilStart === 0 ? (
-                          <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
-                            امروز (موعد پریود)
-                          </span>
-                        ) : p.daysUntilStart > 0 ? (
-                          <span className="text-slate-500">
-                            {toPersianDigits(p.daysUntilStart)} روز دیگر
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">نزدیک</span>
-                        )}
+                      <span className="text-xs font-bold text-[#78746B]">
+                        {p.isDelayed
+                          ? `${toPersianDigits(p.delayedDays)} روز تاخیر`
+                          : p.daysUntilStart === 0
+                          ? "امروز"
+                          : p.daysUntilStart > 0
+                          ? `${toPersianDigits(p.daysUntilStart)} روز دیگر`
+                          : "نزدیک"}
                       </span>
                     </div>
 
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-bold">بازه شروع پریود:</span>
-                        <span className="font-black text-slate-800 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                    <div className="space-y-2.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#78746B] font-medium">بازه شروع پریود:</span>
+                        <span className="font-bold text-[#1B1B1A] bg-[#FFFDF8] px-3 py-1 rounded-full border border-[#E8E2D4]">
                           {p.startDateRangePersian || p.startDatePersian}
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-bold">بازه تخمک‌گذاری:</span>
-                        <span className="font-black text-fuchsia-600 bg-fuchsia-50 px-2 py-0.5 rounded-md border border-fuchsia-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#78746B] font-medium">بازه تخمک‌گذاری:</span>
+                        <span className="font-bold text-[#1B1B1A] bg-[#A7B86C]/45 px-3 py-1 rounded-full">
                           {p.ovulationDateRangePersian || p.ovulationDatePersian}
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-bold">پنجره باروری:</span>
-                        <span className="font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#78746B] font-medium">پنجره باروری:</span>
+                        <span className="font-bold text-[#1B1B1A] bg-[#B8CEF4]/55 px-3 py-1 rounded-full">
                           {p.fertileWindowStartPersian} الی {p.fertileWindowEndPersian}
                         </span>
                       </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400">
-                      {p.cycleIndex === 1
-                        ? "بازه اطمینان ۸۰٪ بیزی بر اساس پراکندگی دوره‌های قبلی 🌸"
-                        : "بازه دوره ۲ با ضریب √۲ جهت لحاظ افزایش عدم قطعیت آینده 🌸"}
                     </div>
                   </div>
                 ))}
@@ -1924,67 +1821,70 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
         </div>
       )}
 
-      {/* ----------------------------------------------------------------- */}
-      {/* SUB-TAB 4: SYMPTOMS & LOGS HISTORY */}
-      {/* ----------------------------------------------------------------- */}
-      {activeSubTab === 'history' && (
-        <div className="glass-card rounded-3xl p-6 border border-white/60 bg-white/70 space-y-6 text-right">
+      {/* ================================================================= */}
+      {/* SUB-TAB 3: SYMPTOMS & LOGS HISTORY                                */}
+      {/* ================================================================= */}
+      {activeSubTab === "history" && (
+        <div className="bg-[#FFFDF8] rounded-[28px] p-6 border border-[#E8E2D4] space-y-6 text-right">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-black text-slate-800">تاریخچه علائم، احوالات و گزارش‌های ثبت‌شده</h3>
-              <p className="text-xs text-slate-500 mt-0.5">مشاهده سوابق خونریزی و احساسات گذشته</p>
+              <h3 className="text-base font-bold text-[#1B1B1A]">تاریخچه علائم و گزارش‌ها</h3>
+              <p className="text-xs text-[#78746B] mt-0.5">سوابق خونریزی و احوالات ثبت‌شده</p>
             </div>
             <button
               onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-              className="px-3.5 py-2 bg-rose-500 text-white rounded-xl text-xs font-black shadow-xs"
+              className="px-5 py-2.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
             >
               ثبت گزارش جدید
             </button>
           </div>
 
           {logs.length === 0 ? (
-            <div className="text-center py-16 text-slate-400 text-xs bg-white/50 rounded-2xl border border-slate-100">
-              هنوز هیچ وضعیتی ثبت نشده است. روی دکمه «ثبت علائم امروز» کلیک کنید.
+            <div className="text-center py-14 text-[#78746B] text-xs bg-[#FAF6EC] rounded-[24px] border border-[#E8E2D4]">
+              هنوز هیچ وضعیتی ثبت نشده است.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {logs.map((log) => (
-                <div 
-                  key={log.id} 
-                  className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3 relative text-right"
+                <div
+                  key={log.id}
+                  className="bg-[#FAF6EC] p-4 rounded-[22px] border border-[#E8E2D4] space-y-3 relative text-right"
                 >
                   {effectiveIsOwner && (
                     <button
                       onClick={() => handleDeleteLog(log.id)}
-                      className="absolute top-3 left-3 p-1 text-slate-300 hover:text-red-500 transition-all cursor-pointer"
+                      className="absolute top-3.5 left-3.5 w-8 h-8 rounded-full bg-[#EFECE2] hover:bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
                       title="حذف"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5 stroke-[1.7]" />
                     </button>
                   )}
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-slate-800">
+                  <div className="flex flex-wrap items-center gap-2 pl-8">
+                    <span className="text-xs font-bold text-[#1B1B1A]">
                       {formatPersianDate(log.date)}
                     </span>
                     {log.isPeriodStart && (
-                      <span className="text-[9px] font-black bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">
-                        🩸 روز اول پریود
+                      <span className="text-[10px] font-bold bg-[#F6C3E5] text-[#1B1B1A] px-2.5 py-0.5 rounded-full">
+                        روز اول پریود
                       </span>
                     )}
-                    {(effectiveIsOwner || sharing.shareFlow) && log.flow && log.flow !== 'none' && (
-                      <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                        خونریزی: {FLOW_OPTIONS.find(f => f.id === log.flow)?.label || log.flow}
+                    {(effectiveIsOwner || sharing.shareFlow) && log.flow && log.flow !== "none" && (
+                      <span className="text-[10px] font-bold text-[#1B1B1A] bg-[#EFECE2] px-2.5 py-0.5 rounded-full">
+                        خونریزی: {FLOW_OPTIONS.find((f) => f.id === log.flow)?.label || log.flow}
                       </span>
                     )}
                   </div>
 
                   {(effectiveIsOwner || sharing.shareMood) && log.moods && log.moods.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {log.moods.map(m => {
-                        const opt = MOOD_OPTIONS.find(x => x.id === m);
+                    <div className="flex flex-wrap gap-1.5">
+                      {log.moods.map((m) => {
+                        const opt = MOOD_OPTIONS.find((x) => x.id === m);
                         return (
-                          <span key={m} className="text-[10px] font-bold bg-pink-50 text-pink-700 px-2 py-0.5 rounded-lg border border-pink-100">
+                          <span
+                            key={m}
+                            className="text-[10px] font-bold bg-[#F6DC6B]/60 text-[#1B1B1A] px-2.5 py-1 rounded-full"
+                          >
                             {opt?.icon} {opt?.label || m}
                           </span>
                         );
@@ -1993,11 +1893,14 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                   )}
 
                   {(effectiveIsOwner || sharing.shareSymptoms) && log.symptoms && log.symptoms.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {log.symptoms.map(s => {
-                        const opt = SYMPTOM_OPTIONS.find(x => x.id === s);
+                    <div className="flex flex-wrap gap-1.5">
+                      {log.symptoms.map((s) => {
+                        const opt = SYMPTOM_OPTIONS.find((x) => x.id === s);
                         return (
-                          <span key={s} className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg">
+                          <span
+                            key={s}
+                            className="text-[10px] font-bold bg-[#EFECE2] text-[#1B1B1A] px-2.5 py-1 rounded-full"
+                          >
                             {opt?.icon} {opt?.label || s}
                           </span>
                         );
@@ -2005,32 +1908,40 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                     </div>
                   )}
 
-                  {(effectiveIsOwner || sharing.shareSex) && log.sex && log.sex !== 'none' && (
+                  {(effectiveIsOwner || sharing.shareSex) && log.sex && log.sex !== "none" && (
                     <div>
-                      <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 inline-block">
-                        🔒 رابطه: {SEX_OPTIONS.find(s => s.id === log.sex)?.label || log.sex}
+                      <span className="text-[10px] font-bold text-[#1B1B1A] bg-[#B8CEF4]/60 px-3 py-1 rounded-full inline-block">
+                        رابطه: {SEX_OPTIONS.find((s) => s.id === log.sex)?.label || log.sex}
                       </span>
                     </div>
                   )}
 
-                  {(effectiveIsOwner || sharing.shareTests) && log.ovulationTestResult && log.ovulationTestResult !== 'none' && (
-                    <div>
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100 inline-block">
-                        🧪 کیت تخمک‌گذاری: {OVULATION_TEST_OPTIONS.find(o => o.id === log.ovulationTestResult)?.label || log.ovulationTestResult}
-                      </span>
-                    </div>
-                  )}
+                  {(effectiveIsOwner || sharing.shareTests) &&
+                    log.ovulationTestResult &&
+                    log.ovulationTestResult !== "none" && (
+                      <div>
+                        <span className="text-[10px] font-bold text-[#1B1B1A] bg-[#DCE6B5] px-3 py-1 rounded-full inline-block">
+                          کیت تخمک‌گذاری:{" "}
+                          {OVULATION_TEST_OPTIONS.find((o) => o.id === log.ovulationTestResult)?.label ||
+                            log.ovulationTestResult}
+                        </span>
+                      </div>
+                    )}
 
-                  {(effectiveIsOwner || (sharing.shareTests && log.sharePregnancyTestWithPartner)) && log.pregnancyTestResult && log.pregnancyTestResult !== 'none' && (
-                    <div>
-                      <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100 inline-block">
-                        👶 بی‌بی‌چک: {PREGNANCY_TEST_OPTIONS.find(p => p.id === log.pregnancyTestResult)?.label || log.pregnancyTestResult}
-                      </span>
-                    </div>
-                  )}
+                  {(effectiveIsOwner || (sharing.shareTests && log.sharePregnancyTestWithPartner)) &&
+                    log.pregnancyTestResult &&
+                    log.pregnancyTestResult !== "none" && (
+                      <div>
+                        <span className="text-[10px] font-bold text-[#1B1B1A] bg-[#F6C3E5] px-3 py-1 rounded-full inline-block">
+                          بی‌بی‌چک:{" "}
+                          {PREGNANCY_TEST_OPTIONS.find((p) => p.id === log.pregnancyTestResult)?.label ||
+                            log.pregnancyTestResult}
+                        </span>
+                      </div>
+                    )}
 
                   {(effectiveIsOwner || sharing.shareNotes) && log.notes && (
-                    <p className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <p className="text-xs text-[#5C584F] bg-[#FFFDF8] p-3 rounded-2xl border border-[#E8E2D4]">
                       {log.notes}
                     </p>
                   )}
@@ -2041,71 +1952,75 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
         </div>
       )}
 
-      {/* ----------------------------------------------------------------- */}
-      {/* MODAL 1: SETTINGS & ONBOARDING DIALOG (IMPO STYLE) */}
-      {/* ----------------------------------------------------------------- */}
+      {/* ================================================================= */}
+      {/* MODAL 1: SETTINGS & ONBOARDING DIALOG                             */}
+      {/* ================================================================= */}
       <AnimatePresence>
         {showSettingsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1B1B1A]/40">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 space-y-5 text-right overflow-y-auto max-h-[90vh]"
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-[#FAF6EC] rounded-[32px] p-6 max-w-lg w-full border border-[#E8E2D4] space-y-5 text-right overflow-y-auto max-h-[90vh]"
             >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-rose-500" />
-                  تنظیمات چرخه و محاسبات طغرل
-                </h3>
+              <div className="flex items-center justify-between border-b border-[#E8E2D4] pb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center">
+                    <Settings className="w-5 h-5 stroke-[1.7]" />
+                  </div>
+                  <h3 className="text-base font-bold text-[#1B1B1A]">
+                    تنظیمات چرخه و محاسبات طغرل
+                  </h3>
+                </div>
                 <button
+                  type="button"
                   onClick={() => setShowSettingsModal(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600"
+                  className="w-9 h-9 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] flex items-center justify-center text-[#1B1B1A] cursor-pointer transition-colors"
                 >
-                  ✕
+                  <X className="w-4 h-4 stroke-[1.8]" />
                 </button>
               </div>
 
               <form onSubmit={handleSaveSettings} className="space-y-4">
-                {/* Ownership Card & Permissions Status */}
-                <div className="p-3.5 bg-gradient-to-r from-purple-50/70 to-pink-50/70 rounded-2xl border border-purple-100 space-y-2">
+                {/* Ownership Card */}
+                <div className="p-4 bg-[#FFFDF8] rounded-[24px] border border-[#E8E2D4] space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-purple-900 flex items-center gap-1.5">
-                      <ShieldAlert className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-bold text-[#1B1B1A] flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 stroke-[1.8]" />
                       مالکیت ترکر سلامت
                     </span>
                     {isOwner ? (
-                      <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        👑 شما صاحب ترکر هستید
+                      <span className="text-[10px] font-bold bg-[#DCE6B5] text-[#1B1B1A] px-3 py-1 rounded-full">
+                        شما صاحب ترکر هستید
                       </span>
                     ) : (
-                      <span className="text-[10px] font-black bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                        👨 حالت همراه (مشاهده‌گر)
+                      <span className="text-[10px] font-bold bg-[#B8CEF4] text-[#1B1B1A] px-3 py-1 rounded-full">
+                        حالت همراه
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-purple-950 leading-relaxed font-medium">
-                    {isOwner 
-                      ? "این ترکر به عنوان ترکر سلامت شخصی شما تنظیم شده است. کلیه لاگ‌ها، علائم و تنظیمات اشتراک‌گذاری با پارتنر منحصراً تحت کنترل شما قرار دارد."
-                      : "این ترکر تحت مالکیت و مدیریت پارتنر شماست. شما به عنوان همراه تنها داده‌های مجاز را مشاهده می‌کنید."
-                    }
+                  <p className="text-[11px] text-[#78746B] leading-relaxed font-medium">
+                    {isOwner
+                      ? "این ترکر به عنوان ترکر سلامت شخصی شما تنظیم شده است و کلیه دسترسی‌های اشتراک با پارتنر تحت کنترل شماست."
+                      : "این ترکر تحت مالکیت پارتنر شماست و شما به عنوان همراه داده‌های مجاز را مشاهده می‌کنید."}
                   </p>
 
                   {!settings.trackerOwnerUid && (
-                    <div className="pt-2 border-t border-purple-200/60 flex items-center justify-between">
+                    <div className="pt-2.5 border-t border-[#E8E2D4] flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-black text-slate-800 block">
+                        <span className="text-xs font-bold text-[#1B1B1A] block">
                           این ترکر برای من است
                         </span>
-                        <span className="text-[10px] text-slate-500 font-medium">
-                          من صاحب این ترکر خواهم بود و مدیریت کامل دسترسی‌ها با من خواهد بود.
+                        <span className="text-[10px] text-[#78746B] font-medium">
+                          مدیریت کامل دسترسی‌ها با من خواهد بود.
                         </span>
                       </div>
                       <input
                         type="checkbox"
                         checked={formClaimOwner}
                         onChange={(e) => setFormClaimOwner(e.target.checked)}
-                        className="w-5 h-5 accent-purple-600 rounded cursor-pointer shrink-0"
+                        className="w-5 h-5 accent-[#1B1B1A] rounded cursor-pointer shrink-0"
                       />
                     </div>
                   )}
@@ -2113,55 +2028,55 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
                 {/* Goal Mode */}
                 <div>
-                  <label className="block text-xs font-black text-slate-700 mb-1.5">هدف شما از استفاده:</label>
+                  <label className="block text-xs font-bold text-[#1B1B1A] mb-2">هدف شما از استفاده:</label>
                   <div className="grid grid-cols-3 gap-2 text-xs font-bold">
                     <button
                       type="button"
-                      onClick={() => setFormGoalMode('track')}
-                      className={`p-2.5 rounded-xl border transition-all text-center cursor-pointer ${
-                        formGoalMode === 'track' 
-                          ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-xs' 
-                          : 'bg-white border-slate-200 text-slate-600'
+                      onClick={() => setFormGoalMode("track")}
+                      className={`p-3 rounded-2xl transition-colors text-center cursor-pointer ${
+                        formGoalMode === "track"
+                          ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                          : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                       }`}
                     >
-                      🌸 ردیابی سلامت
+                      ردیابی سلامت
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormGoalMode('pregnancy')}
-                      className={`p-2.5 rounded-xl border transition-all text-center cursor-pointer ${
-                        formGoalMode === 'pregnancy' 
-                          ? 'bg-purple-50 border-purple-500 text-purple-700 shadow-xs' 
-                          : 'bg-white border-slate-200 text-slate-600'
+                      onClick={() => setFormGoalMode("pregnancy")}
+                      className={`p-3 rounded-2xl transition-colors text-center cursor-pointer ${
+                        formGoalMode === "pregnancy"
+                          ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                          : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                       }`}
                     >
-                      👶 اقدام به بارداری
+                      اقدام به بارداری
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormGoalMode('prevention')}
-                      className={`p-2.5 rounded-xl border transition-all text-center cursor-pointer ${
-                        formGoalMode === 'prevention' 
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-xs' 
-                          : 'bg-white border-slate-200 text-slate-600'
+                      onClick={() => setFormGoalMode("prevention")}
+                      className={`p-3 rounded-2xl transition-colors text-center cursor-pointer ${
+                        formGoalMode === "prevention"
+                          ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                          : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                       }`}
                     >
-                      🛡️ پیشگیری طبیعی
+                      پیشگیری طبیعی
                     </button>
                   </div>
                 </div>
 
                 {/* Last Period Start Date */}
                 <div>
-                  <label className="block text-xs font-black text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-[#1B1B1A] mb-1.5">
                     تاریخ اولین روز آخرین پریود (شمسی):
                   </label>
                   <JalaliDatePicker
                     value={formLastPeriodDate}
                     onChange={(val) => setFormLastPeriodDate(val)}
-                    placeholder="انتخاب اولین روز آخرین پریود به شمسی..."
+                    placeholder="انتخاب اولین روز آخرین پریود..."
                   />
-                  <span className="text-[10px] text-rose-500 font-bold mt-1 block">
+                  <span className="text-[11px] text-[#78746B] font-medium mt-1 block">
                     تاریخ انتخابی: {formatPersianDate(formLastPeriodDate)}
                   </span>
                 </div>
@@ -2169,7 +2084,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                 {/* Cycle and Period Lengths */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-black text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-[#1B1B1A] mb-1.5">
                       طول دوره (فاصله دو شروع):
                     </label>
                     <input
@@ -2179,13 +2094,13 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                       required
                       value={formCycleLength}
                       onChange={(e) => setFormCycleLength(Number(e.target.value))}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      className="w-full px-4 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-xs font-bold text-[#1B1B1A] outline-none transition-colors"
                     />
-                    <span className="text-[10px] text-slate-400 mt-0.5 block">نرمال: ۲۱ تا ۳۵ روز</span>
+                    <span className="text-[10px] text-[#78746B] mt-1 block">نرمال: ۲۱ تا ۳۵ روز</span>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-black text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-[#1B1B1A] mb-1.5">
                       طول خونریزی پریود:
                     </label>
                     <input
@@ -2195,15 +2110,15 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                       required
                       value={formPeriodLength}
                       onChange={(e) => setFormPeriodLength(Number(e.target.value))}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      className="w-full px-4 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-xs font-bold text-[#1B1B1A] outline-none transition-colors"
                     />
-                    <span className="text-[10px] text-slate-400 mt-0.5 block">معمولاً: ۳ تا ۷ روز</span>
+                    <span className="text-[10px] text-[#78746B] mt-1 block">معمولاً: ۳ تا ۷ روز</span>
                   </div>
                 </div>
 
                 {/* Birth Date */}
                 <div>
-                  <label className="block text-xs font-black text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-[#1B1B1A] mb-1.5">
                     تاریخ تولد (برای نمودار بیوریتم طغرل):
                   </label>
                   <JalaliDatePicker
@@ -2213,17 +2128,17 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                   />
                 </div>
 
-                <div className="pt-3 flex gap-2">
+                <div className="pt-3 flex gap-2.5">
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl text-xs font-black shadow-md cursor-pointer"
+                    className="flex-1 py-3.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
                   >
-                    ذخیره تنظیمات چرخه 🌸
+                    ذخیره تنظیمات چرخه
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowSettingsModal(false)}
-                    className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                    className="px-5 py-3.5 bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] rounded-full text-xs font-bold cursor-pointer transition-colors"
                   >
                     انصراف
                   </button>
@@ -2234,51 +2149,54 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
         )}
       </AnimatePresence>
 
-      {/* ----------------------------------------------------------------- */}
-      {/* MODAL 2: COMPREHENSIVE DAILY LOG MODAL (SIGNS & SYMPTOMS) */}
-      {/* ----------------------------------------------------------------- */}
+      {/* ================================================================= */}
+      {/* MODAL 2: COMPREHENSIVE DAILY LOG MODAL                            */}
+      {/* ================================================================= */}
       <AnimatePresence>
         {showLogModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1B1B1A]/40">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 space-y-5 text-right overflow-y-auto max-h-[90vh]"
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-[#FAF6EC] rounded-[32px] p-6 max-w-lg w-full border border-[#E8E2D4] space-y-5 text-right overflow-y-auto max-h-[90vh]"
             >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center justify-between border-b border-[#E8E2D4] pb-3.5">
                 <div>
-                  <h3 className="text-base font-black text-slate-800">ثبت علائم و احوالات روزانه</h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <h3 className="text-base font-bold text-[#1B1B1A]">ثبت علائم و احوالات روزانه</h3>
+                  <p className="text-xs text-[#78746B] mt-0.5">
                     تاریخ: {formatPersianDate(selectedLogDate)}
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowLogModal(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600"
+                  className="w-9 h-9 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] flex items-center justify-center text-[#1B1B1A] cursor-pointer transition-colors"
                 >
-                  ✕
+                  <X className="w-4 h-4 stroke-[1.8]" />
                 </button>
               </div>
 
               <form onSubmit={handleSaveDailyLog} className="space-y-4">
                 {!effectiveIsOwner && (
-                  <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl text-xs text-indigo-900 font-medium leading-relaxed">
-                    شما در حال ثبت لاگ به عنوان همراه هستید. برای حفظ حریم خصوصی پارتنرتان، در این بخش تنها می‌توانید اعلام شروع پریود جدید را ثبت کنید و سایر بخش‌های محرمانه غیرفعال هستند.
+                  <div className="p-3.5 bg-[#B8CEF4]/50 rounded-2xl text-xs text-[#1B1B1A] font-medium leading-relaxed">
+                    شما در حال ثبت لاگ به عنوان همراه هستید. برای حفظ حریم خصوصی پارتنرتان، تنها امکان اعلام شروع پریود جدید فعال است.
                   </div>
                 )}
 
                 {/* Period Start Checkbox */}
-                <div className="p-3 bg-rose-50 rounded-2xl border border-rose-100 flex items-center justify-between">
+                <div className="p-4 bg-[#F6C3E5] rounded-[22px] flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-black text-rose-800 block">امروز شروع پریود جدید است؟</span>
-                    <span className="text-[10px] text-rose-600 font-medium">با انتخاب این گزینه، چرخه جدید از این تاریخ آغاز می‌شود.</span>
+                    <span className="text-xs font-bold text-[#1B1B1A] block">امروز شروع پریود جدید است؟</span>
+                    <span className="text-[11px] text-[#4A3A45] font-medium">
+                      چرخه جدید از این تاریخ آغاز می‌شود.
+                    </span>
                   </div>
                   <input
                     type="checkbox"
                     checked={logFormIsPeriodStart}
                     onChange={(e) => setLogFormIsPeriodStart(e.target.checked)}
-                    className="w-5 h-5 accent-rose-500 rounded cursor-pointer"
+                    className="w-5 h-5 accent-[#1B1B1A] rounded cursor-pointer"
                   />
                 </div>
 
@@ -2286,17 +2204,17 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                   <>
                     {/* Bleeding Flow */}
                     <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">شدت خونریزی:</label>
+                      <label className="block text-xs font-bold text-[#1B1B1A] mb-2">شدت خونریزی:</label>
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 text-xs font-bold">
-                        {FLOW_OPTIONS.map(opt => (
+                        {FLOW_OPTIONS.map((opt) => (
                           <button
                             key={opt.id}
                             type="button"
                             onClick={() => setLogFormFlow(opt.id)}
-                            className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
-                              logFormFlow === opt.id 
-                                ? 'bg-rose-500 text-white border-rose-600 shadow-xs' 
-                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                            className={`p-2.5 rounded-2xl text-center transition-colors cursor-pointer ${
+                              logFormFlow === opt.id
+                                ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                                : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                             }`}
                           >
                             <span className="block text-sm mb-0.5">{opt.icon}</span>
@@ -2308,9 +2226,9 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
                     {/* Moods */}
                     <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">احوالات روحی امروز:</label>
+                      <label className="block text-xs font-bold text-[#1B1B1A] mb-2">احوالات روحی امروز:</label>
                       <div className="flex flex-wrap gap-1.5">
-                        {MOOD_OPTIONS.map(opt => {
+                        {MOOD_OPTIONS.map((opt) => {
                           const isSelected = logFormMoods.includes(opt.id);
                           return (
                             <button
@@ -2318,15 +2236,15 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                               type="button"
                               onClick={() => {
                                 if (isSelected) {
-                                  setLogFormMoods(logFormMoods.filter(m => m !== opt.id));
+                                  setLogFormMoods(logFormMoods.filter((m) => m !== opt.id));
                                 } else {
                                   setLogFormMoods([...logFormMoods, opt.id]);
                                 }
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1 cursor-pointer ${
-                                isSelected 
-                                  ? 'bg-pink-500 text-white border-pink-600' 
-                                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                              className={`px-3.5 py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                                isSelected
+                                  ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                                  : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                               }`}
                             >
                               <span>{opt.icon}</span>
@@ -2339,9 +2257,9 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
                     {/* Symptoms */}
                     <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">نشانه‌ها و دردهای فیزیکی:</label>
+                      <label className="block text-xs font-bold text-[#1B1B1A] mb-2">نشانه‌ها و دردهای فیزیکی:</label>
                       <div className="flex flex-wrap gap-1.5">
-                        {SYMPTOM_OPTIONS.map(opt => {
+                        {SYMPTOM_OPTIONS.map((opt) => {
                           const isSelected = logFormSymptoms.includes(opt.id);
                           return (
                             <button
@@ -2349,15 +2267,15 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                               type="button"
                               onClick={() => {
                                 if (isSelected) {
-                                  setLogFormSymptoms(logFormSymptoms.filter(s => s !== opt.id));
+                                  setLogFormSymptoms(logFormSymptoms.filter((s) => s !== opt.id));
                                 } else {
                                   setLogFormSymptoms([...logFormSymptoms, opt.id]);
                                 }
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1 cursor-pointer ${
-                                isSelected 
-                                  ? 'bg-rose-600 text-white border-rose-700' 
-                                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                              className={`px-3.5 py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                                isSelected
+                                  ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                                  : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                               }`}
                             >
                               <span>{opt.icon}</span>
@@ -2370,31 +2288,33 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
                     {/* Cervical Discharge */}
                     <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">وضعیت ترشحات واژن:</label>
+                      <label className="block text-xs font-bold text-[#1B1B1A] mb-1.5">وضعیت ترشحات:</label>
                       <select
                         value={logFormDischarge}
                         onChange={(e) => setLogFormDischarge(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
+                        className="w-full px-4 py-3 bg-[#EFECE2] rounded-2xl text-xs font-bold text-[#1B1B1A] outline-none"
                       >
-                        {DISCHARGE_OPTIONS.map(opt => (
-                          <option key={opt.id} value={opt.id}>{opt.label}</option>
+                        {DISCHARGE_OPTIONS.map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </option>
                         ))}
                       </select>
                     </div>
 
                     {/* Sex Intimacy */}
                     <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">رابطه زناشویی امروز:</label>
+                      <label className="block text-xs font-bold text-[#1B1B1A] mb-2">رابطه زناشویی امروز:</label>
                       <div className="grid grid-cols-3 gap-2 text-xs font-bold">
-                        {SEX_OPTIONS.map(opt => (
+                        {SEX_OPTIONS.map((opt) => (
                           <button
                             key={opt.id}
                             type="button"
                             onClick={() => setLogFormSex(opt.id)}
-                            className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
-                              logFormSex === opt.id 
-                                ? 'bg-purple-500 text-white border-purple-600' 
-                                : 'bg-slate-50 border-slate-200 text-slate-700'
+                            className={`p-2.5 rounded-2xl text-center transition-colors cursor-pointer ${
+                              logFormSex === opt.id
+                                ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                                : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                             }`}
                           >
                             <span className="block text-sm mb-0.5">{opt.icon}</span>
@@ -2406,17 +2326,17 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
                     {/* Ovulation Test Kit */}
                     <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">کیت تخمک‌گذاری (LH):</label>
+                      <label className="block text-xs font-bold text-[#1B1B1A] mb-2">کیت تخمک‌گذاری (LH):</label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs font-bold">
-                        {OVULATION_TEST_OPTIONS.map(opt => (
+                        {OVULATION_TEST_OPTIONS.map((opt) => (
                           <button
                             key={opt.id}
                             type="button"
                             onClick={() => setLogFormOvulationKit(opt.id)}
-                            className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
-                              logFormOvulationKit === opt.id 
-                                ? 'bg-amber-500 text-white border-amber-600 shadow-xs' 
-                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                            className={`p-2.5 rounded-2xl text-center transition-colors cursor-pointer ${
+                              logFormOvulationKit === opt.id
+                                ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                                : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                             }`}
                           >
                             <span className="block text-sm mb-0.5">{opt.icon}</span>
@@ -2426,19 +2346,19 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                       </div>
                     </div>
 
-                    {/* Pregnancy Test (بی‌بی‌چک) */}
+                    {/* Pregnancy Test */}
                     <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">تست بارداری (بی‌بی‌چک):</label>
-                      <div className="grid grid-cols-3 gap-1.5 text-xs font-bold">
-                        {PREGNANCY_TEST_OPTIONS.map(opt => (
+                      <label className="block text-xs font-bold text-[#1B1B1A] mb-2">تست بارداری (بی‌بی‌چک):</label>
+                      <div className="grid grid-cols-3 gap-2 text-xs font-bold">
+                        {PREGNANCY_TEST_OPTIONS.map((opt) => (
                           <button
                             key={opt.id}
                             type="button"
                             onClick={() => setLogFormPregnancyTest(opt.id)}
-                            className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
-                              logFormPregnancyTest === opt.id 
-                                ? 'bg-rose-500 text-white border-rose-600 shadow-xs' 
-                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                            className={`p-2.5 rounded-2xl text-center transition-colors cursor-pointer ${
+                              logFormPregnancyTest === opt.id
+                                ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                                : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
                             }`}
                           >
                             <span className="block text-sm mb-0.5">{opt.icon}</span>
@@ -2447,18 +2367,21 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                         ))}
                       </div>
 
-                      {/* Explicit toggle: Share pregnancy test with partner */}
-                      {logFormPregnancyTest !== 'none' && (
-                        <div className="p-3 bg-purple-50/80 rounded-2xl border border-purple-200 flex items-center justify-between mt-2.5">
-                          <div className="pr-1">
-                            <span className="text-xs font-black text-purple-900 block">این نتیجه را برای پارتنرم نمایش بده</span>
-                            <span className="text-[10px] text-purple-700 font-medium">به صورت پیش‌فرض نتایج تست‌های بارداری کاملاً محرمانه هستند و برای پارتنر ارسال نمی‌شوند مگر اینکه خودتان این گزینه را فعال کنید.</span>
+                      {logFormPregnancyTest !== "none" && (
+                        <div className="p-3.5 bg-[#FFFDF8] rounded-2xl border border-[#E8E2D4] flex items-center justify-between mt-2.5">
+                          <div className="pl-2">
+                            <span className="text-xs font-bold text-[#1B1B1A] block">
+                              این نتیجه را برای پارتنرم نمایش بده
+                            </span>
+                            <span className="text-[10px] text-[#78746B] font-medium">
+                              نتایج تست بارداری بدون تایید شما کاملاً محرمانه می‌مانند.
+                            </span>
                           </div>
                           <input
                             type="checkbox"
                             checked={logFormSharePregnancyTest}
                             onChange={(e) => setLogFormSharePregnancyTest(e.target.checked)}
-                            className="w-5 h-5 accent-purple-600 rounded cursor-pointer shrink-0 mr-2"
+                            className="w-5 h-5 accent-[#1B1B1A] rounded cursor-pointer shrink-0"
                           />
                         </div>
                       )}
@@ -2466,29 +2389,29 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
                     {/* Notes */}
                     <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1">یادداشت شخصی:</label>
+                      <label className="block text-xs font-bold text-[#1B1B1A] mb-1.5">یادداشت شخصی:</label>
                       <textarea
                         rows={2}
                         value={logFormNotes}
                         onChange={(e) => setLogFormNotes(e.target.value)}
                         placeholder="هر احساس، تجربه یا نکته‌ای از این روز..."
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                        className="w-full px-4 py-2.5 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-xs text-[#1B1B1A] outline-none resize-none"
                       />
                     </div>
                   </>
                 )}
 
-                <div className="pt-3 flex gap-2">
+                <div className="pt-3 flex gap-2.5">
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl text-xs font-black shadow-md cursor-pointer"
+                    className="flex-1 py-3.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
                   >
-                    ثبت و ذخیره علائم 🌸
+                    ذخیره علائم امروز
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowLogModal(false)}
-                    className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                    className="px-5 py-3.5 bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] rounded-full text-xs font-bold cursor-pointer transition-colors"
                   >
                     انصراف
                   </button>
@@ -2499,47 +2422,41 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
         )}
       </AnimatePresence>
 
-      {/* ----------------------------------------------------------------- */}
-      {/* ----------------------------------------------------------------- */}
-      {/* COMPANION CARE & EMPATHY MODAL (FOR MALE PARTNER) */}
-      {/* ----------------------------------------------------------------- */}
+      {/* ================================================================= */}
+      {/* COMPANION CARE MODAL (FOR MALE PARTNER)                           */}
+      {/* ================================================================= */}
       <AnimatePresence>
         {showCareModal && (
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-[#1B1B1A]/40 flex items-center justify-center p-4 z-50">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-3xl w-full max-w-lg p-6 shadow-2xl border border-indigo-100 text-right space-y-4"
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              className="bg-[#FAF6EC] rounded-[32px] w-full max-w-lg p-6 border border-[#E8E2D4] text-right space-y-4"
               dir="rtl"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                    <HeartHandshake className="w-5 h-5" />
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D4]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center">
+                    <MessageCircleHeart className="w-5 h-5 stroke-[1.7]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-800">
-                      ارسال محبت و مراقبت برای پارتنر 💖
-                    </h3>
-                    <p className="text-xs text-slate-500 font-medium">
-                      یک پیام محبت‌آمیز یا پیشنهاد همدلی بفرستید تا فوراً روی صفحه او نمایش داده شود
+                    <h3 className="text-base font-bold text-[#1B1B1A]">ارسال محبت و مراقبت</h3>
+                    <p className="text-xs text-[#78746B] font-medium">
+                      پیام شما فوراً روی صفحه پارتنرتان نمایش داده می‌شود
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowCareModal(false)}
-                  className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
+                  className="w-9 h-9 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] flex items-center justify-center text-[#1B1B1A] transition-colors cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4 stroke-[1.8]" />
                 </button>
               </div>
 
-              {/* Quick Selectable Warm Templates */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 block">
-                  انتخاب پیام‌های آماده و دلگرم‌کننده:
-                </label>
+                <label className="text-xs font-bold text-[#1B1B1A] block">پیام‌های آماده دلگرم‌کننده:</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
                     "عزیزم برات یک دمنوش گرم و نبات آماده کنم؟ ☕",
@@ -2553,38 +2470,34 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                       key={idx}
                       type="button"
                       onClick={() => setCustomCareMessage(tmpl)}
-                      className={`p-3 rounded-2xl text-xs font-bold text-right border transition-all cursor-pointer flex items-center gap-2 ${
+                      className={`p-3 rounded-2xl text-xs font-bold text-right transition-colors cursor-pointer ${
                         customCareMessage === tmpl
-                          ? "bg-indigo-50 border-indigo-300 text-indigo-900 shadow-xs"
-                          : "bg-slate-50/70 border-slate-100 text-slate-700 hover:bg-slate-100"
+                          ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                          : "bg-[#FFFDF8] border border-[#E8E2D4] text-[#1B1B1A] hover:bg-[#EFECE2]"
                       }`}
                     >
-                      <span>💬</span>
-                      <span>{tmpl}</span>
+                      {tmpl}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Custom message textarea */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 block">
-                  یا متن دلخواه خودت رو بنویس:
-                </label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#1B1B1A] block">یا متن دلخواه خودت را بنویس:</label>
                 <textarea
                   value={customCareMessage}
                   onChange={(e) => setCustomCareMessage(e.target.value)}
-                  placeholder="اینجا کلمات محبت‌آمیز و دلگرم‌کننده‌ات رو بنویس... 💕"
+                  placeholder="کلمات محبت‌آمیز خودت را بنویس..."
                   rows={3}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-right focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-medium"
+                  className="w-full px-4 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-xs text-[#1B1B1A] text-right outline-none resize-none font-medium"
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCareModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  className="px-5 py-3 bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] rounded-full text-xs font-bold transition-colors cursor-pointer"
                 >
                   انصراف
                 </button>
@@ -2596,10 +2509,10 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                     setShowCareModal(false);
                     setCustomCareMessage("");
                   }}
-                  className="flex-[2] py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs rounded-xl shadow-md shadow-indigo-200 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold text-xs rounded-full transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>ارسال پیام محبت‌آمیز 💌</span>
+                  <Send className="w-4 h-4 stroke-[1.7]" />
+                  <span>ارسال پیام محبت‌آمیز</span>
                 </button>
               </div>
             </motion.div>
@@ -2607,147 +2520,131 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
         )}
       </AnimatePresence>
 
-      {/* MODAL 3: IRREGULAR CYCLE WARNING DIALOG (EXACT IMPO CLINICAL RULE) */}
-      {/* ----------------------------------------------------------------- */}
+      {/* ================================================================= */}
+      {/* MODAL 3: IRREGULAR CYCLE WARNING DIALOG                           */}
+      {/* ================================================================= */}
       <AnimatePresence>
         {showWarningModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1B1B1A]/40">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-amber-200 space-y-4 text-right"
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-[#FAF6EC] rounded-[32px] p-6 max-w-md w-full border border-[#E8E2D4] space-y-4 text-right"
             >
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
-                <AlertCircle className="w-6 h-6" />
+              <div className="w-14 h-14 rounded-full bg-[#F6DC6B] text-[#1B1B1A] flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6 stroke-[1.7]" />
               </div>
 
-              <h4 className="text-sm font-black text-slate-800 text-center">توجه درباره چرخه نامنظم</h4>
+              <h4 className="text-base font-bold text-[#1B1B1A] text-center">توجه درباره چرخه نامنظم</h4>
 
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              <p className="text-xs text-[#5C584F] leading-relaxed font-medium text-center">
                 {warningMessage}
               </p>
 
               <button
                 onClick={() => setShowWarningModal(false)}
-                className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black cursor-pointer shadow-xs"
+                className="w-full py-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
               >
-                متوجه شدم، ادامه بده
+                متوجه شدم
               </button>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-      {/* ----------------------------------------------------------------- */}
-      {/* MODAL 4: PERIOD SHARING & PRIVACY CONTROLS (OWNER ONLY) */}
-      {/* ----------------------------------------------------------------- */}
+
+      {/* ================================================================= */}
+      {/* MODAL 4: PERIOD SHARING & PRIVACY CONTROLS                        */}
+      {/* ================================================================= */}
       <AnimatePresence>
         {showSharingModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1B1B1A]/40">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 space-y-4 text-right overflow-y-auto max-h-[90vh]"
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-[#FAF6EC] rounded-[32px] p-6 max-w-lg w-full border border-[#E8E2D4] space-y-4 text-right overflow-y-auto max-h-[90vh]"
               dir="rtl"
             >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center">
-                    <ShieldAlert className="w-5 h-5" />
+              <div className="flex items-center justify-between border-b border-[#E8E2D4] pb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full bg-[#B8CEF4] text-[#1B1B1A] flex items-center justify-center">
+                    <ShieldAlert className="w-5 h-5 stroke-[1.7]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-800">
-                      چه چیزی با پارتنرم به اشتراک بگذارم؟ 🔒
-                    </h3>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                      کنترل اختصاصی حریم خصوصی و داده‌های سلامت
-                    </p>
+                    <h3 className="text-base font-bold text-[#1B1B1A]">اشتراک‌گذاری با پارتنر</h3>
+                    <p className="text-xs text-[#78746B] font-medium">کنترل اختصاصی حریم خصوصی داده‌های سلامت</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowSharingModal(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100"
+                  className="w-9 h-9 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] flex items-center justify-center text-[#1B1B1A] cursor-pointer transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 stroke-[1.8]" />
                 </button>
               </div>
 
-              <div className="p-3 bg-purple-50/80 border border-purple-100 rounded-2xl text-[11px] text-purple-900 leading-relaxed font-medium">
-                داده‌های سلامت شما کاملاً خصوصی هستند. با تنظیمات زیر می‌توانید دقیقاً تعیین کنید چه مواردی در حساب کاربری پارتنرتان نمایش داده شود. خاموش کردن هر سوئیچ فوراً دسترسی پارتنر را قطع می‌کند.
+              <div className="p-3.5 bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl text-xs text-[#5C584F] leading-relaxed font-medium">
+                داده‌های سلامت شما کاملاً خصوصی هستند. با کلیدهای زیر تعیین کنید چه مواردی در حساب پارتنرتان نمایش داده شود.
               </div>
 
-              {/* 10 Sharing Toggles */}
-              <div className="space-y-2 divide-y divide-slate-100">
+              <div className="space-y-2 divide-y divide-[#E8E2D4]">
                 {[
                   {
-                    key: 'sharePhase',
-                    label: 'فاز فعلی چرخه قاعدگی',
-                    desc: 'نمایش فازهای پریود، باروری، PMS و فولیکولار به پارتنر',
-                    icon: '🌸',
+                    key: "sharePhase",
+                    label: "فاز فعلی چرخه قاعدگی",
+                    desc: "نمایش فازهای پریود، باروری، PMS و فولیکولار به پارتنر"
                   },
                   {
-                    key: 'shareNextPeriod',
-                    label: 'موعد پریود بعدی و روزشمار',
-                    desc: 'نمایش تاریخ تقریبی و تعداد روزهای مانده به پریود بعدی',
-                    icon: '📅',
+                    key: "shareNextPeriod",
+                    label: "موعد پریود بعدی و روزشمار",
+                    desc: "نمایش تاریخ تقریبی و تعداد روزهای مانده به پریود بعدی"
                   },
                   {
-                    key: 'shareFertileWindow',
-                    label: 'پنجره باروری و شانس بارداری',
-                    desc: 'نمایش روزهای تخمک‌گذاری و میزان شانس بارداری امروز',
-                    icon: '👶',
+                    key: "shareFertileWindow",
+                    label: "پنجره باروری و شانس بارداری",
+                    desc: "نمایش روزهای تخمک‌گذاری و میزان شانس بارداری امروز"
                   },
                   {
-                    key: 'shareFlow',
-                    label: 'شدت خونریزی روزانه',
-                    desc: 'نمایش لکه‌بینی، خونریزی کم، متوسط یا شدید در تاریخچه',
-                    icon: '🩸',
+                    key: "shareFlow",
+                    label: "شدت خونریزی روزانه",
+                    desc: "نمایش لکه‌بینی، خونریزی کم، متوسط یا شدید در تاریخچه"
                   },
                   {
-                    key: 'shareMood',
-                    label: 'احوالات روحی و خلقیات',
-                    desc: 'نمایش احساسات ثبت‌شده (شاد، آرام، حساس، خسته و...)',
-                    icon: '😊',
+                    key: "shareMood",
+                    label: "احوالات روحی و خلقیات",
+                    desc: "نمایش احساسات ثبت‌شده در تاریخچه"
                   },
                   {
-                    key: 'shareSymptoms',
-                    label: 'علائم جسمی و دردهای فیزیکی',
-                    desc: 'نمایش دردهای پریود مثل دل‌درد، کمردرد، سردرد و نفخ',
-                    icon: '🩹',
+                    key: "shareSymptoms",
+                    label: "علائم جسمی و دردهای فیزیکی",
+                    desc: "نمایش دردهای پریود مثل دل‌درد، کمردرد، سردرد و نفخ"
                   },
                   {
-                    key: 'shareSex',
-                    label: 'ثبت رابطه زناشویی',
-                    desc: 'نمایش روزهای رابطه صمیمانه ثبت‌شده در تاریخچه (پیش‌فرض خاموش)',
-                    icon: '🔒',
+                    key: "shareSex",
+                    label: "ثبت رابطه زناشویی",
+                    desc: "نمایش روزهای رابطه صمیمانه ثبت‌شده در تاریخچه"
                   },
                   {
-                    key: 'shareTests',
-                    label: 'کیت تخمک‌گذاری و تست بارداری',
-                    desc: 'نمایش نتایج تست‌ها (تست بارداری علاوه بر این نیازمند تایید در هر ثبت است)',
-                    icon: '🧪',
+                    key: "shareTests",
+                    label: "کیت تخمک‌گذاری و تست بارداری",
+                    desc: "نمایش نتایج تست‌ها به پارتنر"
                   },
                   {
-                    key: 'shareNotes',
-                    label: 'یادداشت‌های شخصی روزانه',
-                    desc: 'نمایش متن یادداشت‌های خصوصی در لاگ‌های روزانه (پیش‌فرض خاموش)',
-                    icon: '📝',
+                    key: "shareNotes",
+                    label: "یادداشت‌های شخصی روزانه",
+                    desc: "نمایش متن یادداشت‌های خصوصی در لاگ‌های روزانه"
                   },
                   {
-                    key: 'allowPartnerLogging',
-                    label: 'اجازه ثبت لاگ به پارتنر',
-                    desc: 'اگر فعال باشد، پارتنر می‌تواند فقط شروع پریود را به نیابت از شما ثبت کند',
-                    icon: '✍️',
-                  },
+                    key: "allowPartnerLogging",
+                    label: "اجازه ثبت لاگ به پارتنر",
+                    desc: "اجازه ثبت شروع پریود به نیابت از شما"
+                  }
                 ].map((item) => (
-                  <div key={item.key} className="pt-2 flex items-center justify-between gap-3">
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-base leading-none mt-0.5">{item.icon}</span>
-                      <div>
-                        <h4 className="text-xs font-black text-slate-800">{item.label}</h4>
-                        <p className="text-[10px] text-slate-500 font-medium leading-relaxed">{item.desc}</p>
-                      </div>
+                  <div key={item.key} className="pt-2.5 flex items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#1B1B1A]">{item.label}</h4>
+                      <p className="text-[11px] text-[#78746B] font-medium leading-relaxed">{item.desc}</p>
                     </div>
                     <button
                       type="button"
@@ -2760,52 +2657,54 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                         handleSaveSharingSettings(updated);
                       }}
                       className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer shrink-0 ${
-                        (sharing as any)[item.key] ? 'bg-purple-600 justify-start' : 'bg-slate-200 justify-end'
+                        (sharing as any)[item.key]
+                          ? "bg-[#1B1B1A] justify-start"
+                          : "bg-[#DDD8C8] justify-end"
                       }`}
                     >
                       <motion.div
                         layout
-                        className="bg-white w-4 h-4 rounded-full shadow-md"
+                        className={`w-4 h-4 rounded-full ${
+                          (sharing as any)[item.key] ? "bg-[#F6C3E5]" : "bg-[#FFFDF8]"
+                        }`}
                       />
                     </button>
                   </div>
                 ))}
               </div>
 
-              {/* Action: Preview what partner sees */}
-              <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
+              <div className="pt-3 border-t border-[#E8E2D4] flex flex-col gap-2.5">
                 <button
                   type="button"
                   onClick={() => {
                     setIsPreviewingAsPartner(true);
                     setShowSharingModal(false);
                   }}
-                  className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-black text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-xs"
+                  className="w-full py-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold text-xs rounded-full flex items-center justify-center gap-2 cursor-pointer transition-colors"
                 >
-                  <Eye className="w-4 h-4" />
-                  <span>پیش‌نمایش آنچه پارتنرم می‌بیند 👁️</span>
+                  <Eye className="w-4 h-4 stroke-[1.7]" />
+                  <span>پیش‌نمایش آنچه پارتنرم می‌بیند</span>
                 </button>
 
-                {/* Data Rights: Export & Delete */}
-                <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     disabled={isExporting}
                     onClick={handleExportData}
-                    className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                    className="py-2.5 px-3 bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] font-bold text-[11px] rounded-full flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5 text-slate-500" />
-                    <span>{isExporting ? "در حال دریافت..." : "دانلود کل داده‌های من (JSON)"}</span>
+                    <Download className="w-3.5 h-3.5 stroke-[1.7]" />
+                    <span>{isExporting ? "در حال دریافت..." : "دانلود پشتیبان (JSON)"}</span>
                   </button>
 
                   <button
                     type="button"
                     disabled={isDeletingAll}
                     onClick={() => setShowDeleteAllConfirmModal(true)}
-                    className="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                    className="py-2.5 px-3 bg-[#F6C3E5] hover:bg-[#E5ADD2] text-[#1B1B1A] font-bold text-[11px] rounded-full flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                    <span>{isDeletingAll ? "در حال حذف..." : "حذف کامل اطلاعات پریود"}</span>
+                    <Trash2 className="w-3.5 h-3.5 stroke-[1.7]" />
+                    <span>{isDeletingAll ? "در حال حذف..." : "حذف کامل داده‌ها"}</span>
                   </button>
                 </div>
               </div>
@@ -2814,29 +2713,31 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
         )}
       </AnimatePresence>
 
-      {/* MODAL 5: DELETE ALL PERIOD DATA CONFIRMATION */}
+      {/* ================================================================= */}
+      {/* MODAL 5: DELETE ALL PERIOD DATA CONFIRMATION                      */}
+      {/* ================================================================= */}
       <AnimatePresence>
         {showDeleteAllConfirmModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1B1B1A]/40">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-rose-200 space-y-4 text-center"
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-[#FAF6EC] rounded-[32px] p-6 max-w-sm w-full border border-[#E8E2D4] space-y-4 text-center"
               dir="rtl"
             >
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
-                <Trash2 className="w-6 h-6" />
+              <div className="w-14 h-14 rounded-full bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6 stroke-[1.7]" />
               </div>
-              <h4 className="text-sm font-black text-slate-800">حذف کامل اطلاعات پریود ترکر</h4>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                آیا از حذف کامل تمام اطلاعات، لاگ‌های روزانه و تنظیمات قاعدگی خود از سرور اطمینان دارید؟ این عملیات غیرقابل بازگشت است.
+              <h4 className="text-base font-bold text-[#1B1B1A]">حذف کامل اطلاعات سلامت</h4>
+              <p className="text-xs text-[#78746B] leading-relaxed font-medium">
+                آیا از حذف کامل تمام اطلاعات، لاگ‌های روزانه و تنظیمات چرخه خود اطمینان دارید؟ این عملیات غیرقابل بازگشت است.
               </p>
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowDeleteAllConfirmModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                  className="flex-1 py-3 bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] rounded-full text-xs font-bold cursor-pointer transition-colors"
                 >
                   انصراف
                 </button>
@@ -2844,7 +2745,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                   type="button"
                   disabled={isDeletingAll}
                   onClick={handleDeleteAllData}
-                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-md shadow-rose-200 cursor-pointer transition-all"
+                  className="flex-1 py-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-colors"
                 >
                   {isDeletingAll ? "در حال حذف..." : "بله، کامل حذف شود"}
                 </button>

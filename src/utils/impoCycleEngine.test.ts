@@ -152,7 +152,8 @@ describe("impoCycleEngine - calculateCycleStatus for cycleLength=28", () => {
     const settings: ImpoPeriodSettings = {
       cycleLength: 28,
       periodLength: 5,
-      lastPeriodStartDate: "2026-03-01"
+      lastPeriodStartDate: "2026-03-01",
+      goalMode: "track"
     };
     const march29 = new Date(2026, 2, 29, 12, 0, 0);
     const status = calculateCycleStatus(settings, march29);
@@ -167,7 +168,8 @@ describe("impoCycleEngine - calculateCycleStatus for cycleLength=28", () => {
     const settings: ImpoPeriodSettings = {
       cycleLength: 28,
       periodLength: 5,
-      lastPeriodStartDate: "2026-10-03"
+      lastPeriodStartDate: "2026-10-03",
+      goalMode: "track"
     };
     const oct31 = new Date(2026, 9, 31, 12, 0, 0);
     const status = calculateCycleStatus(settings, oct31);
@@ -184,7 +186,8 @@ describe("impoCycleEngine - predictFutureCycles when delayed", () => {
     const settings: ImpoPeriodSettings = {
       cycleLength: 28,
       periodLength: 5,
-      lastPeriodStartDate: "2026-04-01"
+      lastPeriodStartDate: "2026-04-01",
+      goalMode: "track"
     };
     const predictions = predictFutureCycles(settings, 3);
 
@@ -320,7 +323,8 @@ describe("impoCycleEngine - predictCycle signals", () => {
     const settings: ImpoPeriodSettings = {
       cycleLength: 28,
       periodLength: 5,
-      lastPeriodStartDate: "2026-05-01"
+      lastPeriodStartDate: "2026-05-01",
+      goalMode: "track"
     };
     const logs: ImpoDailyLog[] = [
       {
@@ -350,7 +354,8 @@ describe("impoCycleEngine - predictCycle signals", () => {
     const settings: ImpoPeriodSettings = {
       cycleLength: 28,
       periodLength: 5,
-      lastPeriodStartDate: "2026-05-01"
+      lastPeriodStartDate: "2026-05-01",
+      goalMode: "track"
     };
     const logs: ImpoDailyLog[] = [
       {

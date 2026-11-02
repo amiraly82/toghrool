@@ -713,12 +713,12 @@ export function calculateCycleStatus(
   let nutritionTip = "";
 
   let stageColor = {
-    primary: "#FB7185",
-    light: "rgba(251, 113, 133, 0.12)",
-    border: "rgba(251, 113, 133, 0.35)",
-    gradient: "from-rose-500 to-pink-600",
-    badgeBg: "bg-rose-50 text-rose-700 border-rose-200",
-    text: "text-rose-600"
+    primary: "#F6C3E5",
+    light: "rgba(246, 195, 229, 0.35)",
+    border: "#E5ADD2",
+    gradient: "from-[#F6C3E5] to-[#E5ADD2]",
+    badgeBg: "bg-[#F6C3E5] text-[#1B1B1A] border-[#E5ADD2]",
+    text: "text-[#1B1B1A]"
   };
 
   switch (phase) {
@@ -729,12 +729,12 @@ export function calculateCycleStatus(
         : "امروز موعد آغاز پریود شماست";
       stageDescription = "امروز روز موعد و پیش‌بینی‌شده برای آغاز دوره قاعدگی شماست. دیواره رحم در آستانه چرخه جدید قرار دارد. به نشانه‌های بدنتان توجه کنید و آرامش داشته باشید.";
       stageColor = {
-        primary: "#F43F5E",
-        light: "rgba(244, 63, 94, 0.12)",
-        border: "rgba(244, 63, 94, 0.35)",
-        gradient: "from-rose-500 to-pink-500",
-        badgeBg: "bg-rose-50 text-rose-700 border-rose-200",
-        text: "text-rose-600"
+        primary: "#F6C3E5",
+        light: "rgba(246, 195, 229, 0.35)",
+        border: "#E5ADD2",
+        gradient: "from-[#F6C3E5] to-[#E5ADD2]",
+        badgeBg: "bg-[#F6C3E5] text-[#1B1B1A] border-[#E5ADD2]",
+        text: "text-[#1B1B1A]"
       };
       chanceOfPregnancy = "بسیار کم";
       selfCareTip = "پدهای بهداشتی را در دسترس داشته باشید، لباس‌های راحت بپوشید و نوشیدنی‌های گرم میل کنید.";
@@ -768,12 +768,12 @@ export function calculateCycleStatus(
         }
       }
       stageColor = {
-        primary: "#EF4444",
-        light: "rgba(239, 68, 68, 0.12)",
-        border: "rgba(239, 68, 68, 0.35)",
-        gradient: "from-red-500 to-rose-600",
-        badgeBg: "bg-red-50 text-red-700 border-red-200",
-        text: "text-red-600"
+        primary: "#F9C6B8",
+        light: "rgba(249, 198, 184, 0.35)",
+        border: "#E5A898",
+        gradient: "from-[#F9C6B8] to-[#F6C3E5]",
+        badgeBg: "bg-[#F9C6B8] text-[#1B1B1A] border-[#E5A898]",
+        text: "text-[#D94E4E]"
       };
       selfCareTip = "آرامش خود را حفظ کنید و استرس را کاهش دهید. خواب منظم و نوشیدن دم‌نوش‌های آرام‌بخش توصیه می‌شود.";
       partnerTip = "با آرامش و بدون استرس در کنار او باشید. احساس اطمینان خاطر بهترین کمک شما در این روزهاست.";
@@ -785,12 +785,12 @@ export function calculateCycleStatus(
       phaseSubtitle = `روز ${toPersianDigits(currentCycleDay)} از دوره خونریزی`;
       stageDescription = "سطح هورمون‌های استروژن و پروژسترون در پایین‌ترین حد است. دیواره رحم در حال پاکسازی و بازسازی است و بدن نیاز مبرم به استراحت و مراقبت گرم دارد.";
       stageColor = {
-        primary: "#F43F5E",
-        light: "rgba(244, 63, 94, 0.12)",
-        border: "rgba(244, 63, 94, 0.35)",
-        gradient: "from-rose-500 to-pink-600",
-        badgeBg: "bg-rose-50 text-rose-700 border-rose-200",
-        text: "text-rose-600"
+        primary: "#F6C3E5",
+        light: "rgba(246, 195, 229, 0.35)",
+        border: "#E5ADD2",
+        gradient: "from-[#F6C3E5] to-[#E5ADD2]",
+        badgeBg: "bg-[#F6C3E5] text-[#1B1B1A] border-[#E5ADD2]",
+        text: "text-[#1B1B1A]"
       };
       chanceOfPregnancy = "بسیار کم";
       selfCareTip = "استفاده از کیسه آب گرم روی شکم و کمر، دوش آب ولرم و استراحت کافی دردهای عضلانی را به شدت کاهش می‌دهد.";
@@ -803,12 +803,12 @@ export function calculateCycleStatus(
       phaseSubtitle = "افزایش ترشح استروژن و شادابی پوست";
       stageDescription = "با پایان پریود، هورمون استروژن روند صعودی خود را آغاز می‌کند. انرژی جسمی و انگیزه فکری بالا می‌رود و زمان فوق‌العاده‌ای برای ورزش، تفریح و پروژه‌های دونفره است.";
       stageColor = {
-        primary: "#10B981",
-        light: "rgba(16, 185, 129, 0.12)",
-        border: "rgba(16, 185, 129, 0.35)",
-        gradient: "from-emerald-500 to-teal-600",
-        badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        text: "text-emerald-600"
+        primary: "#A7B86C",
+        light: "rgba(167, 184, 108, 0.3)",
+        border: "#95A758",
+        gradient: "from-[#A7B86C] to-[#DCE6B5]",
+        badgeBg: "bg-[#DCE6B5] text-[#1B1B1A] border-[#A7B86C]",
+        text: "text-[#1B1B1A]"
       };
       chanceOfPregnancy = "کم";
       selfCareTip = "از انگیزه و انرژی بالایتان برای ورزش‌های پرتحرک، یادگیری کارهای جدید و معاشرت‌های لذت‌بخش استفاده کنید.";
@@ -823,12 +823,12 @@ export function calculateCycleStatus(
         : (goalMode === 'prevention' ? "روزهای پرخطر - نیاز به مراقبت و پیشگیری" : "افزایش حس جذابیت و شادابی زنانه");
       stageDescription = "تخمدان‌ها در حال آماده‌سازی تخمک نهایی هستند و سطح ترشحات استروژنی شفاف و کشسان می‌شود. اسپرم در این بازه می‌تواند تا ۵ روز در رحم زنده بماند.";
       stageColor = {
-        primary: "#8B5CF6",
-        light: "rgba(139, 92, 246, 0.12)",
-        border: "rgba(139, 92, 246, 0.35)",
-        gradient: "from-violet-500 to-purple-600",
-        badgeBg: "bg-purple-50 text-purple-700 border-purple-200",
-        text: "text-purple-600"
+        primary: "#B8CEF4",
+        light: "rgba(184, 206, 244, 0.35)",
+        border: "#9BB8EB",
+        gradient: "from-[#B8CEF4] to-[#DCE6FA]",
+        badgeBg: "bg-[#B8CEF4] text-[#1B1B1A] border-[#9BB8EB]",
+        text: "text-[#1B1B1A]"
       };
       chanceOfPregnancy = "بالا";
       selfCareTip = "توجه به ترشحات دهانه رحم (شبیه سفیده تخم‌مرغ) بهترین نشانه ورود به بارورترین روزهای ماه است.";
@@ -843,12 +843,12 @@ export function calculateCycleStatus(
         : "رهاسازی تخمک و اوج تمایل به صمیمیت";
       stageDescription = "تخمک از فولیکول رها شده و به مدت ۱۲ الی ۲۴ ساعت در لوله فالوپ آماده لقاح است. این روز قله احساسی، فیزیکی و بیولوژیکی چرخه قاعدگی شماست.";
       stageColor = {
-        primary: "#D946EF",
-        light: "rgba(217, 70, 239, 0.14)",
-        border: "rgba(217, 70, 239, 0.4)",
-        gradient: "from-fuchsia-500 to-pink-600",
-        badgeBg: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
-        text: "text-fuchsia-600"
+        primary: "#A7B86C",
+        light: "rgba(167, 184, 108, 0.35)",
+        border: "#8FA153",
+        gradient: "from-[#A7B86C] to-[#DCE6B5]",
+        badgeBg: "bg-[#A7B86C] text-[#1B1B1A] border-[#8FA153]",
+        text: "text-[#1B1B1A]"
       };
       chanceOfPregnancy = "بسیار بالا (اوج)";
       selfCareTip = "ممکن است تیر کشیدن مختصری در یک سمت زیر شکم حس کنید (میتل‌اشمرتس) که کاملاً طبیعی و نشانه رهاسازی تخمک است.";
@@ -861,12 +861,12 @@ export function calculateCycleStatus(
       phaseSubtitle = "تولید هورمون پروژسترون و کاهش آرام انرژی";
       stageDescription = "با تشکیل جسم زرد، پروژسترون بالا می‌رود تا دیواره رحم را تقویت کند. بدن به آرامی ریتم آرام‌تری به خود می‌گیرد و نیاز به خواب باکیفیت بیشتر می‌شود.";
       stageColor = {
-        primary: "#6366F1",
-        light: "rgba(99, 102, 241, 0.12)",
-        border: "rgba(99, 102, 241, 0.35)",
-        gradient: "from-indigo-500 to-blue-600",
-        badgeBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
-        text: "text-indigo-600"
+        primary: "#B8CEF4",
+        light: "rgba(184, 206, 244, 0.3)",
+        border: "#9BB8EB",
+        gradient: "from-[#B8CEF4] to-[#EFECE2]",
+        badgeBg: "bg-[#B8CEF4]/70 text-[#1B1B1A] border-[#9BB8EB]",
+        text: "text-[#1B1B1A]"
       };
       chanceOfPregnancy = "کم";
       selfCareTip = "از کارهای سنگین و اضافه‌کاری کم کنید. دوش شبانه و زمان‌بندی منظم خواب به تعادل هورمونی شما کمک می‌کند.";
@@ -879,12 +879,12 @@ export function calculateCycleStatus(
       phaseSubtitle = "نوسانات هورمونی و حساسیت عاطفی طبیعی";
       stageDescription = "افت ناگهانی پروژسترون و استروژن پیش از خونریزی ممکن است باعث حساسیت پستان‌ها، نفخ، خستگی، کم‌حوصلگی یا نوسانات خلقی شود. این وضعیت کاملاً فیزیولوژیک است.";
       stageColor = {
-        primary: "#F59E0B",
-        light: "rgba(245, 158, 11, 0.14)",
-        border: "rgba(245, 158, 11, 0.35)",
-        gradient: "from-amber-500 to-orange-600",
-        badgeBg: "bg-amber-50 text-amber-700 border-amber-200",
-        text: "text-amber-600"
+        primary: "#F6DC6B",
+        light: "rgba(246, 220, 107, 0.35)",
+        border: "#E5C954",
+        gradient: "from-[#F6DC6B] to-[#F9E795]",
+        badgeBg: "bg-[#F6DC6B] text-[#1B1B1A] border-[#E5C954]",
+        text: "text-[#1B1B1A]"
       };
       chanceOfPregnancy = "بسیار کم";
       selfCareTip = "مصرف کافئین و شکر را محدود کنید چون اضطراب و ورم را تشدید می‌کنند. پیاده‌روی سبک و تنفس عمیق معجزه می‌کند.";

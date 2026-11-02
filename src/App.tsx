@@ -272,46 +272,46 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen font-sans selection:bg-rose-100 selection:text-rose-900 overflow-x-hidden">
+    <div className="min-h-screen bg-[#FAF6EC] text-[#1B1B1A] font-sans selection:bg-[#F6C3E5] selection:text-[#1B1B1A] overflow-x-hidden">
       <AnimatePresence mode="wait">
         {loading ? (
-          /* Pulse heart loader */
+          /* Minimalist Pastel Loader */
           <motion.div
             key="loader"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-gradient-to-br from-rose-100 via-indigo-50 to-teal-50"
+            className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-[#FAF6EC]"
           >
             <div className="relative">
-              <div className="w-20 h-20 bg-white/40 backdrop-blur-md rounded-3xl shadow-lg border border-white/60 flex items-center justify-center text-rose-500">
-                <Heart className="w-10 h-10 fill-rose-500 animate-heart text-rose-500" />
+              <div className="w-20 h-20 bg-[#F6C3E5] rounded-full flex items-center justify-center text-[#1B1B1A]">
+                <Heart className="w-9 h-9 stroke-[1.6] animate-heart text-[#1B1B1A]" />
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs text-white">
-                ✨
+              <div className="absolute -top-1 -right-1 w-7 h-7 bg-[#F6DC6B] rounded-full border-2 border-[#FAF6EC] flex items-center justify-center text-[11px] font-bold text-[#1B1B1A]">
+                ✦
               </div>
             </div>
-            <p className="mt-4 text-xs font-black text-slate-600 flex items-center gap-2">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-500" />
-              در حال لود کردن رؤیاهای مشترک...
+            <p className="mt-5 text-xs font-bold text-[#78746B] flex items-center gap-2">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#1B1B1A]" />
+              در حال آماده‌سازی فضای طغرل...
             </p>
           </motion.div>
         ) : error ? (
-          /* Error feedback page */
+          /* Minimalist Error Page */
           <motion.div
             key="error"
-            className="fixed inset-0 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-rose-100 via-indigo-50 to-teal-50"
+            className="fixed inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#FAF6EC]"
           >
-            <div className="p-4 bg-red-500/10 rounded-full text-red-500 mb-4 border border-red-500/20 backdrop-blur-md">
-              💔
+            <div className="w-16 h-16 bg-[#F6C3E5] rounded-full flex items-center justify-center text-[#1B1B1A] mb-4">
+              <Heart className="w-7 h-7 stroke-[1.6]" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800">خطایی رخ داد</h3>
-            <p className="text-slate-500 text-sm mt-1 max-w-xs">{error}</p>
+            <h3 className="text-lg font-bold text-[#1B1B1A]">خطایی رخ داد</h3>
+            <p className="text-[#78746B] text-sm mt-1.5 max-w-xs leading-relaxed">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-6 py-2.5 px-6 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold rounded-xl text-xs shadow-md shadow-rose-200 cursor-pointer"
+              className="mt-6 py-3 px-7 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold rounded-full text-xs cursor-pointer transition-colors"
             >
-              دوباره تلاش کنید
+              تلاش دوباره
             </button>
           </motion.div>
         ) : !firebaseUser || !userProfile || !userProfile.coupleId ? (

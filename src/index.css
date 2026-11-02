@@ -56,6 +56,23 @@
   font-display: swap;
 }
 
+:root {
+  --bg-cream: #FAF6EC;
+  --bg-card: #FFFDF8;
+  --bg-sand: #EFECE2;
+  --bg-sand-hover: #E5E0D2;
+  --ink: #1B1B1A;
+  --ink-muted: #78746B;
+  --border-warm: #E8E2D4;
+  --pastel-pink: #F6C3E5;
+  --pastel-pink-deep: #E5ADD2;
+  --pastel-yellow: #F6DC6B;
+  --pastel-sage: #A7B86C;
+  --pastel-sage-soft: #DCE6B5;
+  --pastel-blue: #B8CEF4;
+  --pastel-coral: #D94E4E;
+}
+
 @theme {
   --font-sans: "Ray", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Ray", ui-monospace, SFMono-Regular, monospace;
@@ -72,47 +89,50 @@ textarea {
 body {
   direction: rtl;
   text-align: right;
-  background: linear-gradient(135deg, #ffe4e6 0%, #e0e7ff 50%, #f0fdf4 100%);
-  background-attachment: fixed;
-  color: #334155;
+  background-color: #FAF6EC;
+  color: #1B1B1A;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Warm Editorial Minimalist Surfaces (Flat, Crisp, Shadowless) */
 .glass-card {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.08);
+  background-color: #FFFDF8;
+  border: 1px solid #E8E2D4;
+  box-shadow: none;
 }
 
 .glass-card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 .glass-card-hover:hover {
-  background: rgba(255, 255, 255, 0.6);
-  border-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 12px 40px 0 rgba(244, 63, 94, 0.1);
-  transform: translateY(-2px);
+  background-color: #FFFFFF;
+  border-color: #D5CEBE;
+  transform: translateY(-1px);
 }
 
 .glass-input {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  background-color: #EFECE2;
+  border: 1px solid transparent;
+  color: #1B1B1A;
   transition: all 0.2s ease-in-out;
 }
+.glass-input::placeholder {
+  color: #8E8A80;
+}
 .glass-input:focus {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(244, 63, 94, 0.4);
-  box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.1);
+  background-color: #FFFDF8;
+  border-color: #1B1B1A;
+  outline: none;
+  box-shadow: none;
 }
 
 .glass-nav-active {
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 4px 12px 0 rgba(244, 63, 94, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  background-color: #1B1B1A;
+  color: #FAF6EC;
+  border: 1px solid #1B1B1A;
+  box-shadow: none;
 }
 
 html {
@@ -120,76 +140,60 @@ html {
   scroll-padding-top: 100px;
 }
 
-/* Enable fluid momentum-based scrolling across all devices */
 * {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Custom scrollbar styled elegantly with a floating premium look */
+/* Warm Minimalist Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: #FAF6EC;
   border-radius: 9999px;
-  margin: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%);
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: #D8D3C5;
   border-radius: 9999px;
-  transition: all 0.3s ease-in-out;
+  transition: background-color 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.6) 0%, rgba(168, 85, 247, 0.6) 100%);
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: #B8B2A3;
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Heartbeat pulse animation */
+/* Gentle heartbeat animation */
 @keyframes heartPulse {
   0% { transform: scale(1); }
-  14% { transform: scale(1.12); }
+  14% { transform: scale(1.08); }
   28% { transform: scale(1); }
-  42% { transform: scale(1.12); }
+  42% { transform: scale(1.08); }
   70% { transform: scale(1); }
 }
 
 .animate-heart {
-  animation: heartPulse 1.2s infinite ease-in-out;
+  animation: heartPulse 1.6s infinite ease-in-out;
 }
 
-/* Elegant gold shine for Hall of Fame */
-@keyframes goldShine {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
+/* Warm Butter-Yellow Pastel Accent for Hall of Fame */
 .gold-gradient {
-  background: linear-gradient(-45deg, #dfa320, #ffd700, #f8cc46, #c5931c, #ffd700);
-  background-size: 400% 400%;
-  animation: goldShine 10s ease infinite;
+  background-color: #F6DC6B;
+  color: #1B1B1A;
 }
 
-/* Custom styling for completed items in Hall of Fame */
 .fame-card {
-  box-shadow: 0 10px 30px -10px rgba(223, 163, 32, 0.15), 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid rgba(223, 163, 32, 0.2);
-  background: linear-gradient(135deg, #ffffff 0%, #fffdf9 100%);
+  background-color: #FFFDF8;
+  border: 1.5px solid #F6DC6B;
+  box-shadow: none;
 }
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

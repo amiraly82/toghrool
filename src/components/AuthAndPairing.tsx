@@ -163,27 +163,30 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Glow Rings & Ambient Accents */}
-      <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-rose-200 to-indigo-100 opacity-60 blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-teal-100 to-rose-100 opacity-60 blur-3xl animate-pulse" style={{ animationDuration: '10s' }} />
-
-      <div className="w-full max-w-md glass-card rounded-3xl p-8 z-10 relative">
-        {/* Heart Mascot / Logo */}
+    <div className="min-h-screen bg-[#FAF6EC] text-[#1B1B1A] flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md bg-[#FFFDF8] border border-[#E8E2D4] rounded-[32px] p-7 sm:p-9 relative">
+        {/* Editorial Minimalist Brand Header */}
         <div className="flex flex-col items-center mb-8">
-          <div className="relative">
-            <div className="w-16 h-16 bg-white/60 backdrop-blur-md rounded-2xl flex items-center justify-center text-rose-500 shadow-sm border border-white/60">
-              <Heart className="w-8 h-8 fill-rose-500 animate-heart" />
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-12 h-12 rounded-full bg-[#F6DC6B] flex items-center justify-center text-[#1B1B1A]">
+              <Sparkles className="w-5 h-5 stroke-[1.7]" />
             </div>
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-[10px] text-white shadow-sm">
-              ✨
+            <div className="w-16 h-16 rounded-full bg-[#F6C3E5] flex items-center justify-center text-[#1B1B1A]">
+              <Heart className="w-7 h-7 stroke-[1.7] animate-heart" />
+            </div>
+            <div className="w-12 h-12 rounded-full bg-[#B8CEF4] flex items-center justify-center text-[#1B1B1A]">
+              <Key className="w-5 h-5 stroke-[1.7]" />
             </div>
           </div>
-          <h1 className="text-2xl font-black text-slate-800 mt-4 tracking-tight font-sans">
+
+          <span className="text-[11px] font-semibold text-[#78746B] tracking-wide">
+            اپلیکیشن دونفره طغرل
+          </span>
+          <h1 className="text-2xl sm:text-[26px] font-bold text-[#1B1B1A] mt-1 tracking-tight">
             رؤیاهای مشترک ما
           </h1>
-          <p className="text-slate-500 text-xs mt-1 text-center leading-relaxed">
-            لیست‌های آرزوی مشترک، سینما، کتاب، خریدها، سفرها و تالار افتخارات دونفره با تم شیشه‌ای
+          <p className="text-[#78746B] text-xs mt-1.5 text-center leading-relaxed max-w-xs">
+            لیست آرزوها، خاطرات، سلامت و برنامه‌ریزی دونفره در فضایی آرام و اختصاصی
           </p>
         </div>
 
@@ -192,145 +195,166 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
             /* Login & Sign Up view */
             <motion.div
               key="auth-view"
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
             >
+              {/* Mode Pill Switcher */}
+              <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-[#EFECE2] rounded-full mb-6">
+                <button
+                  type="button"
+                  onClick={() => { setIsSignUp(false); setError(""); }}
+                  className={`py-2 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                    !isSignUp ? "bg-[#1B1B1A] text-[#FAF6EC]" : "text-[#78746B] hover:text-[#1B1B1A]"
+                  }`}
+                >
+                  ورود به حساب
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsSignUp(true); setError(""); }}
+                  className={`py-2 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                    isSignUp ? "bg-[#1B1B1A] text-[#FAF6EC]" : "text-[#78746B] hover:text-[#1B1B1A]"
+                  }`}
+                >
+                  عضویت جدید
+                </button>
+              </div>
+
               <form onSubmit={handleAuthSubmit} className="space-y-4">
                 {error && (
-                  <div className="p-3 bg-red-500/10 text-red-700 rounded-xl text-xs flex items-start gap-2 border border-red-500/20 backdrop-blur-md">
-                    <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{error}</span>
+                  <div className="p-3.5 bg-[#F6C3E5]/60 text-[#1B1B1A] rounded-2xl text-xs flex items-start gap-2.5 border border-[#E5ADD2]">
+                    <ShieldAlert className="w-4 h-4 text-[#D94E4E] shrink-0 mt-0.5 stroke-[1.8]" />
+                    <span className="font-medium leading-relaxed">{error}</span>
                   </div>
                 )}
 
                 {isSignUp && (
-                  <>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block mr-1">نام یا لقب شما</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="مثلاً امیر یا سارا"
-                          className="w-full pl-3 pr-10 py-2.5 glass-input rounded-xl text-sm text-right font-medium"
-                          required
-                        />
-                        <User className="absolute right-3.5 top-3.5 w-4 h-4 text-slate-400" />
-                      </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#1B1B1A] block mr-1">نام یا لقب شما</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="مثلاً امیر یا سارا"
+                        className="w-full pl-4 pr-10 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-sm text-[#1B1B1A] placeholder:text-[#8E8A80] text-right font-medium outline-none transition-colors"
+                        required
+                      />
+                      <User className="absolute right-3.5 top-3.5 w-4 h-4 text-[#78746B] stroke-[1.7]" />
                     </div>
-                  </>
+                  </div>
                 )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 block mr-1">ایمیل</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#1B1B1A] block mr-1">ایمیل</label>
                   <div className="relative">
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="name@example.com"
-                      className="w-full pl-3 pr-10 py-2.5 glass-input rounded-xl text-sm text-left font-mono"
+                      className="w-full pl-4 pr-10 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-sm text-[#1B1B1A] placeholder:text-[#8E8A80] text-left font-mono outline-none transition-colors"
                       dir="ltr"
                       required
                     />
-                    <Mail className="absolute right-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <Mail className="absolute right-3.5 top-3.5 w-4 h-4 text-[#78746B] stroke-[1.7]" />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 block mr-1">رمز عبور</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#1B1B1A] block mr-1">رمز عبور</label>
                   <div className="relative">
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-3 pr-10 py-2.5 glass-input rounded-xl text-sm text-left font-mono"
+                      className="w-full pl-4 pr-10 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-sm text-[#1B1B1A] placeholder:text-[#8E8A80] text-left font-mono outline-none transition-colors"
                       dir="ltr"
                       required
                     />
-                    <Key className="absolute right-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <Key className="absolute right-3.5 top-3.5 w-4 h-4 text-[#78746B] stroke-[1.7]" />
                   </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={authLoading}
-                  className="w-full py-3 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold rounded-xl text-sm shadow-md shadow-rose-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 mt-2 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold rounded-full text-sm transition-colors active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {authLoading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-[#FAF6EC] border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <span>{isSignUp ? "ثبت‌نام و عضویت" : "ورود به حساب زوج"}</span>
-                      <Sparkles className="w-4 h-4" />
+                      <span>{isSignUp ? "ساخت حساب در طغرل" : "ورود به فضای مشترک"}</span>
+                      <Sparkles className="w-4 h-4 stroke-[1.7]" />
                     </>
                   )}
                 </button>
               </form>
-
-              <div className="text-center mt-6">
-                <button
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-xs text-rose-500 hover:text-rose-600 hover:underline font-bold cursor-pointer"
-                >
-                  {isSignUp ? "قبلاً ثبت‌نام کرده‌اید؟ اینجا وارد شوید" : "حساب کاربری ندارید؟ اینجا ثبت‌نام کنید"}
-                </button>
-              </div>
             </motion.div>
           ) : (
             /* Pairing view (Logged in, but no coupleId yet) */
             <motion.div
               key="pairing-view"
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-5"
             >
-              <div className="bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-white/60 text-center">
-                <p className="text-xs text-rose-600 font-bold mb-1">کد زوج اختصاصی شما:</p>
-                <div className="flex items-center justify-center gap-2 mt-2">
-                  <span className="font-mono text-2xl font-bold tracking-widest text-rose-700 select-all bg-white/80 px-4 py-1.5 rounded-xl border border-white/80 shadow-sm">
+              {/* Pastel Pink Assistant-Style Code Card */}
+              <div className="bg-[#F6C3E5] p-5 rounded-[26px] relative overflow-hidden text-right">
+                <svg
+                  viewBox="0 0 100 100"
+                  className="w-24 h-24 absolute -bottom-5 -left-3 text-[#E5ADD2] fill-current pointer-events-none rotate-[-12deg]"
+                >
+                  <path d="M50 88C50 88 12 63 12 36C12 21 24 12 36 12C44 12 50 18 50 23C50 18 56 12 64 12C76 12 88 21 88 36C88 63 50 88 50 88Z" />
+                </svg>
+
+                <span className="text-[11px] font-medium text-[#6B5364] block">
+                  کد اختصاصی اتصال زوجین
+                </span>
+                <div className="flex items-center justify-between gap-2 mt-2.5 relative z-10">
+                  <span className="font-mono text-2xl font-bold tracking-widest text-[#1B1B1A] select-all bg-[#FFFDF8] px-4 py-2 rounded-2xl border border-[#1B1B1A]/10">
                     {userProfile.coupleCode}
                   </span>
-                  <button 
+                  <button
+                    type="button"
                     onClick={copyCode}
-                    className="p-2 bg-white/80 rounded-xl border border-white/80 hover:bg-rose-50 text-rose-600 transition-all cursor-pointer shadow-sm"
+                    className="px-4 py-2.5 bg-[#1B1B1A] text-[#FAF6EC] rounded-full text-xs font-bold flex items-center gap-1.5 hover:bg-[#2F2E2C] transition-colors cursor-pointer"
                     title="کپی کد"
                   >
-                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    {copied ? <Check className="w-3.5 h-3.5 text-[#A7B86C]" /> : <Copy className="w-3.5 h-3.5 stroke-[1.7]" />}
+                    <span>{copied ? "کپی شد" : "کپی کد"}</span>
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
-                  این کد را برای همسرتان یا پارتنرتان بفرستید تا با وارد کردن آن در بخش زیر به هم متصل شوید.
+                <p className="text-[11px] text-[#4A3A45] mt-3 leading-relaxed relative z-10 font-medium">
+                  این کد را برای پارتنرتان بفرستید یا کد او را در کادر زیر وارد کنید تا فضای مشترک شما فعال شود.
                 </p>
               </div>
 
-              <div className="border-t border-white/60 my-4" />
-
               <form onSubmit={handlePairingSubmit} className="space-y-4">
                 {error && (
-                  <div className="p-3 bg-red-500/10 text-red-700 rounded-xl text-xs flex items-start gap-2 border border-red-500/20 backdrop-blur-md">
-                    <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="p-3.5 bg-[#F6C3E5]/60 text-[#1B1B1A] rounded-2xl text-xs flex items-start gap-2 border border-[#E5ADD2]">
+                    <ShieldAlert className="w-4 h-4 text-[#D94E4E] shrink-0 mt-0.5 stroke-[1.8]" />
                     <span>{error}</span>
                   </div>
                 )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 block mr-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#1B1B1A] block mr-1">
                     کد زوج پارتنرتان را وارد کنید:
                   </label>
                   <input
                     type="text"
                     value={partnerCode}
                     onChange={(e) => setPartnerCode(e.target.value)}
-                    placeholder="ABCXYZ"
-                    className="w-full px-4 py-3 glass-input rounded-xl font-mono text-center text-lg font-bold tracking-widest uppercase"
-                    maxLength={6}
+                    placeholder="ABCD1234"
+                    className="w-full px-4 py-3.5 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl font-mono text-center text-lg font-bold tracking-widest uppercase text-[#1B1B1A] outline-none transition-colors"
+                    maxLength={8}
                     required
                   />
                 </div>
@@ -338,23 +362,21 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
                 <button
                   type="submit"
                   disabled={pairingLoading}
-                  className="w-full py-3 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold rounded-xl text-sm shadow-md shadow-rose-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold rounded-full text-sm transition-colors active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {pairingLoading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-[#FAF6EC] border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <span>اتصال به پارتنر و شروع همگام‌سازی</span>
-                      <Heart className="w-4 h-4 fill-white" />
+                      <span>اتصال به پارتنر</span>
+                      <Heart className="w-4 h-4 stroke-[1.8]" />
                     </>
                   )}
                 </button>
               </form>
 
-              <div className="border-t border-white/60 my-4" />
-
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span>وارد شده با: {userProfile.displayName}</span>
+              <div className="pt-4 border-t border-[#E8E2D4] flex items-center justify-between text-xs text-[#78746B]">
+                <span className="font-medium">حساب فعال: <strong className="text-[#1B1B1A]">{userProfile.displayName}</strong></span>
                 <button
                   onClick={async () => {
                     try {
@@ -364,9 +386,9 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
                     await signOut(auth);
                     window.location.reload();
                   }}
-                  className="text-red-500 hover:text-red-600 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] text-[#1B1B1A] flex items-center gap-1.5 font-bold cursor-pointer transition-colors"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-3.5 h-3.5 stroke-[1.7]" />
                   <span>خروج</span>
                 </button>
               </div>

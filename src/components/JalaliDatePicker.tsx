@@ -183,41 +183,41 @@ export default function JalaliDatePicker({
       <button
         type="button"
         onClick={toggleOpen}
-        className="w-full px-3.5 py-2.5 bg-white border border-slate-200/80 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500/30 flex items-center justify-between cursor-pointer shadow-sm hover:border-slate-300 transition-all font-medium"
+        className="w-full px-4 py-3 bg-[#EFECE2] hover:bg-[#E5E0D2] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-xs text-[#1B1B1A] focus:outline-none flex items-center justify-between cursor-pointer transition-colors font-medium"
       >
-        <span className={value ? "text-slate-800 font-bold" : "text-slate-400"}>
+        <span className={value ? "text-[#1B1B1A] font-bold" : "text-[#78746B]"}>
           {value ? formatPersianDate(value) : placeholder}
         </span>
-        <CalendarIcon className="w-4 h-4 text-slate-400" />
+        <CalendarIcon className="w-4 h-4 text-[#1B1B1A] stroke-[1.7]" />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: openUpward ? -8 : 8, scale: 0.95 }}
+            initial={{ opacity: 0, y: openUpward ? -8 : 8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: openUpward ? -8 : 8, scale: 0.95 }}
+            exit={{ opacity: 0, y: openUpward ? -8 : 8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className={`absolute left-0 right-0 sm:left-auto sm:w-[340px] ${
+            className={`absolute left-0 right-0 sm:left-auto sm:w-[344px] ${
               openUpward ? "bottom-full mb-2" : "top-full mt-2"
-            } bg-white border border-slate-100 rounded-3xl shadow-2xl p-5 z-[999] text-right`}
+            } bg-[#FFFDF8] border border-[#1B1B1A]/15 rounded-[28px] p-5 z-[999] text-right shadow-xl`}
           >
             {/* Header: < Month Year > */}
-            <div className="flex items-center justify-between mb-4 px-1">
+            <div className="flex items-center justify-between mb-4 px-0.5">
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="p-1.5 hover:bg-slate-100 rounded-xl text-[#1A1A1A] cursor-pointer transition-all"
+                className="w-9 h-9 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] hover:bg-[#EFECE2] flex items-center justify-center text-[#1B1B1A] cursor-pointer transition-colors"
                 title="ماه قبل"
               >
-                <ChevronRight className="w-5 h-5 stroke-[2]" />
+                <ChevronRight className="w-4 h-4 stroke-[1.8]" />
               </button>
 
               <div className="flex items-center gap-1.5">
                 <select
                   value={viewMonth}
                   onChange={(e) => handleMonthChange(parseInt(e.target.value, 10))}
-                  className="bg-slate-100 hover:bg-slate-200/80 text-sm font-bold text-[#1A1A1A] cursor-pointer focus:outline-none text-center px-2.5 py-1 rounded-xl transition-colors"
+                  className="bg-[#EFECE2] hover:bg-[#E5E0D2] text-sm font-bold text-[#1B1B1A] cursor-pointer focus:outline-none text-center px-3 py-1.5 rounded-full transition-colors"
                 >
                   {JALALI_MONTHS.map((m, idx) => (
                     <option key={m} value={idx + 1}>
@@ -229,7 +229,7 @@ export default function JalaliDatePicker({
                 <select
                   value={viewYear}
                   onChange={(e) => handleYearChange(parseInt(e.target.value, 10))}
-                  className="bg-slate-100 hover:bg-slate-200/80 text-sm font-bold text-[#1A1A1A] cursor-pointer focus:outline-none text-center px-2.5 py-1 rounded-xl transition-colors"
+                  className="bg-[#EFECE2] hover:bg-[#E5E0D2] text-sm font-bold text-[#1B1B1A] cursor-pointer focus:outline-none text-center px-3 py-1.5 rounded-full transition-colors"
                 >
                   {yearsRange.map((y) => (
                     <option key={y} value={y}>
@@ -242,10 +242,10 @@ export default function JalaliDatePicker({
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1.5 hover:bg-slate-100 rounded-xl text-[#1A1A1A] cursor-pointer transition-all"
+                className="w-9 h-9 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] hover:bg-[#EFECE2] flex items-center justify-center text-[#1B1B1A] cursor-pointer transition-colors"
                 title="ماه بعد"
               >
-                <ChevronLeft className="w-5 h-5 stroke-[2]" />
+                <ChevronLeft className="w-4 h-4 stroke-[1.8]" />
               </button>
             </div>
 
@@ -254,7 +254,7 @@ export default function JalaliDatePicker({
               {JALALI_WEEKDAYS.map((w, idx) => (
                 <span
                   key={idx}
-                  className="text-xs font-medium text-[#757575]"
+                  className="text-xs font-medium text-[#78746B]"
                 >
                   {w}
                 </span>
@@ -283,13 +283,13 @@ export default function JalaliDatePicker({
                     key={`day-${dayNum}`}
                     type="button"
                     onClick={() => handleSelectDay(dayNum)}
-                    className={`aspect-square rounded-[14px] transition-all flex flex-col items-center justify-center cursor-pointer select-none ${
+                    className={`aspect-square rounded-[14px] transition-colors flex flex-col items-center justify-center cursor-pointer select-none ${
                       isSelected
-                        ? "bg-[#1B9AAA] text-white shadow-sm"
+                        ? "bg-[#1B1B1A] text-[#FAF6EC]"
                         : isToday
-                        ? "bg-[#F9CCD8] text-[#7D243C]"
-                        : "bg-[#F7F7F7] hover:bg-[#EFEFEF] text-[#1E1E1E]"
-                    } ${isToday ? "border-2 border-dashed border-[#222222]" : ""}`}
+                        ? "bg-[#F6C3E5] text-[#1B1B1A]"
+                        : "bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A]"
+                    } ${isToday && !isSelected ? "border-[1.8px] border-dashed border-[#1B1B1A]" : ""}`}
                   >
                     <span className="text-xs font-bold leading-none">
                       {toPersianDigits(dayNum)}
@@ -305,11 +305,11 @@ export default function JalaliDatePicker({
             </div>
 
             {/* Action buttons (Today, Clear) */}
-            <div className="flex items-center justify-between border-t border-slate-100 mt-4 pt-2.5 text-xs font-bold">
+            <div className="flex items-center justify-between border-t border-[#E8E2D4] mt-4 pt-3 text-xs font-bold">
               <button
                 type="button"
                 onClick={handleSelectToday}
-                className="text-[#1B9AAA] hover:opacity-80 transition-opacity cursor-pointer py-1 px-2 rounded-lg hover:bg-slate-50"
+                className="bg-[#1B1B1A] text-[#FAF6EC] hover:bg-[#2F2E2C] transition-colors cursor-pointer py-1.5 px-3.5 rounded-full text-[11px]"
               >
                 انتخاب امروز
               </button>
@@ -317,7 +317,7 @@ export default function JalaliDatePicker({
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer py-1 px-2 rounded-lg hover:bg-slate-50 flex items-center gap-1"
+                  className="text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer py-1.5 px-3 rounded-full hover:bg-[#EFECE2] flex items-center gap-1 text-[11px]"
                 >
                   <X className="w-3 h-3" />
                   پاک کردن
