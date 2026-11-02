@@ -207,6 +207,144 @@ function ensureUserSchema($pdo) {
     }
 }
 
+// Automatically ensure email OTP table exists
+function ensureOtpSchema($pdo) {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `email_otps` (
+              `id` INT AUTO_INCREMENT PRIMARY KEY,
+              `email` VARCHAR(255) NOT NULL,
+              `otp_code` VARCHAR(16) NOT NULL,
+              `type` VARCHAR(32) NOT NULL,
+              `payload` LONGTEXT DEFAULT NULL,
+              `attempts` INT NOT NULL DEFAULT 0,
+              `expiresAt` DATETIME NOT NULL,
+              `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              INDEX `idx_email_type` (`email`, `type`),
+              INDEX `idx_expires` (`expiresAt`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+    } catch (Exception $e) {
+        error_log("OTP schema check notice: " . $e->getMessage());
+    }
+}
+
+// Persian Responsive HTML Email Template matching Toghrool brand
+function buildToghroolEmailTemplate($title, $heading, $bodyText, $otpCode) {
+    $persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    $latinDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    $persianOtp = str_replace($latinDigits, $persianDigits, $otpCode);
+
+    return '<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title>
+</head>
+<body style="margin: 0; padding: 28px 14px; background-color: #FAF6EC; font-family: Tahoma, -apple-system, sans-serif; direction: rtl; text-align: right; color: #1B1B1A;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 500px; margin: 0 auto; background: #FFFDF8; border-radius: 28px; border: 1px solid #E8E2D4; overflow: hidden; box-shadow: 0 10px 30px rgba(27,27,26,0.05);">
+    <tr>
+      <td style="background: linear-gradient(135deg, #F6C3E5 0%, #EC407A 100%); padding: 30px 24px; text-align: center;">
+        <h1 style="margin: 0; color: #FFFFFF; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">طغرل | Toghrool</h1>
+        <p style="margin: 6px 0 0; color: rgba(255,255,255,0.92); font-size: 13px;">همراه صمیمی لحظه‌ها و سلامت زوجین</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 32px 26px;">
+        <h2 style="margin: 0 0 12px; font-size: 17px; color: #1B1B1A; font-weight: bold;">' . htmlspecialchars($heading, ENT_QUOTES, 'UTF-8') . '</h2>
+        <p style="margin: 0 0 20px; font-size: 13px; line-height: 1.8; color: #78746B;">' . htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8') . '</p>
+        
+        <div style="background: #FAF6EC; border: 2px dashed #E8E2D4; border-radius: 20px; padding: 20px 14px; text-align: center; margin: 24px 0;">
+          <span style="display: block; font-size: 12px; font-weight: bold; color: #78746B; margin-bottom: 8px;">کد تایید یک‌بار مصرف شما:</span>
+          <span style="display: inline-block; font-size: 34px; font-weight: 900; letter-spacing: 12px; color: #1B1B1A; font-family: monospace, sans-serif; direction: ltr;">' . htmlspecialchars($otpCode, ENT_QUOTES, 'UTF-8') . '</span>
+          <span style="display: block; font-size: 16px; font-weight: bold; color: #EC407A; margin-top: 6px;">(' . $persianOtp . ')</span>
+        </div>
+
+        <p style="margin: 0 0 10px; font-size: 12px; color: #9E9A8F; text-align: center;">این کد تا ۱۰ دقیقه دیگر معتبر است.</p>
+        <p style="margin: 20px 0 0; font-size: 11px; color: #B5B0A4; border-top: 1px solid #F0EBE0; padding-top: 16px; line-height: 1.6; text-align: justify;">
+          اگر شما این درخواست را در اپلیکیشن طغرل ثبت نکرده‌اید، این پیام را نادیده بگیرید. امنیت حساب و اطلاعات شما برای ما در اولویت است.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>';
+}
+
+// Deliver UTF-8 HTML Email via Localhost SMTP Exim (Port 25)
+function sendToghroolEmail($toEmail, $subject, $htmlContent) {
+    $senderName = "طغرل | Toghrool";
+    $fromEmail = "noreply@toghrool.ir";
+
+    $fp = @fsockopen('127.0.0.1', 25, $errno, $errstr, 5);
+    if (!$fp) {
+        error_log("SMTP connection error ($errno): $errstr");
+        return false;
+    }
+
+    $read = function() use ($fp) {
+        $res = '';
+        while ($line = fgets($fp, 512)) {
+            $res .= $line;
+            if (isset($line[3]) && $line[3] === ' ') break;
+        }
+        return $res;
+    };
+    $write = function($cmd) use ($fp) {
+        fwrite($fp, $cmd . "\r\n");
+    };
+
+    $read();
+    $write('HELO toghrool.ir');
+    $read();
+    $write("MAIL FROM:<{$fromEmail}>");
+    $read();
+    $write("RCPT TO:<{$toEmail}>");
+    $rcptRes = $read();
+
+    if (strpos($rcptRes, '250') === false) {
+        $write('QUIT');
+        fclose($fp);
+        error_log("SMTP RCPT rejected: " . trim($rcptRes));
+        return false;
+    }
+
+    $write('DATA');
+    $read();
+
+    $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
+    $encodedSender = "=?UTF-8?B?" . base64_encode($senderName) . "?=";
+
+    $headers = [
+        "MIME-Version: 1.0",
+        "Content-Type: text/html; charset=UTF-8",
+        "From: {$encodedSender} <{$fromEmail}>",
+        "Reply-To: {$fromEmail}",
+        "To: <{$toEmail}>",
+        "Date: " . date("r"),
+        "Subject: {$encodedSubject}",
+        "X-Mailer: Toghrool-Mail/2.0"
+    ];
+
+    $msg = implode("\r\n", $headers) . "\r\n\r\n" . $htmlContent . "\r\n.\r\n";
+    fwrite($fp, $msg);
+    $dataRes = $read();
+    $write('QUIT');
+    $read();
+    fclose($fp);
+
+    $success = (strpos($dataRes, '250') !== false);
+    if (!$success) {
+        error_log("SMTP DATA failed: " . trim($dataRes));
+    }
+    return $success;
+}
+
 // Automatically ensure period tracker tables and columns exist (self-healing migration)
 function ensurePeriodSchema($pdo) {
     static $checked = false;
@@ -329,6 +467,320 @@ switch ($action) {
     // ----------------------------------------------------
     // AUTHENTICATION & SESSIONS
     // ----------------------------------------------------
+    case 'send_signup_otp':
+        ensureOtpSchema($pdo);
+        ensureUserSchema($pdo);
+
+        $email = strtolower(trim($input['email'] ?? ''));
+        $password = (string)($input['password'] ?? '');
+        $displayName = trim($input['displayName'] ?? '');
+        $gender = trim($input['gender'] ?? 'female');
+        if (!in_array($gender, ['female', 'male'], true)) {
+            $gender = 'female';
+        }
+
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'لطفاً یک آدرس ایمیل معتبر وارد کنید.']);
+            exit();
+        }
+
+        if (!$displayName) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'لطفاً نام یا لقب خود را وارد کنید.']);
+            exit();
+        }
+
+        if (strlen($password) < 6) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'رمز عبور باید حداقل ۶ کاراکتر باشد.']);
+            exit();
+        }
+
+        // Check if email already registered
+        $stmt = $pdo->prepare("SELECT uid FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            http_response_code(409);
+            echo json_encode(['status' => 'error', 'message' => 'این ایمیل قبلاً ثبت‌نام کرده است. لطفاً وارد شوید.']);
+            exit();
+        }
+
+        // Rate-limit: 5 OTP sends per 10 minutes per IP/email
+        $clientIp = getClientIp();
+        $rateKey = md5($clientIp . '|' . $email);
+        checkRateLimitGate($pdo, $rateKey, 'otp_signup', 5, 600);
+
+        // Generate 5-digit numeric OTP code
+        $otpCode = (string)random_int(10000, 99999);
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $payload = json_encode([
+            'displayName' => $displayName,
+            'passwordHash' => $passwordHash,
+            'gender' => $gender
+        ], JSON_UNESCAPED_UNICODE);
+
+        // Delete any previous pending signup OTPs for this email
+        $delStmt = $pdo->prepare("DELETE FROM email_otps WHERE email = ? AND type = 'signup'");
+        $delStmt->execute([$email]);
+
+        // Insert new OTP with 10 minutes expiry
+        $insStmt = $pdo->prepare("INSERT INTO email_otps (email, otp_code, type, payload, attempts, expiresAt) VALUES (?, ?, 'signup', ?, 0, DATE_ADD(NOW(), INTERVAL 10 MINUTE))");
+        $insStmt->execute([$email, $otpCode, $payload]);
+
+        // Send email with brand template
+        $subject = "کد تایید ثبت‌نام طغرل: {$otpCode}";
+        $html = buildToghroolEmailTemplate(
+            "کد تایید ثبت‌نام",
+            "{$displayName} عزیز، خوش آمدید!",
+            "برای تایید هویت و تکمیل ثبت‌نام حساب خود در اپلیکیشن طغرل، کد تایید زیر را در برنامه وارد کنید:",
+            $otpCode
+        );
+
+        $sent = sendToghroolEmail($email, $subject, $html);
+        if (!$sent) {
+            error_log("Failed to send signup OTP email to {$email}");
+            http_response_code(500);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'خطا در ارسال ایمیل تایید. لطفاً آدرس ایمیل را بررسی کرده و چند دقیقه دیگر تلاش کنید.'
+            ]);
+            exit();
+        }
+
+        recordRateLimitFailure($pdo, $rateKey, 'otp_signup', 5, 600);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => "کد تایید ۵ رقمی به ایمیل {$email} ارسال شد.",
+            'email' => $email
+        ]);
+        break;
+
+    case 'verify_signup_otp':
+        ensureOtpSchema($pdo);
+        ensureUserSchema($pdo);
+
+        $email = strtolower(trim($input['email'] ?? ''));
+        $otpCode = trim((string)($input['otp_code'] ?? ''));
+
+        if (!$email || !$otpCode) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'لطفاً ایمیل و کد تایید را وارد کنید.']);
+            exit();
+        }
+
+        // Look for active OTP
+        $stmt = $pdo->prepare("SELECT * FROM email_otps WHERE email = ? AND type = 'signup' AND expiresAt > NOW() ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$email]);
+        $otpRow = $stmt->fetch();
+
+        if (!$otpRow) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'کد تایید منقضی شده یا درخواستی یافت نشد. لطفاً کد جدید دریافت کنید.']);
+            exit();
+        }
+
+        if ($otpRow['attempts'] >= 5) {
+            $del = $pdo->prepare("DELETE FROM email_otps WHERE id = ?");
+            $del->execute([$otpRow['id']]);
+            http_response_code(429);
+            echo json_encode(['status' => 'error', 'message' => 'تعداد دفعات اشتباه بیش از حد مجاز بود. لطفاً کد جدید دریافت کنید.']);
+            exit();
+        }
+
+        if (trim($otpRow['otp_code']) !== $otpCode) {
+            $up = $pdo->prepare("UPDATE email_otps SET attempts = attempts + 1 WHERE id = ?");
+            $up->execute([$otpRow['id']]);
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'کد تایید وارد شده نادرست است.']);
+            exit();
+        }
+
+        // Valid code! Extract payload and create account
+        $payload = json_decode($otpRow['payload'] ?? '{}', true) ?: [];
+        $displayName = $payload['displayName'] ?? 'کاربر طغرل';
+        $passwordHash = $payload['passwordHash'] ?? '';
+        $gender = $payload['gender'] ?? 'female';
+        $onboardingCompleted = ($gender === 'male') ? 1 : 0;
+
+        // Check if email already exists
+        $cStmt = $pdo->prepare("SELECT uid FROM users WHERE email = ?");
+        $cStmt->execute([$email]);
+        if ($cStmt->fetch()) {
+            http_response_code(409);
+            echo json_encode(['status' => 'error', 'message' => 'این ایمیل قبلاً ثبت‌نام کرده است.']);
+            exit();
+        }
+
+        $uid = generateId('usr_');
+        $coupleCode = generateCoupleCode();
+
+        $iStmt = $pdo->prepare("INSERT INTO users (uid, email, displayName, coupleCode, passwordHash, gender, onboardingCompleted) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $iStmt->execute([$uid, $email, $displayName, $coupleCode, $passwordHash, $gender, $onboardingCompleted]);
+
+        // Clean up used OTP
+        $del = $pdo->prepare("DELETE FROM email_otps WHERE email = ? AND type = 'signup'");
+        $del->execute([$email]);
+
+        // Issue auth token
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $tStmt = $pdo->prepare("INSERT INTO auth_tokens (token_hash, uid, createdAt, expiresAt, lastUsedAt) VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), NOW())");
+        $tStmt->execute([$tokenHash, $uid]);
+
+        $uStmt = $pdo->prepare("SELECT * FROM users WHERE uid = ?");
+        $uStmt->execute([$uid]);
+        $user = $uStmt->fetch();
+        sanitizeUserForResponse($user);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'حساب کاربری شما با موفقیت ایجاد شد.',
+            'token' => $rawToken,
+            'user' => $user
+        ]);
+        break;
+
+    case 'send_forgot_otp':
+        ensureOtpSchema($pdo);
+        $email = strtolower(trim($input['email'] ?? ''));
+
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'لطفاً یک آدرس ایمیل معتبر وارد کنید.']);
+            exit();
+        }
+
+        // Check if user exists
+        $stmt = $pdo->prepare("SELECT uid, displayName FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'کاربری با این ایمیل در سامانه طغرل یافت نشد.']);
+            exit();
+        }
+
+        // Rate-limit: 5 forgot requests per 10 minutes
+        $clientIp = getClientIp();
+        $rateKey = md5($clientIp . '|' . $email);
+        checkRateLimitGate($pdo, $rateKey, 'otp_forgot', 5, 600);
+
+        $otpCode = (string)random_int(10000, 99999);
+
+        $delStmt = $pdo->prepare("DELETE FROM email_otps WHERE email = ? AND type = 'forgot_password'");
+        $delStmt->execute([$email]);
+
+        $insStmt = $pdo->prepare("INSERT INTO email_otps (email, otp_code, type, payload, attempts, expiresAt) VALUES (?, ?, 'forgot_password', NULL, 0, DATE_ADD(NOW(), INTERVAL 10 MINUTE))");
+        $insStmt->execute([$email, $otpCode]);
+
+        $subject = "کد بازیابی رمز عبور طغرل: {$otpCode}";
+        $html = buildToghroolEmailTemplate(
+            "بازیابی رمز عبور",
+            "{$user['displayName']} عزیز،",
+            "درخواستی برای بازیابی و تغییر رمز عبور حساب شما در اپلیکیشن طغرل ثبت شده است. از کد تایید زیر برای تنظیم رمز عبور جدید استفاده کنید:",
+            $otpCode
+        );
+
+        $sent = sendToghroolEmail($email, $subject, $html);
+        if (!$sent) {
+            error_log("Failed to send forgot password email to {$email}");
+            http_response_code(500);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'ارسال ایمیل بازیابی با خطا مواجه شد. لطفاً چند دقیقه دیگر مجدداً تلاش نمایید.'
+            ]);
+            exit();
+        }
+
+        recordRateLimitFailure($pdo, $rateKey, 'otp_forgot', 5, 600);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => "کد بازیابی ۵ رقمی به ایمیل {$email} ارسال شد.",
+            'email' => $email
+        ]);
+        break;
+
+    case 'reset_password_with_otp':
+        ensureOtpSchema($pdo);
+        $email = strtolower(trim($input['email'] ?? ''));
+        $otpCode = trim((string)($input['otp_code'] ?? ''));
+        $newPassword = (string)($input['newPassword'] ?? '');
+
+        if (!$email || !$otpCode || !$newPassword) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'لطفاً کد تایید و رمز عبور جدید را وارد کنید.']);
+            exit();
+        }
+
+        if (strlen($newPassword) < 6) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'رمز عبور جدید باید حداقل ۶ کاراکتر باشد.']);
+            exit();
+        }
+
+        // Verify OTP
+        $stmt = $pdo->prepare("SELECT * FROM email_otps WHERE email = ? AND type = 'forgot_password' AND expiresAt > NOW() ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$email]);
+        $otpRow = $stmt->fetch();
+
+        if (!$otpRow) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'کد بازیابی منقضی شده یا درخواستی یافت نشد. لطفاً کد جدید دریافت کنید.']);
+            exit();
+        }
+
+        if ($otpRow['attempts'] >= 5) {
+            $del = $pdo->prepare("DELETE FROM email_otps WHERE id = ?");
+            $del->execute([$otpRow['id']]);
+            http_response_code(429);
+            echo json_encode(['status' => 'error', 'message' => 'تعداد دفعات اشتباه بیش از حد مجاز بود. لطفاً مجدداً کد دریافت کنید.']);
+            exit();
+        }
+
+        if (trim($otpRow['otp_code']) !== $otpCode) {
+            $up = $pdo->prepare("UPDATE email_otps SET attempts = attempts + 1 WHERE id = ?");
+            $up->execute([$otpRow['id']]);
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'کد بازیابی وارد شده نادرست است.']);
+            exit();
+        }
+
+        // Valid! Update password
+        $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $uStmt = $pdo->prepare("UPDATE users SET passwordHash = ? WHERE email = ?");
+        $uStmt->execute([$newHash, $email]);
+
+        // Delete OTP
+        $del = $pdo->prepare("DELETE FROM email_otps WHERE email = ? AND type = 'forgot_password'");
+        $del->execute([$email]);
+
+        // Clear login rate limits for this email
+        $clientIp = getClientIp();
+        $rateKey = md5($clientIp . '|' . $email);
+        resetRateLimit($pdo, $rateKey, 'login');
+
+        // Issue new session token so user is automatically logged in
+        $uStmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $uStmt->execute([$email]);
+        $user = $uStmt->fetch();
+        sanitizeUserForResponse($user);
+
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $tStmt = $pdo->prepare("INSERT INTO auth_tokens (token_hash, uid, createdAt, expiresAt, lastUsedAt) VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), NOW())");
+        $tStmt->execute([$tokenHash, $user['uid']]);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'رمز عبور شما با موفقیت تغییر کرد.',
+            'token' => $rawToken,
+            'user' => $user
+        ]);
+        break;
     case 'register':
         ensureUserSchema($pdo);
         $email = strtolower(trim($input['email'] ?? ''));
