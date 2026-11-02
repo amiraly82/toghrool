@@ -7,7 +7,7 @@ import {
   signOut,
   updateProfile 
 } from "firebase/auth";
-import { Heart, Key, Mail, User, ShieldAlert, Sparkles, LogOut, Copy, Check } from "lucide-react";
+import { Heart, Key, Mail, User, ShieldAlert, Sparkles, LogOut, Copy, Check, X, ChevronLeft } from "lucide-react";
 import { UserProfile } from "../types";
 import { fetchFromPhpApi, clearAuthSession } from "../apiClient";
 
@@ -26,9 +26,20 @@ interface AuthAndPairingProps {
   loading: boolean;
   onRefreshProfile: () => void;
   onRegisteredFemale?: (user: UserProfile) => void;
+  onSkipPairing?: () => void;
+  isPairingModal?: boolean;
+  onCloseModal?: () => void;
 }
 
-export default function AuthAndPairing({ userProfile, loading, onRefreshProfile, onRegisteredFemale }: AuthAndPairingProps) {
+export default function AuthAndPairing({ 
+  userProfile, 
+  loading, 
+  onRefreshProfile, 
+  onRegisteredFemale,
+  onSkipPairing,
+  isPairingModal = false,
+  onCloseModal
+}: AuthAndPairingProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -170,8 +181,18 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile,
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF6EC] text-[#1B1B1A] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-md bg-[#FFFDF8] border border-[#E8E2D4] rounded-[32px] p-7 sm:p-9 relative">
+    <div className={isPairingModal ? "w-full" : "min-h-screen bg-[#FAF6EC] text-[#1B1B1A] flex items-center justify-center p-4 sm:p-6"}>
+      <div className="w-full max-w-md bg-[#FFFDF8] border border-[#E8E2D4] rounded-[32px] p-7 sm:p-9 relative shadow-lg">
+        {isPairingModal && onCloseModal && (
+          <button
+            type="button"
+            onClick={onCloseModal}
+            className="absolute top-4 left-4 w-9 h-9 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] flex items-center justify-center text-[#1B1B1A] cursor-pointer transition-colors z-20"
+            title="بستن"
+          >
+            <X className="w-4 h-4 stroke-[2]" />
+          </button>
+        )}
         {/* Editorial Minimalist Brand Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 mb-4">
@@ -444,6 +465,17 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile,
                     </>
                   )}
                 </button>
+
+                {onSkipPairing && (
+                  <button
+                    type="button"
+                    onClick={onSkipPairing}
+                    className="w-full py-3 px-4 bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] font-bold rounded-full text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <span>فعلاً بدون پارتنر ادامه می‌دهم (رد کردن)</span>
+                    <ChevronLeft className="w-4 h-4 stroke-[2]" />
+                  </button>
+                )}
               </form>
 
               <div className="pt-4 border-t border-[#E8E2D4] flex items-center justify-between text-xs text-[#78746B]">

@@ -299,23 +299,15 @@ function requirePeriodTarget($pdo) {
     return [$user, $targetId];
 }
 
-// Enforce paired couple membership
+// Enforce paired couple membership (supports solo mode fallback to uid)
 function requireCoupleMember($pdo) {
     global $input;
     $user = requireAuth($pdo);
-    if (empty($user['coupleId'])) {
-        http_response_code(403);
-        echo json_encode([
-            'status' => 'error',
-            'code' => 'NOT_COUPLE_MEMBER',
-            'message' => 'شما هنوز به پارتنر خود متصل نشده‌اید.'
-        ]);
-        exit();
-    }
+    $targetCoupleId = !empty($user['coupleId']) ? $user['coupleId'] : $user['uid'];
 
     // Verify client did not attempt to forge another couple's ID
     $requestedCoupleId = trim($_GET['coupleId'] ?? $input['coupleId'] ?? '');
-    if ($requestedCoupleId !== '' && $requestedCoupleId !== $user['coupleId']) {
+    if ($requestedCoupleId !== '' && $requestedCoupleId !== $targetCoupleId && !empty($user['coupleId']) && $requestedCoupleId !== $user['coupleId']) {
         http_response_code(403);
         echo json_encode([
             'status' => 'error',
@@ -325,6 +317,7 @@ function requireCoupleMember($pdo) {
         exit();
     }
 
+    $user['coupleId'] = $targetCoupleId;
     return $user;
 }
 
@@ -767,6 +760,12 @@ switch ($action) {
 
             $pdo->prepare("UPDATE IGNORE couple_period_logs SET coupleId = ? WHERE coupleId IN (?, ?)")
                 ->execute([$coupleId, $myUid, $partner['uid']]);
+
+            // Migrate solo wishlist, memories, comments, and pokes to shared coupleId
+            $pdo->prepare("UPDATE IGNORE wishlist SET coupleId = ? WHERE coupleId IN (?, ?)")->execute([$coupleId, $myUid, $partner['uid']]);
+            $pdo->prepare("UPDATE IGNORE memories SET coupleId = ? WHERE coupleId IN (?, ?)")->execute([$coupleId, $myUid, $partner['uid']]);
+            $pdo->prepare("UPDATE IGNORE memory_comments SET coupleId = ? WHERE coupleId IN (?, ?)")->execute([$coupleId, $myUid, $partner['uid']]);
+            $pdo->prepare("UPDATE IGNORE pokes SET coupleId = ? WHERE coupleId IN (?, ?)")->execute([$coupleId, $myUid, $partner['uid']]);
         } catch (Exception $migEx) {
             error_log("Couple period sync notice: " . $migEx->getMessage());
         }

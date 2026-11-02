@@ -125,6 +125,7 @@ interface DashboardProps {
   userProfile: UserProfile;
   onRefreshProfile: () => void;
   onUpdateUserProfile?: (updated: UserProfile) => void;
+  onOpenPairingModal?: () => void;
 }
 
 // Preset configurations for adding custom shelves (categories)
@@ -210,7 +211,7 @@ const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", si
   }
 };
 
-export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserProfile }: DashboardProps) {
+export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserProfile, onOpenPairingModal }: DashboardProps) {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [pokes, setPokes] = useState<Poke[]>([]);
   const [activeTab, setActiveTab] = useState<string>("wishlist");
@@ -390,25 +391,27 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     let isMounted = true;
 
     const syncWithHost = async () => {
+      const effectiveCoupleId = userProfile.coupleId || userProfile.uid;
+
       // 1. Wishlist Items
+      try {
+        const wishRes = await fetchFromPhpApi('getWishlist', { coupleId: effectiveCoupleId });
+        if (isMounted && wishRes && wishRes.status === 'success' && Array.isArray(wishRes.items)) {
+          setItems(wishRes.items);
+          setLoading(false);
+        }
+      } catch (e) {}
+
+      // 2. Shared Memories (Persisted in MySQL on Host)
+      try {
+        const memRes = await fetchFromPhpApi('getMemories', { coupleId: effectiveCoupleId });
+        if (isMounted && memRes && memRes.status === 'success' && Array.isArray(memRes.memories)) {
+          setMemories(memRes.memories);
+        }
+      } catch (e) {}
+
+      // 3. Pokes (Only when paired with partner)
       if (userProfile.coupleId) {
-        try {
-          const wishRes = await fetchFromPhpApi('getWishlist', { coupleId: userProfile.coupleId });
-          if (isMounted && wishRes && wishRes.status === 'success' && Array.isArray(wishRes.items)) {
-            setItems(wishRes.items);
-            setLoading(false);
-          }
-        } catch (e) {}
-
-        // 2. Shared Memories (Persisted in MySQL on Host)
-        try {
-          const memRes = await fetchFromPhpApi('getMemories', { coupleId: userProfile.coupleId });
-          if (isMounted && memRes && memRes.status === 'success' && Array.isArray(memRes.memories)) {
-            setMemories(memRes.memories);
-          }
-        } catch (e) {}
-
-        // 3. Pokes
         try {
           const pokeRes = await fetchFromPhpApi('getPokes', { 
             coupleId: userProfile.coupleId,
@@ -419,7 +422,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             setPokes(unread);
           }
         } catch (e) {}
-
+      }
         // 4. Period Data for Shared Calendar
         try {
           const periodRes = await fetchFromPhpApi('getPeriodData', {
@@ -454,7 +457,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             }
           }
         } catch (e) {}
-      }
 
       // 4. Heartbeat & Partner Status
       if (userProfile.uid) {

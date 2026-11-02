@@ -5,7 +5,7 @@ import { UserProfile, FemaleOnboardingHealthData } from "./types";
 import AuthAndPairing from "./components/AuthAndPairing";
 import Dashboard from "./components/Dashboard";
 import FemaleOnboardingTour from "./components/FemaleOnboardingTour";
-import { Heart, RefreshCw } from "lucide-react";
+import { Heart, RefreshCw, Key, ArrowRight, HeartHandshake, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { fetchFromPhpApi } from "./apiClient";
 
@@ -308,6 +308,25 @@ export default function App() {
     !userProfile.onboardingCompleted
   );
 
+  const [skippedPairing, setSkippedPairing] = useState<boolean>(() => {
+    const activeUid = JSON.parse(localStorage.getItem("custom_user_session") || "{}")?.uid;
+    if (activeUid && localStorage.getItem(`skip_pairing_${activeUid}`) === "true") {
+      return true;
+    }
+    return false;
+  });
+
+  const [showPairingModal, setShowPairingModal] = useState<boolean>(false);
+
+  const handleSkipPairing = () => {
+    const activeUid = userProfile?.uid || JSON.parse(localStorage.getItem("custom_user_session") || "{}")?.uid;
+    if (activeUid) {
+      localStorage.setItem(`skip_pairing_${activeUid}`, "true");
+    }
+    setSkippedPairing(true);
+    setShowPairingModal(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF6EC] text-[#1B1B1A] font-sans selection:bg-[#F6C3E5] selection:text-[#1B1B1A] overflow-x-hidden">
       <AnimatePresence mode="wait">
@@ -395,8 +414,8 @@ export default function App() {
               }}
             />
           </motion.div>
-        ) : !userProfile.coupleId ? (
-          /* Pairing view (Logged in, but no couple connected yet) */
+        ) : !userProfile.coupleId && !skippedPairing ? (
+          /* Pairing view (Logged in, but no couple connected yet and not skipped) */
           <motion.div
             key="pairing"
             initial={{ opacity: 0 }}
@@ -406,22 +425,82 @@ export default function App() {
             <AuthAndPairing 
               userProfile={userProfile} 
               loading={loading} 
-              onRefreshProfile={handleRefreshProfile} 
+              onRefreshProfile={handleRefreshProfile}
+              onSkipPairing={handleSkipPairing}
             />
           </motion.div>
         ) : (
-          /* Fully synchronized Shared Dashboard */
+          /* Main App (Solo Mode with Top Banner OR Paired Mode) */
           <motion.div
-            key="dashboard"
+            key="dashboard-view"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="relative min-h-screen"
           >
+            {/* Top Banner when Unpaired / Solo */}
+            {!userProfile.coupleId && (
+              <div className="sticky top-0 z-40 bg-[#FFF0F7] border-b border-[#F6C3E5] px-4 py-2.5 sm:py-3 shadow-xs" dir="rtl">
+                <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-right">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#EC407A] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Key className="w-4 h-4 stroke-[2]" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-[#1B1B1A] block">
+                        حالت استفاده انفرادی فعال است
+                      </span>
+                      <p className="text-[11px] text-[#78746B] font-medium leading-tight">
+                        برای اشتراک‌گذاری لحظات، آرزوها و چرخه سلامت با پارتنرتان، کد اتصال را ثبت کنید.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPairingModal(true)}
+                    className="px-4 py-1.5 sm:py-2 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
+                  >
+                    <span>وارد کردن کد پارتنر</span>
+                    <ArrowRight className="w-3.5 h-3.5 stroke-[2] rotate-180" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Main Synchronized Dashboard */}
             <Dashboard 
               userProfile={userProfile} 
               onRefreshProfile={handleRefreshProfile} 
               onUpdateUserProfile={handleUpdateUserProfile}
+              onOpenPairingModal={() => setShowPairingModal(true)}
             />
+
+            {/* Interactive Pairing Modal when clicked from top banner */}
+            <AnimatePresence>
+              {showPairingModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1B1B1A]/40 backdrop-blur-xs">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="w-full max-w-md relative"
+                  >
+                    <AuthAndPairing
+                      userProfile={userProfile}
+                      loading={loading}
+                      onRefreshProfile={() => {
+                        handleRefreshProfile();
+                        setShowPairingModal(false);
+                      }}
+                      isPairingModal={true}
+                      onCloseModal={() => setShowPairingModal(false)}
+                      onSkipPairing={() => setShowPairingModal(false)}
+                    />
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
