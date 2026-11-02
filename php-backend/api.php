@@ -276,12 +276,13 @@ function buildToghroolEmailTemplate($title, $heading, $bodyText, $otpCode) {
 </html>';
 }
 
-// Deliver UTF-8 HTML Email via Localhost SMTP Exim (Port 25)
+// Deliver UTF-8 HTML Email via Localhost Authenticated SMTP Exim (Port 25)
 function sendToghroolEmail($toEmail, $subject, $htmlContent) {
     $senderName = "طغرل | Toghrool";
     $fromEmail = "toghrool@amiralyeasy.ir";
+    $smtpPass = "Toghrool_Email@2026";
 
-    $fp = @fsockopen('127.0.0.1', 25, $errno, $errstr, 5);
+    $fp = @fsockopen('127.0.0.1', 25, $errno, $errstr, 8);
     if (!$fp) {
         error_log("SMTP connection error ($errno): $errstr");
         return false;
@@ -300,8 +301,21 @@ function sendToghroolEmail($toEmail, $subject, $htmlContent) {
     };
 
     $read();
-    $write('HELO amiralyeasy.ir');
+    $write('EHLO amiralyeasy.ir');
     $read();
+
+    // Authenticate with created cPanel email credentials
+    $write('AUTH LOGIN');
+    $read();
+    $write(base64_encode($fromEmail));
+    $read();
+    $write(base64_encode($smtpPass));
+    $authRes = $read();
+
+    if (strpos($authRes, '235') === false) {
+        error_log("SMTP AUTH notice: " . trim($authRes));
+    }
+
     $write("MAIL FROM:<{$fromEmail}>");
     $read();
     $write("RCPT TO:<{$toEmail}>");
