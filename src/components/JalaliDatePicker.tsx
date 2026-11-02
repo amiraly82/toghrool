@@ -154,9 +154,29 @@ export default function JalaliDatePicker({
   }
 
   const yearsRange = [];
-  for (let y = 1330; y <= todayJy + 5; y++) {
+  for (let y = 1300; y <= todayJy + 10; y++) {
     yearsRange.push(y);
   }
+
+  const handleMonthChange = (newMonth: number) => {
+    setViewMonth(newMonth);
+    const baseDay = activeJd > 0 ? activeJd : 1;
+    const maxDay = getDaysInJalaliMonth(viewYear, newMonth);
+    const clampedDay = Math.min(baseDay, maxDay);
+    const [gy, gm, gd] = jalaliToGregorian(viewYear, newMonth, clampedDay);
+    const dateStr = `${gy}-${String(gm).padStart(2, "0")}-${String(gd).padStart(2, "0")}`;
+    onChange(dateStr);
+  };
+
+  const handleYearChange = (newYear: number) => {
+    setViewYear(newYear);
+    const baseDay = activeJd > 0 ? activeJd : 1;
+    const maxDay = getDaysInJalaliMonth(newYear, viewMonth);
+    const clampedDay = Math.min(baseDay, maxDay);
+    const [gy, gm, gd] = jalaliToGregorian(newYear, viewMonth, clampedDay);
+    const dateStr = `${gy}-${String(gm).padStart(2, "0")}-${String(gd).padStart(2, "0")}`;
+    onChange(dateStr);
+  };
 
   return (
     <div ref={containerRef} className={`relative w-full text-right ${className}`} dir="rtl">
@@ -193,11 +213,11 @@ export default function JalaliDatePicker({
                 <ChevronRight className="w-5 h-5 stroke-[2]" />
               </button>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <select
                   value={viewMonth}
-                  onChange={(e) => setViewMonth(parseInt(e.target.value, 10))}
-                  className="bg-transparent text-base font-bold text-[#1A1A1A] cursor-pointer focus:outline-none text-center appearance-none hover:bg-slate-50 px-1.5 py-0.5 rounded-lg"
+                  onChange={(e) => handleMonthChange(parseInt(e.target.value, 10))}
+                  className="bg-slate-100 hover:bg-slate-200/80 text-sm font-bold text-[#1A1A1A] cursor-pointer focus:outline-none text-center px-2.5 py-1 rounded-xl transition-colors"
                 >
                   {JALALI_MONTHS.map((m, idx) => (
                     <option key={m} value={idx + 1}>
@@ -208,8 +228,8 @@ export default function JalaliDatePicker({
 
                 <select
                   value={viewYear}
-                  onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
-                  className="bg-transparent text-base font-bold text-[#1A1A1A] cursor-pointer focus:outline-none text-center appearance-none hover:bg-slate-50 px-1.5 py-0.5 rounded-lg"
+                  onChange={(e) => handleYearChange(parseInt(e.target.value, 10))}
+                  className="bg-slate-100 hover:bg-slate-200/80 text-sm font-bold text-[#1A1A1A] cursor-pointer focus:outline-none text-center px-2.5 py-1 rounded-xl transition-colors"
                 >
                   {yearsRange.map((y) => (
                     <option key={y} value={y}>

@@ -64,15 +64,9 @@ export default function App() {
       localStorage.setItem("app_build_version", currentBuild);
     }
 
-    // If loaded with ?v= parameter and matches current build, clean URL query without reload
+    // Refresh root document cache entry so normal reloads always serve the latest HTML
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('v') && urlParams.get('v') === currentBuild) {
-        urlParams.delete('v');
-        const newSearch = urlParams.toString();
-        const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
-        window.history.replaceState({}, document.title, newUrl);
-      }
+      fetch(window.location.pathname, { cache: "reload" }).catch(() => {});
     } catch (e) {}
 
     const checkServerVersion = async () => {
@@ -105,11 +99,16 @@ export default function App() {
               } catch (err) {}
             }
 
-            // 3. Clear temporary local caches while preserving user session
+            // 3. Overwrite browser HTTP cache for root path before redirecting
+            try {
+              await fetch(window.location.pathname, { cache: "reload" });
+            } catch (err) {}
+
+            // 4. Clear temporary local caches while preserving user session
             localStorage.removeItem("cached_user_profile");
             localStorage.setItem("app_build_version", data.buildTime);
 
-            // 4. Force browser to fetch fresh HTML using cache-busting query parameter
+            // 5. Force browser to fetch fresh HTML using cache-busting query parameter
             const targetUrl = new URL(window.location.href);
             targetUrl.searchParams.set('v', data.buildTime);
             window.location.replace(targetUrl.toString());
