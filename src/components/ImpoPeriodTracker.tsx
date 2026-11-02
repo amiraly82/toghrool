@@ -95,67 +95,59 @@ const getPhaseStyle = (phase: string) => {
   switch (phase) {
     case 'period':
       return {
-        cardBg: 'bg-rose-50 text-rose-900 border-rose-200',
-        selectedBg: 'bg-gradient-to-b from-rose-500 to-pink-600 text-white border-rose-600',
-        badge: 'bg-rose-100 text-rose-800',
+        cardBg: 'bg-[#F9CCD8] text-[#7D243C] border-transparent',
+        selectedBg: 'bg-[#F9CCD8] text-[#7D243C] border-[#7D243C] ring-2 ring-[#7D243C]/20',
+        badge: 'bg-white/60 text-[#7D243C]',
         icon: '🩸',
         shortLabel: 'پریود'
       };
     case 'due':
       return {
-        cardBg: 'bg-rose-50 text-rose-900 border-rose-200',
-        selectedBg: 'bg-gradient-to-b from-rose-500 to-pink-500 text-white border-rose-500',
-        badge: 'bg-rose-100 text-rose-800',
+        cardBg: 'bg-[#F9CCD8] text-[#7D243C] border-transparent',
+        selectedBg: 'bg-[#F9CCD8] text-[#7D243C] border-[#7D243C] ring-2 ring-[#7D243C]/20',
+        badge: 'bg-white/60 text-[#7D243C]',
         icon: '⏳',
         shortLabel: 'موعد'
       };
     case 'delayed':
       return {
-        cardBg: 'bg-red-50 text-red-900 border-red-200',
-        selectedBg: 'bg-gradient-to-b from-red-500 to-rose-600 text-white border-red-600',
-        badge: 'bg-red-100 text-red-800',
+        cardBg: 'bg-[#F9CCD8] text-[#7D243C] border-transparent',
+        selectedBg: 'bg-[#F9CCD8] text-[#7D243C] border-[#7D243C] ring-2 ring-[#7D243C]/20',
+        badge: 'bg-white/60 text-[#7D243C]',
         icon: '⚠️',
         shortLabel: 'تاخیر'
       };
     case 'ovulation':
       return {
-        cardBg: 'bg-fuchsia-50 text-fuchsia-900 border-fuchsia-200',
-        selectedBg: 'bg-gradient-to-b from-fuchsia-500 to-pink-600 text-white border-fuchsia-600',
-        badge: 'bg-fuchsia-100 text-fuchsia-800',
+        cardBg: 'bg-[#1B9AAA] text-white border-transparent',
+        selectedBg: 'bg-[#1B9AAA] text-white border-[#0E545B] ring-2 ring-[#1B9AAA]/30',
+        badge: 'bg-white/25 text-white',
         icon: '🥚',
         shortLabel: 'تخمک‌گذاری'
       };
     case 'fertile':
       return {
-        cardBg: 'bg-purple-50 text-purple-900 border-purple-200',
-        selectedBg: 'bg-gradient-to-b from-purple-500 to-violet-600 text-white border-purple-600',
-        badge: 'bg-purple-100 text-purple-800',
-        icon: '🟣',
+        cardBg: 'bg-[#C8EEF2] text-[#0E545B] border-transparent',
+        selectedBg: 'bg-[#C8EEF2] text-[#0E545B] border-[#0E545B] ring-2 ring-[#1B9AAA]/20',
+        badge: 'bg-white/60 text-[#0E545B]',
+        icon: '✨',
         shortLabel: 'باروری'
       };
     case 'pms':
       return {
-        cardBg: 'bg-amber-50 text-amber-900 border-amber-200',
-        selectedBg: 'bg-gradient-to-b from-amber-400 to-amber-500 text-slate-900 border-amber-500',
-        badge: 'bg-amber-100 text-amber-800',
+        cardBg: 'bg-[#E2D2FE] text-[#4A2574] border-transparent',
+        selectedBg: 'bg-[#E2D2FE] text-[#4A2574] border-[#4A2574] ring-2 ring-[#4A2574]/20',
+        badge: 'bg-white/60 text-[#4A2574]',
         icon: '⚡',
         shortLabel: 'PMS'
       };
-    case 'follicular':
-      return {
-        cardBg: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-        selectedBg: 'bg-gradient-to-b from-emerald-500 to-teal-600 text-white border-emerald-600',
-        badge: 'bg-emerald-100 text-emerald-800',
-        icon: '🌱',
-        shortLabel: 'فولیکولار'
-      };
     default:
       return {
-        cardBg: 'bg-slate-50 text-slate-800 border-slate-200',
-        selectedBg: 'bg-gradient-to-b from-indigo-600 to-purple-700 text-white border-indigo-700',
-        badge: 'bg-slate-100 text-slate-700',
-        icon: '🌙',
-        shortLabel: 'لوتئال'
+        cardBg: 'bg-[#F7F7F7] text-[#1E1E1E] border-transparent',
+        selectedBg: 'bg-[#E5E5E5] text-[#1E1E1E] border-[#222222]',
+        badge: 'bg-white/80 text-slate-700',
+        icon: '🌱',
+        shortLabel: 'عادی'
       };
   }
 };
@@ -1406,42 +1398,32 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
                               key={dayItem.iso}
                               type="button"
                               onClick={() => setStripSelectedDate(dayItem.iso)}
-                              className={`w-20 p-2.5 rounded-2xl flex flex-col items-center justify-between transition-all cursor-pointer border text-center relative ${
+                              className={`w-16 h-16 rounded-[18px] flex flex-col items-center justify-center transition-all cursor-pointer text-center relative select-none ${
                                 dayItem.isSelected
-                                  ? 'ring-3 ring-rose-400 ring-offset-2 scale-105 z-10 shadow-md ' + phaseColor.selectedBg
-                                  : phaseColor.cardBg + ' hover:scale-102 hover:shadow-xs'
-                              }`}
+                                  ? 'scale-105 z-10 shadow-sm ' + phaseColor.selectedBg
+                                  : phaseColor.cardBg + ' hover:opacity-90'
+                              } ${dayItem.isToday ? 'border-2 border-dashed border-[#222222]' : ''}`}
                             >
-                              {dayItem.isToday && (
-                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-xs">
-                                  امروز
-                                </span>
-                              )}
-
-                              <span className="text-[10px] font-bold opacity-80 mb-0.5">
+                              <span className="text-[10px] font-medium opacity-75 leading-none mb-1">
                                 {dayItem.weekday}
                               </span>
 
-                              <span className="text-lg font-black my-0.5">
+                              <span className="text-base font-bold leading-none">
                                 {toPersianDigits(dayItem.jd)}
                               </span>
 
-                              <span className="text-[9px] font-bold opacity-75">
-                                {JALALI_MONTHS[dayItem.jm - 1]}
-                              </span>
-
-                              {/* Phase Badge */}
-                              <div className={`mt-1.5 px-1.5 py-0.5 rounded-lg text-[9px] font-black flex items-center gap-0.5 ${phaseColor.badge}`}>
-                                <span>{phaseColor.icon}</span>
-                                <span>{phaseColor.shortLabel}</span>
-                              </div>
-
-                              <span className="text-[8px] font-bold text-slate-400 mt-1">
-                                روز {toPersianDigits(dayItem.status.currentCycleDay)}
-                              </span>
+                              {dayItem.isToday ? (
+                                <span className="text-[10px] font-bold leading-none mt-1">
+                                  امروز
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-medium opacity-70 leading-none mt-1">
+                                  {JALALI_MONTHS[dayItem.jm - 1]}
+                                </span>
+                              )}
 
                               {dayItem.hasLog && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-pink-500 absolute bottom-1 right-1" title="یادداشت ثبت شده" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#1B9AAA] absolute top-1.5 left-1.5" title="یادداشت ثبت شده" />
                               )}
                             </button>
                           );
@@ -1847,56 +1829,49 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
       )}
 
       {/* ----------------------------------------------------------------- */}
-      {/* SUB-TAB 2: JALALI MONTHLY CALENDAR (WITH IMPO PHASE DOTS) */}
+      {/* SUB-TAB 2: JALALI MONTHLY CALENDAR (EXACT SQUIRCLE DESIGN) */}
       {/* ----------------------------------------------------------------- */}
       {activeSubTab === 'calendar' && (
-        <div className="glass-card rounded-3xl p-6 border border-white/60 bg-white/70 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  if (calendarMonth === 1) {
-                    setCalendarMonth(12);
-                    setCalendarYear(y => y - 1);
-                  } else {
-                    setCalendarMonth(m => m - 1);
-                  }
-                }}
-                className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
-              >
-                <ChevronRight className="w-5 h-5 text-slate-600" />
-              </button>
-              <h3 className="text-base font-black text-slate-800">
-                {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
-              </h3>
-              <button
-                onClick={() => {
-                  if (calendarMonth === 12) {
-                    setCalendarMonth(1);
-                    setCalendarYear(y => y + 1);
-                  } else {
-                    setCalendarMonth(m => m + 1);
-                  }
-                }}
-                className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
-              >
-                <ChevronLeft className="w-5 h-5 text-slate-600" />
-              </button>
-            </div>
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm max-w-lg mx-auto space-y-6" dir="rtl">
+          {/* Top Navigation Header: < Month Year > */}
+          <div className="flex items-center justify-between px-2">
+            <button
+              onClick={() => {
+                if (calendarMonth === 1) {
+                  setCalendarMonth(12);
+                  setCalendarYear(y => y - 1);
+                } else {
+                  setCalendarMonth(m => m - 1);
+                }
+              }}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-[#1A1A1A]"
+              title="ماه قبل"
+            >
+              <ChevronRight className="w-5 h-5 stroke-[2]" />
+            </button>
+
+            <h3 className="text-lg sm:text-xl font-bold text-[#1A1A1A]">
+              {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
+            </h3>
 
             <button
               onClick={() => {
-                setCalendarYear(todayJy);
-                setCalendarMonth(todayJm);
+                if (calendarMonth === 12) {
+                  setCalendarMonth(1);
+                  setCalendarYear(y => y + 1);
+                } else {
+                  setCalendarMonth(m => m + 1);
+                }
               }}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="p-2 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-[#1A1A1A]"
+              title="ماه بعد"
             >
-              برو به ماه جاری
+              <ChevronLeft className="w-5 h-5 stroke-[2]" />
             </button>
           </div>
 
           {/* Weekday Names Header */}
-          <div className="grid grid-cols-7 gap-2 text-center text-xs font-black text-slate-400 pb-2 border-b border-slate-100">
+          <div className="grid grid-cols-7 gap-2.5 sm:gap-3 text-center text-xs sm:text-sm font-medium text-[#757575]">
             {JALALI_WEEKDAYS.map(day => (
               <span key={day}>{day}</span>
             ))}
@@ -1907,8 +1882,6 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
             const daysInMonth = getDaysInJalaliMonth(calendarYear, calendarMonth);
             const [firstGy, firstGm, firstGd] = jalaliToGregorian(calendarYear, calendarMonth, 1);
             const firstDateGregorian = new Date(firstGy, firstGm - 1, firstGd);
-            // In JavaScript: Sunday=0, Monday=1, ..., Saturday=6
-            // In Iran: Saturday is index 0
             const jsDay = firstDateGregorian.getDay();
             const firstDayOfWeekOffset = (jsDay + 1) % 7;
 
@@ -1921,10 +1894,10 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
             }
 
             return (
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-2.5 sm:gap-3">
                 {daysArray.map((day, idx) => {
                   if (day === null) {
-                    return <div key={`empty_${idx}`} className="h-16" />;
+                    return <div key={`empty_${idx}`} className="aspect-square" />;
                   }
 
                   const [gy, gm, gd] = jalaliToGregorian(calendarYear, calendarMonth, day);
@@ -1947,74 +1920,68 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGen
 
                   const hasLog = logs.some(l => l.date === cellIso);
 
+                  let tileColorClass = "bg-[#F7F7F7] text-[#1E1E1E] hover:bg-[#EFEFEF]";
+                  if (isPeriodDay) {
+                    tileColorClass = "bg-[#F9CCD8] text-[#7D243C]";
+                  } else if (isOvulationDay) {
+                    tileColorClass = "bg-[#1B9AAA] text-white";
+                  } else if (isFertileDay) {
+                    tileColorClass = "bg-[#C8EEF2] text-[#0E545B]";
+                  } else if (isPmsDay) {
+                    tileColorClass = "bg-[#E2D2FE] text-[#4A2574]";
+                  }
+
                   return (
-                    <motion.div
+                    <motion.button
+                      type="button"
                       key={day}
-                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => handleOpenLogModal(cellIso)}
-                      className={`h-16 p-1.5 rounded-2xl flex flex-col justify-between items-center transition-all cursor-pointer border ${
-                        isToday 
-                          ? 'border-rose-500 bg-rose-50/50 shadow-sm' 
-                          : 'border-slate-100 hover:border-pink-200 bg-white/70'
+                      className={`aspect-square rounded-[16px] sm:rounded-[18px] flex flex-col items-center justify-center transition-all cursor-pointer relative select-none ${tileColorClass} ${
+                        isToday ? 'border-2 border-dashed border-[#222222]' : ''
                       }`}
                     >
-                      <div className="w-full flex items-center justify-between text-[11px] font-black text-slate-700">
-                        <span>{toPersianDigits(day)}</span>
-                        {isToday && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                        )}
-                      </div>
-
-                      {/* Phase Dot Indicators */}
-                      <div className="flex items-center gap-1">
-                        {isPeriodDay && (
-                          <span className="w-2 h-2 rounded-full bg-rose-500" title="قاعدگی" />
-                        )}
-                        {isOvulationDay && (
-                          <span className="w-2 h-2 rounded-full bg-fuchsia-500" title="تخمک‌گذاری" />
-                        )}
-                        {isFertileDay && !isOvulationDay && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500" title="باروری" />
-                        )}
-                        {isPmsDay && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="PMS" />
-                        )}
-                        {hasLog && (
-                          <span className="w-1 h-1 rounded-full bg-cyan-500" title="گزارش ثبت‌شده" />
-                        )}
-                      </div>
-                    </motion.div>
+                      <span className="text-sm sm:text-base font-bold leading-none">
+                        {toPersianDigits(day)}
+                      </span>
+                      {isToday && (
+                        <span className="text-[10px] sm:text-xs font-bold leading-none mt-1">
+                          امروز
+                        </span>
+                      )}
+                      {hasLog && (
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full absolute top-1.5 left-1.5 ${
+                            isOvulationDay ? 'bg-white' : 'bg-[#1B9AAA]'
+                          }`}
+                          title="گزارش ثبت‌شده"
+                        />
+                      )}
+                    </motion.button>
                   );
                 })}
               </div>
             );
           })()}
 
-          {/* Calendar Help Legend */}
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500">
-            <span className="font-bold">راهنمای رنگ‌های تقویم:</span>
-            <div className="flex flex-wrap gap-4 text-[11px] font-medium">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                روزهای خونریزی قاعدگی
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-500" />
-                تخمک‌گذاری
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                پنجره باروری
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                سندرم PMS
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-cyan-500" />
-                علائم ثبت‌شده
-              </span>
-            </div>
+          {/* Bottom Legend (Exact Match to Reference Design) */}
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-4 sm:gap-5 text-xs sm:text-sm font-bold text-[#1E1E1E]">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3.5 h-3.5 rounded-full bg-[#F9CCD8] inline-block" />
+              <span>دوره پریود</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3.5 h-3.5 rounded-full bg-[#E2D2FE] inline-block" />
+              <span>دوره PMS</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3.5 h-3.5 rounded-full bg-[#C8EEF2] inline-block" />
+              <span>دوره باروری</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3.5 h-3.5 rounded-full bg-[#1B9AAA] inline-block" />
+              <span>روز تخمک گذاری</span>
+            </span>
           </div>
         </div>
       )}

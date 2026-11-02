@@ -2313,73 +2313,66 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
         {/* --- TAB 3: CALENDAR --- */}
         {activeTab === "calendar" && (
-          <div className="max-w-2xl mx-auto">
-            <div className="glass-card rounded-3xl p-6 mb-8">
-              {/* Calendar Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
-                    <CalendarIcon className="w-5 h-5 text-violet-500" />
-                    برنامه‌های مشترک روی تقویم
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                    برنامه‌های دونفره همراه با نمایش نامحسوس روزهای چرخه سلامت
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {/* Subtle Cycle toggle button */}
-                  <button
-                    onClick={() => setShowCycleOnCalendar(prev => !prev)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                      showCycleOnCalendar
-                        ? "bg-rose-50 text-rose-700 border-rose-200 shadow-xs"
-                        : "bg-white/40 text-slate-500 border-slate-200 hover:bg-white/70"
-                    }`}
-                    title="روشن یا خاموش کردن نمایش رنگ‌های نامحسوس چرخه در تقویم"
-                  >
-                    <Droplet className={`w-3.5 h-3.5 ${showCycleOnCalendar ? "fill-rose-500 text-rose-500" : "text-slate-400"}`} />
-                    <span>چرخه سلامت: {showCycleOnCalendar ? "نمایان" : "مخفی"}</span>
-                  </button>
-
-                  <div className="flex items-center gap-1 bg-white/50 border border-white/60 p-0.5 rounded-xl backdrop-blur-sm">
-                    <button
-                      onClick={prevMonth}
-                      className="p-1.5 hover:bg-white/80 rounded-lg text-slate-600 transition-all cursor-pointer"
-                      title="ماه قبل"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                    <span className="text-xs font-black text-slate-700 font-mono px-2">
-                      {JALALI_MONTHS[currentJalaliMonth - 1]} {currentJalaliYear}
-                    </span>
-                    <button
-                      onClick={nextMonth}
-                      className="p-1.5 hover:bg-white/80 rounded-lg text-slate-600 transition-all cursor-pointer"
-                      title="ماه بعد"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+          <div className="max-w-lg mx-auto" dir="rtl">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm mb-8 space-y-6">
+              {/* Top Toggle for Cycle Overlay */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="text-sm font-black text-slate-800 flex items-center gap-1.5">
+                  <CalendarIcon className="w-4 h-4 text-[#1B9AAA]" />
+                  <span>تقویم مشترک زوجین</span>
+                </h3>
+                <button
+                  onClick={() => setShowCycleOnCalendar(prev => !prev)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    showCycleOnCalendar
+                      ? "bg-[#F9CCD8]/40 text-[#7D243C] border-[#F9CCD8]"
+                      : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <Droplet className={`w-3.5 h-3.5 ${showCycleOnCalendar ? "fill-[#7D243C] text-[#7D243C]" : "text-slate-400"}`} />
+                  <span>چرخه سلامت: {showCycleOnCalendar ? "نمایان" : "مخفی"}</span>
+                </button>
               </div>
 
-              {/* Day Labels */}
-              <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-400 mb-2">
+              {/* Calendar Header: < Month Year > */}
+              <div className="flex items-center justify-between px-2">
+                <button
+                  onClick={prevMonth}
+                  className="p-2 hover:bg-slate-100 rounded-xl text-[#1A1A1A] transition-all cursor-pointer"
+                  title="ماه قبل"
+                >
+                  <ChevronRight className="w-5 h-5 stroke-[2]" />
+                </button>
+
+                <h3 className="text-lg sm:text-xl font-bold text-[#1A1A1A]">
+                  {JALALI_MONTHS[currentJalaliMonth - 1]} {toPersianDigits(currentJalaliYear)}
+                </h3>
+
+                <button
+                  onClick={nextMonth}
+                  className="p-2 hover:bg-slate-100 rounded-xl text-[#1A1A1A] transition-all cursor-pointer"
+                  title="ماه بعد"
+                >
+                  <ChevronLeft className="w-5 h-5 stroke-[2]" />
+                </button>
+              </div>
+
+              {/* Weekday Labels */}
+              <div className="grid grid-cols-7 gap-2.5 sm:gap-3 text-center text-xs sm:text-sm font-medium text-[#757575]">
                 <div>شنبه</div>
-                <div>یکشنبه</div>
-                <div>دوشنبه</div>
-                <div>سه‌شنبه</div>
-                <div>چهارشنبه</div>
-                <div>پنجشنبه</div>
+                <div>یک</div>
+                <div>دو</div>
+                <div>سه</div>
+                <div>چهار</div>
+                <div>پنج</div>
                 <div>جمعه</div>
               </div>
 
-              {/* Day Boxes with Subtle Menstrual Phase Colors */}
-              <div className="grid grid-cols-7 gap-1.5">
+              {/* Squircle Day Tiles with Exact Reference Palette */}
+              <div className="grid grid-cols-7 gap-2.5 sm:gap-3">
                 {calendarDays.map((day, idx) => {
                   if (day === null) {
-                    return <div key={`empty-${idx}`} className="h-16 bg-white/10 rounded-xl border border-transparent" />;
+                    return <div key={`empty-${idx}`} className="aspect-square" />;
                   }
 
                   const dayItems = getItemsForDay(day);
@@ -2387,123 +2380,84 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
                   const [gy, gm, gd] = jalaliToGregorian(currentJalaliYear, currentJalaliMonth, day);
                   const targetDate = new Date(gy, gm - 1, gd);
+                  const todayNow = getTehranDate();
+                  const [tJy, tJm, tJd] = gregorianToJalali(todayNow.getFullYear(), todayNow.getMonth() + 1, todayNow.getDate());
+                  const isToday = currentJalaliYear === tJy && currentJalaliMonth === tJm && day === tJd;
+
                   const phaseInfo = showCycleOnCalendar ? getMenstrualPhaseForDate(targetDate) : null;
 
-                  let cellClass = "bg-white/40 border-white/50 text-slate-700 hover:bg-white/70";
-                  let pillClass = "";
+                  let tileColorClass = "bg-[#F7F7F7] text-[#1E1E1E] hover:bg-[#EFEFEF]";
                   let phaseLabel = "";
 
                   if (phaseInfo) {
-                    if (phaseInfo.phase === "period") {
-                      cellClass = "bg-rose-500/[0.08] border-rose-300/40 text-rose-950 hover:bg-rose-500/[0.14]";
-                      pillClass = "bg-rose-400";
-                      phaseLabel = `روز ${toPersianDigits(phaseInfo.currentCycleDay)} قاعدگی 🩸`;
-                    } else if (phaseInfo.phase === "due") {
-                      cellClass = "bg-rose-500/[0.12] border-rose-400/50 text-rose-950 hover:bg-rose-500/[0.18]";
-                      pillClass = "bg-rose-500";
-                      phaseLabel = "موعد مورد انتظار پریود ⏳";
-                    } else if (phaseInfo.phase === "delayed") {
-                      cellClass = "bg-red-500/[0.08] border-red-300/40 text-red-950 hover:bg-red-500/[0.14]";
-                      pillClass = "bg-red-400";
-                      phaseLabel = `تاخیر در پریود (${toPersianDigits(phaseInfo.delayedDays)} روز) ⚠️`;
+                    if (phaseInfo.phase === "period" || phaseInfo.phase === "due" || phaseInfo.phase === "delayed") {
+                      tileColorClass = "bg-[#F9CCD8] text-[#7D243C]";
+                      phaseLabel = `دوره پریود`;
                     } else if (phaseInfo.phase === "pms") {
-                      cellClass = "bg-purple-500/[0.06] border-purple-300/40 text-purple-950 hover:bg-purple-500/[0.14]";
-                      pillClass = "bg-purple-400";
-                      phaseLabel = "دوران حساس PMS 🌸";
+                      tileColorClass = "bg-[#E2D2FE] text-[#4A2574]";
+                      phaseLabel = "دوره PMS";
                     } else if (phaseInfo.phase === "ovulation") {
-                      cellClass = "bg-orange-500/[0.08] border-orange-300/45 text-orange-950 hover:bg-orange-500/[0.16]";
-                      pillClass = "bg-orange-400";
-                      phaseLabel = "روز تخمک‌گذاری 🥚";
+                      tileColorClass = "bg-[#1B9AAA] text-white";
+                      phaseLabel = "روز تخمک‌گذاری";
                     } else if (phaseInfo.phase === "fertile") {
-                      cellClass = "bg-amber-500/[0.06] border-amber-300/40 text-amber-950 hover:bg-amber-500/[0.14]";
-                      pillClass = "bg-amber-300";
-                      phaseLabel = "پنجره باروری ✨";
-                    } else if (phaseInfo.phase === "follicular") {
-                      cellClass = "bg-emerald-500/[0.04] border-emerald-300/30 text-emerald-950 hover:bg-emerald-500/[0.10]";
-                      pillClass = "bg-emerald-300";
-                      phaseLabel = "فاز پرانرژی و شادابی 🌱";
+                      tileColorClass = "bg-[#C8EEF2] text-[#0E545B]";
+                      phaseLabel = "دوره باروری";
                     }
-                  }
-
-                  if (hasItems) {
-                    cellClass += " ring-1.5 ring-violet-500/50 shadow-xs";
                   }
 
                   return (
                     <div
                       key={`day-${day}`}
-                      className={`h-16 rounded-xl border p-1.5 flex flex-col justify-between transition-all relative backdrop-blur-sm cursor-pointer ${cellClass}`}
+                      className={`aspect-square rounded-[16px] sm:rounded-[18px] flex flex-col items-center justify-center transition-all relative select-none cursor-pointer ${tileColorClass} ${
+                        isToday ? "border-2 border-dashed border-[#222222]" : ""
+                      } ${hasItems ? "ring-2 ring-violet-500/70" : ""}`}
                       title={`${phaseLabel ? `[${phaseLabel}] ` : ""}${hasItems ? `(${dayItems.length} برنامه: ${dayItems.map(i => i.title).join("، ")})` : ""}`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-[11px] font-mono font-black">{toPersianDigits(day)}</span>
-                        {phaseLabel && (
-                          <span
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: phaseInfo?.stageColor.primary || '#f43f5e' }}
-                            title={phaseLabel}
-                          />
-                        )}
-                      </div>
+                      <span className="text-sm sm:text-base font-bold leading-none">
+                        {toPersianDigits(day)}
+                      </span>
 
-                      {/* Scheduled Wishlist Plans Badge */}
-                      {hasItems && (
-                        <div className="flex flex-col items-center justify-center my-auto w-full px-0.5">
-                          <span className="w-full text-center py-0.5 px-1 bg-violet-600 hover:bg-violet-700 text-white text-[9px] font-black rounded-md shadow-xs truncate">
-                            {dayItems.length === 1 ? dayItems[0].title : `${toPersianDigits(dayItems.length)} برنامه`}
-                          </span>
-                        </div>
+                      {isToday && (
+                        <span className="text-[10px] sm:text-xs font-bold leading-none mt-1">
+                          امروز
+                        </span>
                       )}
 
-                      {/* Subtle Bottom Phase Bar (نامحسوس و تمیز) */}
-                      {pillClass && (
-                        <div className="w-full flex justify-center mt-auto pt-0.5">
-                          <div className={`w-5 h-1 rounded-full ${pillClass} opacity-80`} />
-                        </div>
+                      {hasItems && !isToday && (
+                        <span className="text-[9px] font-bold leading-none mt-1 px-1 py-0.5 rounded bg-violet-600 text-white max-w-[90%] truncate">
+                          {dayItems.length === 1 ? dayItems[0].title : `${toPersianDigits(dayItems.length)} برنامه`}
+                        </span>
+                      )}
+
+                      {hasItems && isToday && (
+                        <span className="w-2 h-2 rounded-full bg-violet-600 absolute top-1.5 left-1.5" title="دارای برنامه مشترک" />
                       )}
                     </div>
                   );
                 })}
               </div>
 
-              {/* Subtle Menstrual Phase Calendar Legend */}
-              <div className="mt-6 pt-4 border-t border-slate-200/50" dir="rtl">
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[11px] font-black text-slate-600 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-rose-500" />
-                    راهنمای رنگ‌های نامحسوس چرخه سلامت در تقویم:
+              {/* Bottom Legend (Exact Match to Reference Design) */}
+              {showCycleOnCalendar && (
+                <div className="pt-4 flex flex-wrap items-center justify-center gap-4 sm:gap-5 text-xs sm:text-sm font-bold text-[#1E1E1E]">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#F9CCD8] inline-block" />
+                    <span>دوره پریود</span>
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    (برای هماهنگی مسافرت‌ها و قرارهای دونفره)
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#E2D2FE] inline-block" />
+                    <span>دوره PMS</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#C8EEF2] inline-block" />
+                    <span>دوره باروری</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#1B9AAA] inline-block" />
+                    <span>روز تخمک گذاری</span>
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-2 items-center justify-center">
-                  <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-300/40 px-2.5 py-1 rounded-xl text-[10px] font-bold text-rose-900">
-                    <span className="w-2 h-2 rounded-full bg-rose-500" />
-                    <span>دوران پریود (استراحت بیشتر)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-300/40 px-2.5 py-1 rounded-xl text-[10px] font-bold text-purple-900">
-                    <span className="w-2 h-2 rounded-full bg-purple-500" />
-                    <span>دوران PMS (نیاز به آرامش و درک)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-300/40 px-2.5 py-1 rounded-xl text-[10px] font-bold text-orange-900">
-                    <span className="w-2 h-2 rounded-full bg-orange-500" />
-                    <span>تخمک‌گذاری (اوج باروری)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-300/40 px-2.5 py-1 rounded-xl text-[10px] font-bold text-amber-900">
-                    <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    <span>پنجره باروری</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-300/40 px-2.5 py-1 rounded-xl text-[10px] font-bold text-emerald-900">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span>فاز پرانرژی (فولیکولار)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-violet-600 text-white px-2.5 py-1 rounded-xl text-[10px] font-black shadow-xs">
-                    <CalendarIcon className="w-3 h-3" />
-                    <span>برنامه‌های مشترک ثبت‌شده</span>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* List of items scheduled for current month */}

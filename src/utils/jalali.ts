@@ -7,7 +7,7 @@ export const JALALI_MONTHS = [
 ];
 
 export const JALALI_WEEKDAYS = [
-  "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"
+  "شنبه", "یک", "دو", "سه", "چهار", "پنج", "جمعه"
 ];
 
 export function toPersianDigits(n: number | string): string {
