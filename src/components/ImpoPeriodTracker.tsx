@@ -1822,11 +1822,12 @@ export default function ImpoPeriodTracker({
 
                   <button
                     type="button"
-                    onClick={() =>
-                      handlePartnerPoke(`عزیزم، امروز در ${cycleStatus.phaseTitle} هستم؛ کنارم باش 🌸`)
-                    }
+                    onClick={() => {
+                      setCustomCareMessage("");
+                      setShowCareModal(true);
+                    }}
                     className="w-11 h-11 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
-                    title="ارسال پیام وضعیت به پارتنر"
+                    title="ارسال پیام و احساس به پارتنر"
                   >
                     <Send className="w-4 h-4 stroke-[1.7]" />
                   </button>
@@ -2054,6 +2055,18 @@ export default function ImpoPeriodTracker({
                       {cycleStatus.nutritionTip}
                     </p>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomCareMessage("");
+                      setShowCareModal(true);
+                    }}
+                    className="w-full py-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-2xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <MessageCircleHeart className="w-4 h-4 stroke-[1.7]" />
+                    <span>ارسال پیام و احساس به پارتنر</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -2770,7 +2783,7 @@ export default function ImpoPeriodTracker({
       </AnimatePresence>
 
       {/* ================================================================= */}
-      {/* COMPANION CARE MODAL (FOR MALE PARTNER)                           */}
+      {/* COMPANION CARE & PARTNER MESSAGE MODAL (FOR BOTH ROLES)           */}
       {/* ================================================================= */}
       <AnimatePresence>
         {showCareModal && (
@@ -2788,9 +2801,13 @@ export default function ImpoPeriodTracker({
                     <MessageCircleHeart className="w-5 h-5 stroke-[1.7]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#1B1B1A]">ارسال محبت و مراقبت</h3>
+                    <h3 className="text-base font-bold text-[#1B1B1A]">
+                      {partnerRole === "female" ? "ارسال پیام و احساس به پارتنر" : "ارسال محبت و مراقبت"}
+                    </h3>
                     <p className="text-xs text-[#78746B] font-medium">
-                      پیام شما فوراً روی صفحه پارتنرتان نمایش داده می‌شود
+                      {partnerRole === "female"
+                        ? "پیام شما فوراً همراه با اعلان برای پارتنرتان ارسال می‌شود"
+                        : "پیام شما فوراً روی صفحه پارتنرتان نمایش داده می‌شود"}
                     </p>
                   </div>
                 </div>
@@ -2802,22 +2819,37 @@ export default function ImpoPeriodTracker({
                 </button>
               </div>
 
+              {/* Ready-made message cards */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1B1B1A] block">پیام‌های آماده دلگرم‌کننده:</label>
+                <label className="text-xs font-bold text-[#1B1B1A] block">
+                  {partnerRole === "female"
+                    ? "پیام‌های آماده وضعیت و احساسات:"
+                    : "پیام‌های آماده دلگرم‌کننده:"}
+                </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    "عزیزم برات یک دمنوش گرم و نبات آماده کنم؟ ☕",
-                    "کیسه آب گرم و جای استراحتت حاضره، بیا دراز بکش 🛋️",
-                    "شکلات و خوراکی مورد علاقه‌ت رو برات خریدم نوش جونت 🍫",
-                    "فقط می‌خواستم بگم چقدر دوستت دارم و کنارت هستم 🌸",
-                    "امروز هر کاری داشتی بسپر به من، فقط استراحت کن 💖",
-                    "یک لیوان آب خنک برات آوردم، مراقب سلامتیت باش 💧"
-                  ].map((tmpl, idx) => (
+                  {(partnerRole === "female"
+                    ? [
+                        "عزیزم، امروز حالم کمی حساس‌تره و به توجه بیشتری نیاز دارم 💕",
+                        `امروز در ${cycleStatus.phaseTitle} هستم، لطفاً هوامو داشته باش 🌸`,
+                        "می‌شه برام یک دمنوش گرم یا خوراکی خوشمزه بیاری عزیزم؟ ☕🍫",
+                        "کمی دل‌درد و خستگی دارم؛ ممنون می‌شم کارهای خونه با تو باشه 🛋️",
+                        "امروز پر از انرژی و خوشحالم! یک برنامه دونفره قشنگ بچینیم؟ ✨",
+                        "فقط می‌خواستم بهت بگم چقدر دوستت دارم و بودنت بهم آرامش میده 🥰"
+                      ]
+                    : [
+                        "عزیزم برات یک دمنوش گرم و نبات آماده کنم؟ ☕",
+                        "کیسه آب گرم و جای استراحتت حاضره، بیا دراز بکش 🛋️",
+                        "شکلات و خوراکی مورد علاقه‌ت رو برات خریدم نوش جونت 🍫",
+                        "فقط می‌خواستم بگم چقدر دوستت دارم و کنارت هستم 🌸",
+                        "امروز هر کاری داشتی بسپر به من، فقط استراحت کن 💖",
+                        "یک لیوان آب خنک برات آوردم، مراقب سلامتیت باش 💧"
+                      ]
+                  ).map((tmpl, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => setCustomCareMessage(tmpl)}
-                      className={`p-3 rounded-2xl text-xs font-bold text-right transition-colors cursor-pointer ${
+                      className={`p-3 rounded-2xl text-xs font-bold text-right transition-colors cursor-pointer leading-relaxed ${
                         customCareMessage === tmpl
                           ? "bg-[#1B1B1A] text-[#FAF6EC]"
                           : "bg-[#FFFDF8] border border-[#E8E2D4] text-[#1B1B1A] hover:bg-[#EFECE2]"
@@ -2829,17 +2861,23 @@ export default function ImpoPeriodTracker({
                 </div>
               </div>
 
+              {/* Custom message textarea */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#1B1B1A] block">یا متن دلخواه خودت را بنویس:</label>
                 <textarea
                   value={customCareMessage}
                   onChange={(e) => setCustomCareMessage(e.target.value)}
-                  placeholder="کلمات محبت‌آمیز خودت را بنویس..."
+                  placeholder={
+                    partnerRole === "female"
+                      ? "هر چیزی که در دلت هست یا دوست داری پارتنرت بدونه رو بنویس..."
+                      : "کلمات محبت‌آمیز خودت را بنویس..."
+                  }
                   rows={3}
-                  className="w-full px-4 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-xs text-[#1B1B1A] text-right outline-none resize-none font-medium"
+                  className="w-full px-4 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-xs text-[#1B1B1A] text-right outline-none resize-none font-medium leading-relaxed"
                 />
               </div>
 
+              {/* Modal footer actions */}
               <div className="flex items-center gap-2.5 pt-2">
                 <button
                   type="button"
@@ -2851,7 +2889,11 @@ export default function ImpoPeriodTracker({
                 <button
                   type="button"
                   onClick={() => {
-                    const msg = customCareMessage.trim() || "عزیزم، همیشه به فکرتم و کنارت هستم 💕";
+                    const fallback =
+                      partnerRole === "female"
+                        ? "عزیزم، فقط می‌خواستم بهت یادآوری کنم که چقدر برام عزیزی 💕"
+                        : "عزیزم، همیشه به فکرتم و کنارت هستم 💕";
+                    const msg = customCareMessage.trim() || fallback;
                     handlePartnerPoke(msg);
                     setShowCareModal(false);
                     setCustomCareMessage("");
@@ -2859,7 +2901,9 @@ export default function ImpoPeriodTracker({
                   className="flex-1 py-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold text-xs rounded-full transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Send className="w-4 h-4 stroke-[1.7]" />
-                  <span>ارسال پیام محبت‌آمیز</span>
+                  <span>
+                    {partnerRole === "female" ? "ارسال پیام به پارتنر" : "ارسال پیام محبت‌آمیز"}
+                  </span>
                 </button>
               </div>
             </motion.div>
