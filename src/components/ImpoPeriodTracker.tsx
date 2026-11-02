@@ -851,15 +851,26 @@ export default function ImpoPeriodTracker({
     const ovuAngle = ((safeOvu - 0.5) / safeCycleLength) * 360;
     const ovuPos = polarToCartesian(ringCx, ringCy, ringR, ovuAngle);
 
-    // 4. Luteal Phase & PMS (Days fertileEnd + 1 to cycleLength)
+    // 4. Normal Days (روزهای عادی: Days fertileEnd + 1 to pmsStart - 1)
     const p4Start = p3End + 1;
-    const p4End = safeCycleLength;
-    const hasLuteal = p4End >= p4Start;
+    const p4End = Math.max(p4Start - 1, safePmsStart - 1);
+    const hasNormal = p4End >= p4Start;
     const p4RawStart = (p4Start - 1) * degPerDay;
+    const p4RawEnd = p4End * degPerDay;
     const p4ArcStart = p4RawStart + gap;
-    const p4ArcEnd = Math.max(p4ArcStart + 1, 360 - gap);
-    const p4MidAngle = (p4RawStart + 360) / 2;
+    const p4ArcEnd = Math.max(p4ArcStart + 1, p4RawEnd - gap);
+    const p4MidAngle = (p4RawStart + p4RawEnd) / 2;
     const p4IconPos = polarToCartesian(ringCx, ringCy, ringR, p4MidAngle);
+
+    // 5. PMS Phase (دوره PMS: Days pmsStart to cycleLength)
+    const p5Start = Math.min(safePmsStart, safeCycleLength);
+    const p5End = safeCycleLength;
+    const hasPms = p5End >= p5Start;
+    const p5RawStart = (p5Start - 1) * degPerDay;
+    const p5ArcStart = p5RawStart + gap;
+    const p5ArcEnd = Math.max(p5ArcStart + 1, 360 - gap);
+    const p5MidAngle = (p5RawStart + 360) / 2;
+    const p5IconPos = polarToCartesian(ringCx, ringCy, ringR, p5MidAngle);
 
     // Today pointer & cursor position on the ring track
     const currentDayClamped = Math.max(1, Math.min(cycleStatus.currentCycleDay, safeCycleLength));
@@ -887,11 +898,17 @@ export default function ImpoPeriodTracker({
         ovuPos,
         ovuDay: safeOvu
       } : null,
-      luteal: hasLuteal ? {
+      normal: hasNormal ? {
         startDay: p4Start,
         endDay: p4End,
         path: describeArc(ringCx, ringCy, ringR, p4ArcStart, p4ArcEnd),
         iconPos: p4IconPos
+      } : null,
+      pms: hasPms ? {
+        startDay: p5Start,
+        endDay: p5End,
+        path: describeArc(ringCx, ringCy, ringR, p5ArcStart, p5ArcEnd),
+        iconPos: p5IconPos
       } : null,
       today: {
         day: cycleStatus.currentCycleDay,
@@ -899,7 +916,7 @@ export default function ImpoPeriodTracker({
         angle: todayAngle
       }
     };
-  }, [safeCycleLength, safePeriodLength, safeFertileStart, safeFertileEnd, safeOvulationDay, cycleStatus.currentCycleDay]);
+  }, [safeCycleLength, safePeriodLength, safeFertileStart, safeFertileEnd, safeOvulationDay, safePmsStart, cycleStatus.currentCycleDay]);
 
   // Active Phase Meta for Badges and Typography
   const currentPhaseMeta = useMemo(() => {
@@ -968,13 +985,13 @@ export default function ImpoPeriodTracker({
       case "luteal":
       default:
         return {
-          title: "فاز لوتئال",
-          subtitle: "روزهای بازگشت به تعادل، استراحت و مراقبت",
-          color: "#B8CEF4",
-          bgClass: "bg-[#B8CEF4]",
-          borderClass: "border-[#9ABBE5]",
+          title: "روزهای عادی چرخه",
+          subtitle: "روزهای آرام، باثبات و تعادل هورمونی",
+          color: "#D8D1C0",
+          bgClass: "bg-[#D8D1C0]",
+          borderClass: "border-[#C5BDAA]",
           pillText: "text-[#1B1B1A]",
-          icon: Moon
+          icon: Coffee
         };
     }
   }, [cycleStatus.phase, cycleStatus.delayedDays]);
@@ -1251,18 +1268,49 @@ export default function ImpoPeriodTracker({
                       </g>
                     )}
 
-                    {/* 4. Powder Blue Capsule: Luteal Phase & PMS (Days fertileEnd + 1 to cycleLength) */}
-                    {cycleGeometry.luteal && (
+                    {/* 4. Warm Sand Capsule: Normal Days (Days fertileEnd + 1 to pmsStart - 1) */}
+                    {cycleGeometry.normal && (
                       <g>
                         <path
-                          d={cycleGeometry.luteal.path}
+                          d={cycleGeometry.normal.path}
+                          fill="none"
+                          stroke="#D8D1C0"
+                          strokeWidth={ringStrokeWidth}
+                          strokeLinecap="round"
+                        />
+                        {/* Coffee / Balanced Normal Days Icon */}
+                        <g transform={`translate(${cycleGeometry.normal.iconPos.x - 7.5}, ${cycleGeometry.normal.iconPos.y - 7.5})`}>
+                          <path
+                            d="M10 2v2M6 2v2M2 6h9a2 2 0 012 2v2a3 3 0 01-3 3H4a3 3 0 01-3-3V8a2 2 0 012-2z"
+                            fill="none"
+                            stroke="#1B1B1A"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M13 7h1a2 2 0 010 4h-1"
+                            fill="none"
+                            stroke="#1B1B1A"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                          />
+                        </g>
+                      </g>
+                    )}
+
+                    {/* 5. Powder Blue Capsule: PMS Phase (Days pmsStart to cycleLength) */}
+                    {cycleGeometry.pms && (
+                      <g>
+                        <path
+                          d={cycleGeometry.pms.path}
                           fill="none"
                           stroke="#B8CEF4"
                           strokeWidth={ringStrokeWidth}
                           strokeLinecap="round"
                         />
-                        {/* Moon / Calm Icon */}
-                        <g transform={`translate(${cycleGeometry.luteal.iconPos.x - 7.5}, ${cycleGeometry.luteal.iconPos.y - 7.5})`}>
+                        {/* Moon / Calm & PMS Care Icon */}
+                        <g transform={`translate(${cycleGeometry.pms.iconPos.x - 7.5}, ${cycleGeometry.pms.iconPos.y - 7.5})`}>
                           <path
                             d="M11.5 8.5a4.5 4.5 0 11-5.5-5.5 5.2 5.2 0 005.5 5.5z"
                             fill="none"
@@ -1377,8 +1425,8 @@ export default function ImpoPeriodTracker({
                   </div>
                 </div>
 
-                {/* 4-PHASE VISUAL TIMELINE LEGEND (Explains each colored segment on the circle) */}
-                <div className="w-full max-w-[340px] sm:max-w-md mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {/* 5-PHASE VISUAL TIMELINE LEGEND (Separating Period, Follicular, Fertile, Normal Days, and PMS) */}
+                <div className="w-full max-w-[340px] sm:max-w-xl mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {/* 1. پریود */}
                   <button
                     type="button"
@@ -1457,26 +1505,52 @@ export default function ImpoPeriodTracker({
                     )}
                   </button>
 
-                  {/* 4. لوتئال / PMS */}
+                  {/* 4. روزهای عادی */}
                   <button
                     type="button"
                     onClick={() =>
-                      setSelectedLegendPhase((prev) => (prev === "luteal" ? null : "luteal"))
+                      setSelectedLegendPhase((prev) => (prev === "normal" ? null : "normal"))
                     }
                     className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
-                      cycleStatus.phase === "luteal" || cycleStatus.phase === "pms"
+                      cycleStatus.phase === "luteal"
+                        ? "bg-[#D8D1C0]/60 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
+                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#D8D1C0] border border-[#1B1B1A]/20 shrink-0" />
+                      <span>روزهای عادی</span>
+                    </div>
+                    <div className="text-[11px] text-[#78746B] mt-0.5 font-medium">
+                      روز {toPersianDigits(safeFertileEnd + 1)} تا {toPersianDigits(Math.max(safeFertileEnd + 1, safePmsStart - 1))}
+                    </div>
+                    {cycleStatus.phase === "luteal" && (
+                      <span className="mt-1 inline-block text-[10px] font-bold text-[#1B1B1A] bg-[#1B1B1A]/10 px-2 py-0.5 rounded-full">
+                        فاز کنونی
+                      </span>
+                    )}
+                  </button>
+
+                  {/* 5. دوره PMS */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedLegendPhase((prev) => (prev === "pms" ? null : "pms"))
+                    }
+                    className={`col-span-2 sm:col-span-1 p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                      cycleStatus.phase === "pms"
                         ? "bg-[#B8CEF4]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
                         : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
                     }`}
                   >
                     <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A]">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#B8CEF4] border border-[#1B1B1A]/20 shrink-0" />
-                      <span>لوتئال / PMS</span>
+                      <span>دوره PMS</span>
                     </div>
                     <div className="text-[11px] text-[#78746B] mt-0.5 font-medium">
-                      روز {toPersianDigits(safeFertileEnd + 1)} تا {toPersianDigits(safeCycleLength)}
+                      روز {toPersianDigits(safePmsStart)} تا {toPersianDigits(safeCycleLength)}
                     </div>
-                    {(cycleStatus.phase === "luteal" || cycleStatus.phase === "pms") && (
+                    {cycleStatus.phase === "pms" && (
                       <span className="mt-1 inline-block text-[10px] font-bold text-[#1B1B1A] bg-[#1B1B1A]/10 px-2 py-0.5 rounded-full">
                         فاز کنونی
                       </span>
@@ -1489,7 +1563,7 @@ export default function ImpoPeriodTracker({
                   <motion.div
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-[340px] sm:max-w-md mt-2 p-3.5 bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl text-xs text-[#1B1B1A] space-y-1"
+                    className="w-full max-w-[340px] sm:max-w-xl mt-2 p-3.5 bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl text-xs text-[#1B1B1A] space-y-1"
                   >
                     {selectedLegendPhase === "period" && (
                       <div className="leading-relaxed">
@@ -1506,9 +1580,14 @@ export default function ImpoPeriodTracker({
                         <strong className="text-[#1B1B1A]">🌿 پنجره باروری و تخمک‌گذاری:</strong> روزهای اوج شانس بارداری با ترشحات شفاف رحمی. نقطه مشکی روی حلقه نشان‌دهنده روز دقیق تخمک‌گذاری است (روز {toPersianDigits(safeOvulationDay)}).
                       </div>
                     )}
-                    {selectedLegendPhase === "luteal" && (
+                    {selectedLegendPhase === "normal" && (
                       <div className="leading-relaxed">
-                        <strong className="text-[#1B1B1A]">🌙 فاز لوتئال و PMS:</strong> روزهای آرامش و آماده‌سازی برای چرخه بعد. در روزهای پایانی این فاز، همراهی عاطفی، درک تغییرات خلقی و کاهش استرس اهمیت دارد.
+                        <strong className="text-[#1B1B1A]">☕ روزهای عادی چرخه:</strong> روزهای آرام، پایدار و تعادل هورمونی پس از تخمک‌گذاری و قبل از شروع PMS. سطح هورمون‌ها در تعادل است و بدن بدون علائم خاصی فعالیت‌های معمول خود را دنبال می‌کند.
+                      </div>
+                    )}
+                    {selectedLegendPhase === "pms" && (
+                      <div className="leading-relaxed">
+                        <strong className="text-[#1B1B1A]">🌙 دوره PMS (سندرم پیش از قاعدگی):</strong> روزهای افت هورمونی پیش از آغاز قاعدگی بعدی. ممکن است با خستگی، حساسیت عاطفی یا نوسانات خلقی همراه باشد؛ نیاز به درک متقابل، آرامش و همراهی عاطفی بیشتر.
                       </div>
                     )}
                   </motion.div>
@@ -1646,15 +1725,11 @@ export default function ImpoPeriodTracker({
                   );
                 })()}
 
-                {/* Bottom 4-Dot Horizontal Legend */}
+                {/* Bottom 5-Dot Horizontal Legend */}
                 <div className="pt-2 flex flex-wrap items-center justify-center gap-4 text-[11px] sm:text-xs font-bold text-[#1B1B1A]">
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-[#F6C3E5] inline-block" />
                     <span>دوره پریود</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-[#B8CEF4] inline-block" />
-                    <span>دوره PMS</span>
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-[#DCE6B5] inline-block" />
@@ -1663,6 +1738,14 @@ export default function ImpoPeriodTracker({
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-[#A7B86C] inline-block" />
                     <span>روز تخمک گذاری</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#EFECE2] border border-[#1B1B1A]/20 inline-block" />
+                    <span>روزهای عادی</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-[#B8CEF4] inline-block" />
+                    <span>دوره PMS</span>
                   </span>
                 </div>
               </div>
