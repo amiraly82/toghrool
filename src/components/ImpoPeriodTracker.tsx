@@ -23,6 +23,7 @@ import JalaliDatePicker from "./JalaliDatePicker";
 interface ImpoPeriodTrackerProps {
   userProfile: UserProfile;
   onSendPoke?: (message: string, tag: string) => void;
+  onUpdateGender?: (gender: 'female' | 'male') => void;
 }
 
 // Flow Level Options
@@ -159,9 +160,9 @@ const getPhaseStyle = (phase: string) => {
   }
 };
 
-export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPeriodTrackerProps) {
-  // Navigation sub-tab inside period tracker: 'dashboard' | 'calendar' | 'predictions' | 'biorhythm' | 'history'
-  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'calendar' | 'predictions' | 'biorhythm' | 'history'>('dashboard');
+export default function ImpoPeriodTracker({ userProfile, onSendPoke, onUpdateGender }: ImpoPeriodTrackerProps) {
+  // Navigation sub-tab inside period tracker: 'dashboard' | 'calendar' | 'predictions' | 'history'
+  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'calendar' | 'predictions' | 'history'>('dashboard');
 
   // View Mode: Circular (Impo Circle) or Flat (Impo Bar)
   const [viewMode, setViewMode] = useState<'circular' | 'flat'>('circular');
@@ -208,6 +209,13 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
   const [selectedLogDate, setSelectedLogDate] = useState<string>(toGregorianIsoString(new Date()));
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
+  const [showDeleteAllConfirmModal, setShowDeleteAllConfirmModal] = useState(false);
+  const [trackerToast, setTrackerToast] = useState<string | null>(null);
+
+  const showNotice = (msg: string) => {
+    setTrackerToast(msg);
+    setTimeout(() => setTrackerToast(null), 3500);
+  };
 
   // Period Sharing Settings
   const [sharing, setSharing] = useState<PeriodSharingSettings>(() => {
@@ -445,15 +453,53 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
     return predictFutureCycles(settings, 2, logs);
   }, [settings, logs]);
 
-  // Biorhythm result
-  const biorhythm: BiorhythmResult | null = useMemo(() => {
-    return calculateBiorhythm(settings.birthDate, new Date());
-  }, [settings.birthDate]);
+  // Quick 1-click role selection for first-time visitors
+  const [roleConfirmed, setRoleConfirmed] = useState<boolean>(() => {
+    return !!localStorage.getItem(`impo_partner_role_${userProfile.uid}`);
+  });
+
+  const handleSelectQuickRole = async (selectedGender: 'female' | 'male') => {
+    localStorage.setItem(`impo_partner_role_${userProfile.uid}`, selectedGender);
+    setRoleConfirmed(true);
+    if (onUpdateGender) {
+      onUpdateGender(selectedGender);
+    }
+    try {
+      await fetchFromPhpApi('updateProfile', {
+        displayName: userProfile.displayName,
+        avatarUrl: userProfile.avatarUrl || '',
+        gender: selectedGender
+      });
+    } catch (e) {
+      console.warn("Role gender sync notice:", e);
+    }
+    if (selectedGender === 'female' && !settings.trackerOwnerUid) {
+      const targetId = userProfile.coupleId || userProfile.uid;
+      const updatedSettings: ImpoPeriodSettings = {
+        ...settings,
+        trackerOwnerUid: userProfile.uid
+      };
+      setSettings(updatedSettings);
+      setFormClaimOwner(true);
+      localStorage.setItem(`impo_period_settings_${targetId}`, JSON.stringify(updatedSettings));
+      try {
+        await fetchFromPhpApi('savePeriodSettings', {
+          coupleId: userProfile.coupleId || '',
+          uid: userProfile.uid,
+          settings: updatedSettings
+        });
+      } catch (e) {}
+      showNotice("نقش شما به عنوان صاحب ترکر سلامت ثبت شد 🌸");
+    } else if (selectedGender === 'male') {
+      setFormClaimOwner(false);
+      showNotice("حالت همراهی عاطفی و مراقبت از پارتنر فعال شد 💖");
+    }
+  };
 
   // Open log modal for specific date
   const handleOpenLogModal = (dateStr: string) => {
     if (!effectiveIsOwner && !sharing.allowPartnerLogging) {
-      alert("امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است.");
+      showNotice("امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است 🔒");
       return;
     }
     setSelectedLogDate(dateStr);
@@ -489,7 +535,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
   // Quick Action: "I got my period today!"
   const handleQuickGotPeriodToday = async () => {
     if (!effectiveIsOwner && !sharing.allowPartnerLogging) {
-      alert("امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است.");
+      showNotice("امکان ثبت لاگ توسط صاحب ترکر غیرفعال شده است 🔒");
       return;
     }
     const todayStr = toGregorianIsoString(new Date());
@@ -552,7 +598,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (settings.trackerOwnerUid && !effectiveIsOwner) {
-      alert("تنها صاحب ترکر مجاز به تغییر تنظیمات است.");
+      showNotice("تنها صاحب ترکر مجاز به تغییر تنظیمات است 🔒");
       return;
     }
     const targetId = userProfile.coupleId || userProfile.uid;
@@ -626,12 +672,13 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        showNotice("فایل پشتیبان با موفقیت دانلود شد 📥");
       } else {
-        alert(res?.message || "خطا در دریافت فایل خروجی.");
+        showNotice(res?.message || "خطا در دریافت فایل خروجی.");
       }
     } catch (err) {
       console.error("Export error:", err);
-      alert("خطا در برقراری ارتباط با سرور جهت دریافت نسخه پشتیبان.");
+      showNotice("خطا در برقراری ارتباط با سرور جهت دریافت نسخه پشتیبان.");
     } finally {
       setIsExporting(false);
     }
@@ -639,11 +686,6 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
 
   // Delete all period health data
   const handleDeleteAllData = async () => {
-    const confirm1 = window.confirm("آیا از حذف کامل تمام اطلاعات، لاگ‌ها و تنظیمات قاعدگی خود اطمینان دارید؟ این عمل غیرقابل بازگشت است.");
-    if (!confirm1) return;
-    const confirm2 = window.confirm("با تایید این پیام، تاریخچه چرخه‌ها و لاگ‌های سلامت شما کاملاً از سرور پاک خواهد شد. ادامه می‌دهید؟");
-    if (!confirm2) return;
-
     setIsDeletingAll(true);
     try {
       const res = await fetchFromPhpApi('deleteMyPeriodData', {
@@ -666,15 +708,16 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
           viewMode: 'circular'
         });
         setHasConfigured(false);
+        setShowDeleteAllConfirmModal(false);
         setShowSharingModal(false);
         setShowSettingsModal(false);
-        alert("تمام اطلاعات ترکر با موفقیت حذف شد.");
+        showNotice("تمام اطلاعات ترکر با موفقیت از سرور حذف شد 🗑️");
       } else {
-        alert(res?.message || "خطا در حذف اطلاعات.");
+        showNotice(res?.message || "خطا در حذف اطلاعات.");
       }
     } catch (err) {
       console.error("Delete all error:", err);
-      alert("خطا در حذف اطلاعات از سرور.");
+      showNotice("خطا در حذف اطلاعات از سرور.");
     } finally {
       setIsDeletingAll(false);
     }
@@ -743,7 +786,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
   // Delete Log
   const handleDeleteLog = async (logId: string) => {
     if (!effectiveIsOwner) {
-      alert("تنها صاحب ترکر مجاز به حذف لاگ است.");
+      showNotice("تنها صاحب ترکر مجاز به حذف لاگ است 🔒");
       return;
     }
     const targetId = userProfile.coupleId || userProfile.uid;
@@ -807,6 +850,48 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
 
   return (
     <div className="space-y-6" dir="rtl">
+      {trackerToast && (
+        <div className="fixed bottom-20 sm:bottom-6 right-6 bg-slate-900/95 text-white border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-2.5 shadow-2xl z-50">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="text-xs font-bold">{trackerToast}</span>
+        </div>
+      )}
+
+      {/* 1-Click First-Visit Role Selector Card */}
+      {!roleConfirmed && !settings.trackerOwnerUid && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-rose-50 via-pink-50 to-indigo-50 border border-pink-200/80 rounded-3xl p-5 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4"
+        >
+          <div className="text-right space-y-1">
+            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-rose-500" />
+              خوش آمدید! نحوه استفاده شما از تقویم سلامت چیست؟
+            </h3>
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              با انتخاب نقش خود، ظاهر و ابزارهای این بخش دقیقاً متناسب با شما تنظیم می‌شود (در هر زمان از پروفایل نیز قابل تغییر است).
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => handleSelectQuickRole('female')}
+              className="flex-1 sm:flex-initial px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-2xl text-xs font-black shadow-md shadow-rose-200 cursor-pointer transition-all"
+            >
+              👩 چرخه خودم را ثبت می‌کنم
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectQuickRole('male')}
+              className="flex-1 sm:flex-initial px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl text-xs font-black shadow-md shadow-indigo-200 cursor-pointer transition-all"
+            >
+              👨 همراه پارتنرم هستم
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Partner View Preview Banner for Owner */}
       {isPreviewingAsPartner && (
         <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white px-4 py-3 rounded-2xl flex items-center justify-between shadow-lg text-xs font-black">
@@ -993,18 +1078,6 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
           >
             <Sparkles className="w-3.5 h-3.5" />
             پیش‌بینی دوره‌ها
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('biorhythm')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeSubTab === 'biorhythm'
-                ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-                : 'bg-white/50 text-slate-600 hover:bg-white/80'
-            }`}
-          >
-            <HeartPulse className="w-3.5 h-3.5" />
-            بیوریتم زیستی
           </button>
 
           <button
@@ -2067,115 +2140,7 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
       )}
 
       {/* ----------------------------------------------------------------- */}
-      {/* SUB-TAB 4: BIORHYTHM ANALYSIS (IMPO EXCLUSIVE) */}
-      {/* ----------------------------------------------------------------- */}
-      {activeSubTab === 'biorhythm' && (
-        <div className="glass-card rounded-3xl p-6 border border-white/60 bg-white/70 space-y-6 text-right">
-          <div>
-            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-              <HeartPulse className="w-4 h-4 text-rose-500" />
-              آنالیز بیوریتم زیستی امروز (Biorhythm)
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              محاسبه موج‌های بیولوژیک طبیعی انسان از روی تاریخ تولد برای درک بهتر سطح انرژی، نوسان خلق و تمرکز فکری:
-            </p>
-          </div>
-
-          {biorhythm ? (
-            <div className="space-y-6">
-              {/* Three Rhythms Progress Bars */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 1. Physical Rhythm */}
-                <div className="bg-white p-5 rounded-2xl border border-emerald-100 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-emerald-700 flex items-center gap-1.5">
-                      <Zap className="w-4 h-4" />
-                      ریتم فیزیکی (۲۳ روزه)
-                    </span>
-                    <span className="text-xs font-black text-slate-700">
-                      %{toPersianDigits(Math.abs(biorhythm.physical))} {biorhythm.physical >= 0 ? 'مثبت' : 'منفی'}
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${biorhythm.physical >= 0 ? 'bg-emerald-500' : 'bg-rose-400'}`}
-                      style={{ width: `${Math.min(100, Math.max(10, (biorhythm.physical + 100) / 2))}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-500">
-                    قدرت عضلانی، انرژی بدنی، مقاومت در برابر درد و هماهنگی حرکتی.
-                  </p>
-                </div>
-
-                {/* 2. Emotional Rhythm */}
-                <div className="bg-white p-5 rounded-2xl border border-pink-100 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-rose-700 flex items-center gap-1.5">
-                      <Heart className="w-4 h-4" />
-                      ریتم احساسی (۲۸ روزه)
-                    </span>
-                    <span className="text-xs font-black text-slate-700">
-                      %{toPersianDigits(Math.abs(biorhythm.emotional))} {biorhythm.emotional >= 0 ? 'مثبت' : 'منفی'}
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${biorhythm.emotional >= 0 ? 'bg-rose-500' : 'bg-amber-400'}`}
-                      style={{ width: `${Math.min(100, Math.max(10, (biorhythm.emotional + 100) / 2))}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-500">
-                    روحیه، خوش‌بینی، عواطف و پذیرش عاطفی در رابطه با پارتنر.
-                  </p>
-                </div>
-
-                {/* 3. Intellectual Rhythm */}
-                <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-indigo-700 flex items-center gap-1.5">
-                      <Sun className="w-4 h-4" />
-                      ریتم ذهنی (۳۳ روزه)
-                    </span>
-                    <span className="text-xs font-black text-slate-700">
-                      %{toPersianDigits(Math.abs(biorhythm.intellectual))} {biorhythm.intellectual >= 0 ? 'مثبت' : 'منفی'}
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${biorhythm.intellectual >= 0 ? 'bg-indigo-500' : 'bg-slate-400'}`}
-                      style={{ width: `${Math.min(100, Math.max(10, (biorhythm.intellectual + 100) / 2))}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-slate-500">
-                    تمرکز، سرعت یادگیری، حافظه و قدرت تصمیم‌گیری منطقی.
-                  </p>
-                </div>
-              </div>
-
-              {/* Summary Insight */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-100 text-xs text-slate-600 leading-relaxed">
-                <strong>نتیجه‌گیری بیوریتم امروز: </strong>
-                {biorhythm.summary}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-10 bg-white/50 rounded-2xl border border-slate-100 space-y-3">
-              <p className="text-xs text-slate-500">
-                برای مشاهده بیوریتم دقیق، لطفاً تاریخ تولد خود را در تنظیمات چرخه وارد کنید.
-              </p>
-              <button
-                onClick={() => setShowSettingsModal(true)}
-                className="px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-black"
-              >
-                تنظیم تاریخ تولد
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ----------------------------------------------------------------- */}
-      {/* SUB-TAB 5: SYMPTOMS & LOGS HISTORY */}
+      {/* SUB-TAB 4: SYMPTOMS & LOGS HISTORY */}
       {/* ----------------------------------------------------------------- */}
       {activeSubTab === 'history' && (
         <div className="glass-card rounded-3xl p-6 border border-white/60 bg-white/70 space-y-6 text-right">
@@ -2449,18 +2414,6 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
                     />
                     <span className="text-[10px] text-slate-400 mt-0.5 block">معمولاً: ۳ تا ۷ روز</span>
                   </div>
-                </div>
-
-                {/* Birth date for Biorhythm */}
-                <div>
-                  <label className="block text-xs font-black text-slate-700 mb-1">
-                    تاریخ تولد (برای نمودار بیوریتم ایمپو):
-                  </label>
-                  <JalaliDatePicker
-                    value={formBirthDate}
-                    onChange={(val) => setFormBirthDate(val)}
-                    placeholder="انتخاب تاریخ تولد شمسی..."
-                  />
                 </div>
 
                 <div className="pt-3 flex gap-2">
@@ -3051,13 +3004,53 @@ export default function ImpoPeriodTracker({ userProfile, onSendPoke }: ImpoPerio
                   <button
                     type="button"
                     disabled={isDeletingAll}
-                    onClick={handleDeleteAllData}
+                    onClick={() => setShowDeleteAllConfirmModal(true)}
                     className="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                   >
                     <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                     <span>{isDeletingAll ? "در حال حذف..." : "حذف کامل اطلاعات پریود"}</span>
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL 5: DELETE ALL PERIOD DATA CONFIRMATION */}
+      <AnimatePresence>
+        {showDeleteAllConfirmModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-rose-200 space-y-4 text-center"
+              dir="rtl"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-black text-slate-800">حذف کامل اطلاعات پریود ترکر</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                آیا از حذف کامل تمام اطلاعات، لاگ‌های روزانه و تنظیمات قاعدگی خود از سرور اطمینان دارید؟ این عملیات غیرقابل بازگشت است.
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteAllConfirmModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                >
+                  انصراف
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingAll}
+                  onClick={handleDeleteAllData}
+                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-md shadow-rose-200 cursor-pointer transition-all"
+                >
+                  {isDeletingAll ? "در حال حذف..." : "بله، کامل حذف شود"}
+                </button>
               </div>
             </motion.div>
           </div>

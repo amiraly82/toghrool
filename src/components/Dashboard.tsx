@@ -356,63 +356,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     });
   };
 
-  // Tehran Time Real-Time Clock & Official Sync State
-  const [tehranTime, setTehranTime] = useState<Date | null>(null);
-  const [timeOffset, setTimeOffset] = useState<number>(0);
-
-  useEffect(() => {
-    // Start with timezone-adjusted local time
-    setTehranTime(getTehranDate());
-
-    const syncTime = async () => {
-      try {
-        const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Tehran");
-        if (res.ok) {
-          const data = await res.json();
-          const apiTime = new Date(data.datetime);
-          const localNow = new Date();
-          const offset = apiTime.getTime() - localNow.getTime();
-          setTimeOffset(offset);
-        }
-      } catch (err) {
-        console.warn("Failed to sync with WorldTimeAPI, using standard local timezone calculation.", err);
-      }
-    };
-    syncTime();
-    const interval = setInterval(syncTime, 10 * 60 * 1000); // Sync offset every 10 mins
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const localNow = new Date();
-      const adjusted = new Date(localNow.getTime() + timeOffset);
-      
-      try {
-        const formatter = new Intl.DateTimeFormat("en-US", {
-          timeZone: "Asia/Tehran",
-          year: "numeric", month: "numeric", day: "numeric",
-          hour: "numeric", minute: "numeric", second: "numeric",
-          hour12: false
-        });
-        const parts = formatter.formatToParts(adjusted);
-        const partMap = Object.fromEntries(parts.map(p => [p.type, p.value]));
-        const tDate = new Date(
-          parseInt(partMap.year, 10),
-          parseInt(partMap.month, 10) - 1,
-          parseInt(partMap.day, 10),
-          parseInt(partMap.hour, 10),
-          parseInt(partMap.minute, 10),
-          parseInt(partMap.second, 10)
-        );
-        setTehranTime(tDate);
-      } catch (e) {
-        setTehranTime(adjusted);
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeOffset]);
-
   // Calendar State (Jalali)
   const [currentJalaliYear, setCurrentJalaliYear] = useState(() => {
     const today = getTehranDate();
@@ -425,53 +368,13 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     return jm;
   });
 
-  // Period Tracker State
+  // Period Tracker State (for Shared Calendar overlay)
   const [periodSettings, setPeriodSettings] = useState<{
     cycleLength: number;
     periodLength: number;
     lastPeriodStartDate: string;
   } | null>(null);
   const [periodLogs, setPeriodLogs] = useState<any[]>([]);
-
-  // Personalized period settings
-  const [userPeriodSettings, setUserPeriodSettings] = useState<{
-    uid: string;
-    cycleLengthMin: number;
-    cycleLengthMax: number;
-    cycleLengthTypical: number;
-    periodLength: number;
-    lastPeriodStartDate: string;
-    pmsNotificationEnabled: boolean;
-    pmsNotificationDaysBefore: number;
-    showPmsPredictions: boolean;
-  } | null>(null);
-  const [personalUseAdvanced, setPersonalUseAdvanced] = useState<boolean>(false);
-  const [personalCycleMin, setPersonalCycleMin] = useState<number>(25);
-  const [personalCycleMax, setPersonalCycleMax] = useState<number>(35);
-  const [personalCycleTypical, setPersonalCycleTypical] = useState<number>(28);
-  const [personalPeriodLength, setPersonalPeriodLength] = useState<number>(5);
-  const [personalLastPeriodStartDate, setPersonalLastPeriodStartDate] = useState<string>("");
-  const [personalPmsNotificationEnabled, setPersonalPmsNotificationEnabled] = useState<boolean>(true);
-  const [personalPmsNotificationDaysBefore, setPersonalPmsNotificationDaysBefore] = useState<number>(2);
-  const [personalShowPmsPredictions, setPersonalShowPmsPredictions] = useState<boolean>(true);
-  const [settingsModalTab, setSettingsModalTab] = useState<"general" | "advanced">("general");
-
-  // Period Tracker Modal & Form State
-  const [showLogPeriodModal, setShowLogPeriodModal] = useState(false);
-  const [showPeriodSettingsModal, setShowPeriodSettingsModal] = useState(false);
-  const [logFormDate, setLogFormDate] = useState(() => {
-    return getTehranDate().toLocaleDateString("en-CA"); // YYYY-MM-DD local format
-  });
-  const [logFormFlow, setLogFormFlow] = useState<string>("medium");
-  const [logFormMood, setLogFormMood] = useState<string>("neutral");
-  const [logFormSymptoms, setLogFormSymptoms] = useState<string[]>([]);
-  const [logFormNotes, setLogFormNotes] = useState<string>("");
-  const [logFormIsPeriodStart, setLogFormIsPeriodStart] = useState<boolean>(false);
-
-  // Settings form fields
-  const [settingsFormCycleLength, setSettingsFormCycleLength] = useState<number>(28);
-  const [settingsFormPeriodLength, setSettingsFormPeriodLength] = useState<number>(5);
-  const [settingsFormLastPeriodStartDate, setSettingsFormLastPeriodStartDate] = useState<string>("");
 
   // Notification permission check
   useEffect(() => {
@@ -640,27 +543,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       }
     } catch (e) {}
   }, [userProfile?.coupleId, activeTab]);
-
-  // Load Personal Period Settings from local storage
-  useEffect(() => {
-    if (!userProfile?.uid) return;
-    try {
-      const stored = localStorage.getItem(`user_period_settings_${userProfile.uid}`);
-      if (stored) {
-        const data = JSON.parse(stored);
-        setUserPeriodSettings(data);
-        setPersonalUseAdvanced(true);
-        setPersonalCycleMin(data.cycleLengthMin ?? 25);
-        setPersonalCycleMax(data.cycleLengthMax ?? 35);
-        setPersonalCycleTypical(data.cycleLengthTypical ?? 28);
-        setPersonalPeriodLength(data.periodLength ?? 5);
-        setPersonalLastPeriodStartDate(data.lastPeriodStartDate || "");
-        setPersonalPmsNotificationEnabled(data.pmsNotificationEnabled ?? true);
-        setPersonalPmsNotificationDaysBefore(data.pmsNotificationDaysBefore ?? 2);
-        setPersonalShowPmsPredictions(data.showPmsPredictions ?? true);
-      }
-    } catch (e) {}
-  }, [userProfile?.uid]);
 
   // Handlers for cropping drag / pan
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -987,132 +869,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         }
       }
     );
-  };
-
-  const handleSavePeriodSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userProfile?.coupleId) return;
-    try {
-      const updated = {
-        cycleLength: Number(settingsFormCycleLength) || 28,
-        periodLength: Number(settingsFormPeriodLength) || 5,
-        lastPeriodStartDate: settingsFormLastPeriodStartDate
-      };
-      await fetchFromPhpApi('savePeriodSettings', { settings: updated });
-      setPeriodSettings(updated);
-      setShowPeriodSettingsModal(false);
-      triggerAlert("تنظیمات ردیاب عادت ماهانه با موفقیت ذخیره شد. ✨");
-      confetti({
-        particleCount: 15,
-        spread: 30,
-        colors: ["#ec4899", "#f43f5e"]
-      });
-    } catch (err) {
-      console.error("Error saving period settings:", err);
-      triggerAlert("خطایی در ذخیره تنظیمات رخ داد. مجددا تلاش کنید.");
-    }
-  };
-
-  const handleSavePersonalPeriodSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userProfile?.uid) return;
-    try {
-      const personalSettings = {
-        uid: userProfile.uid,
-        cycleLengthMin: Number(personalCycleMin) || 25,
-        cycleLengthMax: Number(personalCycleMax) || 35,
-        cycleLengthTypical: Number(personalCycleTypical) || 28,
-        periodLength: Number(personalPeriodLength) || 5,
-        lastPeriodStartDate: personalLastPeriodStartDate || settingsFormLastPeriodStartDate || "",
-        pmsNotificationEnabled: personalPmsNotificationEnabled,
-        pmsNotificationDaysBefore: Number(personalPmsNotificationDaysBefore) || 2,
-        showPmsPredictions: personalShowPmsPredictions,
-      };
-      localStorage.setItem(`user_period_settings_${userProfile.uid}`, JSON.stringify(personalSettings));
-      setUserPeriodSettings(personalSettings);
-      setPersonalUseAdvanced(true);
-      setShowPeriodSettingsModal(false);
-      triggerAlert("تنظیمات پیشرفته و شخصی شما با موفقیت ذخیره شد. ✨");
-      confetti({
-        particleCount: 20,
-        spread: 35,
-        colors: ["#a855f7", "#ec4899"]
-      });
-    } catch (err) {
-      console.error("Error saving personal period settings:", err);
-      triggerAlert("خطایی در ذخیره تنظیمات پیشرفته رخ داد. مجدداً تلاش کنید.");
-    }
-  };
-
-  const handleSavePeriodLog = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userProfile?.coupleId) return;
-    try {
-      const logData = {
-        date: logFormDate,
-        flow: logFormFlow,
-        moods: [logFormMood],
-        symptoms: logFormSymptoms,
-        notes: logFormNotes,
-        isPeriodDay: true,
-        isPeriodStart: logFormIsPeriodStart
-      };
-      await fetchFromPhpApi('savePeriodLog', { log: logData });
-
-      // Automatically update last period start date if marked as start
-      if (logFormIsPeriodStart) {
-        if (!periodSettings || logFormDate >= (periodSettings.lastPeriodStartDate || '')) {
-          await fetchFromPhpApi('savePeriodSettings', {
-            settings: {
-              cycleLength: periodSettings?.cycleLength || 28,
-              periodLength: periodSettings?.periodLength || 5,
-              lastPeriodStartDate: logFormDate
-            }
-          });
-        }
-      }
-
-      setShowLogPeriodModal(false);
-      triggerAlert("وضعیت امروز با موفقیت ثبت و همگام‌سازی شد. 💕");
-      confetti({
-        particleCount: 20,
-        spread: 40,
-        colors: ["#ec4899", "#f43f5e"]
-      });
-    } catch (err) {
-      console.error("Error saving period log:", err);
-      triggerAlert("خطایی در ثبت وضعیت رخ داد.");
-    }
-  };
-
-  const handleDeletePeriodLog = async (logId: string) => {
-    triggerConfirm("آیا مطمئن هستید که می‌خواهید این گزارش را حذف کنید؟", async () => {
-      try {
-        await fetchFromPhpApi('deletePeriodLog', { id: logId });
-        setPeriodLogs(prev => prev.filter(l => l.id !== logId));
-      } catch (err) {
-        console.error("Error deleting period log:", err);
-      }
-    });
-  };
-
-  const openLogModalForDate = (dateStr: string) => {
-    setLogFormDate(dateStr);
-    const existing = periodLogs.find(l => l.date === dateStr);
-    if (existing) {
-      setLogFormFlow(existing.flow || "medium");
-      setLogFormMood(Array.isArray(existing.moods) ? existing.moods[0] : (existing.mood || "neutral"));
-      setLogFormSymptoms(existing.symptoms || []);
-      setLogFormNotes(existing.notes || "");
-      setLogFormIsPeriodStart(existing.isPeriodStart || false);
-    } else {
-      setLogFormFlow("medium");
-      setLogFormMood("neutral");
-      setLogFormSymptoms([]);
-      setLogFormNotes("");
-      setLogFormIsPeriodStart(false);
-    }
-    setShowLogPeriodModal(true);
   };
 
   const handleCreateCategory = (e: React.FormEvent) => {
@@ -1667,16 +1423,20 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     }
   };
 
-  const handleDeleteMemory = async (memoryId: string) => {
-    if (!window.confirm("آیا از حذف این خاطره قشنگ مطمئن هستید؟ 🥺")) return;
-    try {
-      setMemories(prev => prev.filter(m => m.id !== memoryId));
-      await fetchFromPhpApi('deleteMemory', { id: memoryId });
-      triggerAlert("خاطره با موفقیت حذف شد. 🕊️");
-    } catch (err) {
-      console.error("Error deleting memory:", err);
-      triggerAlert("خطایی در حذف خاطره به وجود آمد.");
-    }
+  const handleDeleteMemory = (memoryId: string) => {
+    triggerConfirm("آیا از حذف این خاطره قشنگ مطمئن هستید؟ 🥺", async () => {
+      try {
+        setMemories(prev => prev.filter(m => m.id !== memoryId));
+        if (selectedMemory?.id === memoryId) {
+          setSelectedMemory(null);
+        }
+        await fetchFromPhpApi('deleteMemory', { id: memoryId });
+        triggerAlert("خاطره با موفقیت حذف شد. 🕊️");
+      } catch (err) {
+        console.error("Error deleting memory:", err);
+        triggerAlert("خطایی در حذف خاطره به وجود آمد.");
+      }
+    });
   };
 
   // Keep selectedMemory synchronized with memories state
@@ -1930,38 +1690,22 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             <div className="mr-2 sm:mr-3">
               <h1 className="text-xs sm:text-base md:text-lg font-black text-slate-800 flex items-center gap-1 sm:gap-1.5 leading-none">
                 {userProfile.displayName}
-                <span className="text-[8px] sm:text-xs text-rose-500 font-medium bg-rose-500/10 px-1 sm:px-2 py-0.5 rounded-full backdrop-blur-sm border border-rose-500/10 whitespace-nowrap">❤️ همگام</span>
+                <span className="text-[10px] sm:text-xs text-rose-600 font-bold bg-rose-500/10 px-1.5 sm:px-2 py-0.5 rounded-full backdrop-blur-sm border border-rose-500/15 whitespace-nowrap">❤️ همگام</span>
               </h1>
-              <p className="text-[9px] sm:text-[10px] text-slate-500 mt-1 sm:mt-1.5 font-medium leading-none flex items-center gap-1.5">
+              <p className="text-[10px] sm:text-xs text-slate-600 mt-1 sm:mt-1.5 font-medium leading-none flex items-center gap-1.5">
                 شریک رؤیاها: <span className="font-bold text-rose-600">{partnerProfile?.displayName || (userProfile.partnerEmail ? userProfile.partnerEmail.split("@")[0] : "در انتظار...")}</span>
                 {userProfile.partnerUid && (
-                  <span className={`inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                  <span className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                     isPartnerOnline 
-                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/15" 
-                      : "bg-slate-100 text-slate-400 border border-slate-200"
+                      ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20" 
+                      : "bg-slate-100 text-slate-500 border border-slate-200"
                   }`}>
-                    <span className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${isPartnerOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${isPartnerOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
                     {isPartnerOnline ? "فعال" : "آفلاین"}
                   </span>
                 )}
               </p>
             </div>
-          </div>
-
-          {/* Synced Tehran Clock Widget (Desktop) */}
-          <div className="hidden md:flex flex-col items-center text-center bg-white/40 border border-white/60 px-4 py-1.5 rounded-2xl backdrop-blur-md shadow-sm">
-            <span className="text-[9px] font-black text-rose-500 tracking-wide flex items-center gap-1 mb-0.5" dir="rtl">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              ساعت رسمی تهران
-            </span>
-            {tehranTime ? (
-              <div className="flex items-center gap-2" dir="rtl">
-                <span className="text-xs font-bold text-slate-700">{formatTehranDateAndTime(tehranTime).weekday}، {formatTehranDateAndTime(tehranTime).jalaliDateStr}</span>
-                <span className="text-xs font-black text-rose-600 font-mono tracking-wider bg-rose-50/80 px-1.5 py-0.5 rounded-lg border border-rose-100">{formatTehranDateAndTime(tehranTime).timeStr}</span>
-              </div>
-            ) : (
-              <span className="text-xs text-slate-400 font-medium animate-pulse">در حال همگام‌سازی...</span>
-            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -2022,124 +1766,160 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         )}
       </AnimatePresence>
 
-      <main className="max-w-5xl mx-auto px-4 mt-8">
-        {/* Synced Tehran Clock for Mobile Screen only */}
-        <div className="md:hidden flex items-center justify-between bg-white/40 border border-white/50 px-4 py-2.5 rounded-2xl backdrop-blur-xl shadow-sm mb-6 text-right" dir="rtl">
-          <span className="text-[10px] font-black text-slate-500 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-            ساعت رسمی تهران:
-          </span>
-          {tehranTime ? (
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-slate-700">{formatTehranDateAndTime(tehranTime).weekday}، {formatTehranDateAndTime(tehranTime).jalaliDateStr}</span>
-              <span className="text-xs font-black text-rose-600 font-mono bg-rose-50/80 px-1.5 py-0.5 rounded-lg border border-rose-100">{formatTehranDateAndTime(tehranTime).timeStr}</span>
-            </div>
-          ) : (
-            <span className="text-xs text-slate-400 font-medium animate-pulse">همگام‌سازی...</span>
-          )}
-        </div>
-
-        {/* Navigation Tabs (Desktop only) */}
+      <main className="max-w-5xl mx-auto px-4 mt-6">
+        {/* Navigation Tabs (Desktop only - 5 Pillars) */}
         <div className="hidden md:block w-full mb-8">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 px-1 w-full md:flex-wrap md:justify-center">
-            <div className="flex flex-nowrap md:flex-wrap bg-white/30 backdrop-blur-xl p-1.5 rounded-2xl border border-white/50 shadow-sm gap-1 shrink-0">
+          <div className="flex items-center justify-center w-full">
+            <div className="flex flex-wrap bg-white/50 backdrop-blur-xl p-1.5 rounded-2xl border border-white/60 shadow-sm gap-1.5">
               <button
                 onClick={() => setActiveTab("wishlist")}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap ${
-                  activeTab === "wishlist" 
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  activeTab === "wishlist" || activeTab === "hall"
                     ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md shadow-rose-200" 
-                    : "text-slate-600 hover:bg-white/40"
+                    : "text-slate-700 hover:bg-white/60"
                 }`}
               >
-                <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeTab === "wishlist" ? "fill-white text-white" : "text-slate-400"}`} />
-                ویش‌لیست مشترک
-              </button>
-
-              <button
-                onClick={() => setActiveTab("hall")}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap ${
-                  activeTab === "hall" 
-                    ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-md shadow-amber-200" 
-                    : "text-slate-600 hover:bg-white/40"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                تالار افتخارات
+                <Heart className={`w-4 h-4 ${activeTab === "wishlist" || activeTab === "hall" ? "fill-white text-white" : "text-rose-500"}`} />
+                آرزوها و افتخارات
               </button>
 
               <button
                 onClick={() => setActiveTab("calendar")}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap ${
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "calendar" 
                     ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-md shadow-violet-200" 
-                    : "text-slate-600 hover:bg-white/40"
+                    : "text-slate-700 hover:bg-white/60"
                 }`}
               >
-                <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                تقویم دو نفره
+                <CalendarIcon className={`w-4 h-4 ${activeTab === "calendar" ? "text-white" : "text-violet-500"}`} />
+                تقویم مشترک
               </button>
 
               <button
                 onClick={() => setActiveTab("memories")}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap ${
-                  activeTab === "memories" 
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                  activeTab === "memories" || activeTab.startsWith("tab-")
                     ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-200" 
-                    : "text-slate-600 hover:bg-white/40"
+                    : "text-slate-700 hover:bg-white/60"
                 }`}
               >
-                <Camera className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeTab === "memories" ? "fill-white text-white" : "text-pink-500"}`} />
-                خاطرات مشترک 📸
+                <Camera className={`w-4 h-4 ${activeTab === "memories" || activeTab.startsWith("tab-") ? "text-white" : "text-pink-500"}`} />
+                خاطرات و یادداشت‌ها 📸
               </button>
 
               <button
                 onClick={() => setActiveTab("period")}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap ${
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "period" 
                     ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md shadow-rose-200" 
-                    : "text-slate-600 hover:bg-white/40"
+                    : "text-slate-700 hover:bg-white/60"
                 }`}
               >
-                <Droplet className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeTab === "period" ? "fill-white text-white" : "text-rose-500"}`} />
-                ردیاب پریود 🩸
+                <Droplet className={`w-4 h-4 ${activeTab === "period" ? "fill-white text-white" : "text-rose-500"}`} />
+                تقویم سلامت 🌸
               </button>
 
               <button
                 onClick={() => setActiveTab("finance")}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap ${
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "finance" 
                     ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-200" 
-                    : "text-slate-600 hover:bg-white/40"
+                    : "text-slate-700 hover:bg-white/60"
                 }`}
               >
-                <Wallet className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeTab === "finance" ? "fill-white text-white" : "text-emerald-500"}`} />
+                <Wallet className={`w-4 h-4 ${activeTab === "finance" ? "text-white" : "text-emerald-600"}`} />
                 مدیریت مالی 💼
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Segmented Sub-Switch inside Wishlist / Hall of Fame Pillar */}
+        {(activeTab === "wishlist" || activeTab === "hall") && (
+          <div className="flex items-center justify-center mb-6" dir="rtl">
+            <div className="inline-flex bg-white/60 backdrop-blur-xl p-1.5 rounded-2xl border border-white/70 shadow-sm gap-1.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab("wishlist")}
+                className={`px-4 sm:px-6 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                  activeTab === "wishlist"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-white/70"
+                }`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${activeTab === "wishlist" ? "fill-rose-400 text-rose-400" : "text-slate-400"}`} />
+                <span>در مسیر انجام ({toPersianDigits(wishlistItems.length)})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("hall")}
+                className={`px-4 sm:px-6 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                  activeTab === "hall"
+                    ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-white/70"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>تالار افتخارات 🏆 ({toPersianDigits(hallOfFameItems.length)})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Sub-Navigation Bar inside Memories & Sticky Notes Pillar */}
+        {(activeTab === "memories" || activeTab.startsWith("tab-")) && (
+          <div className="flex items-center justify-center mb-6 overflow-x-auto no-scrollbar" dir="rtl">
+            <div className="inline-flex items-center bg-white/60 backdrop-blur-xl p-1.5 rounded-2xl border border-white/70 shadow-sm gap-1.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab("memories")}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === "memories"
+                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-white/70"
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>آلبوم خاطرات ({toPersianDigits(memories.length)})</span>
               </button>
 
               {customTabs.map((tab) => (
                 <div key={tab.id} className="relative group/tab flex items-center shrink-0">
                   <button
+                    type="button"
                     onClick={() => setActiveTab(`tab-${tab.id}`)}
-                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0 ${
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                       activeTab === `tab-${tab.id}`
-                        ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md shadow-teal-200"
-                        : "text-slate-600 hover:bg-white/40"
+                        ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-white/70"
                     }`}
                   >
-                    <span className="text-xs sm:text-sm">{tab.icon || "✨"}</span>
-                    {tab.title}
+                    <span>{tab.icon || "📌"}</span>
+                    <span>{tab.title}</span>
                   </button>
                   <button
+                    type="button"
                     onClick={(e) => handleDeleteTab(tab.id, e)}
-                    className="absolute -top-1.5 -left-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/tab:opacity-100 transition-all shadow border border-white cursor-pointer z-10"
-                    title="حذف تب"
+                    className=" -top-1 -left-1 absolute bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/tab:opacity-100 transition-all shadow border border-white cursor-pointer z-10"
+                    title="حذف برد یادداشت"
                   >
                     <X className="w-2.5 h-2.5" />
                   </button>
                 </div>
               ))}
+
+              <button
+                type="button"
+                onClick={() => setShowAddTabModal(true)}
+                className="px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                title="ساخت برد یادداشت چسبان جدید"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>برد یادداشت جدید</span>
+              </button>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Search Bar Component */}
         {(activeTab === "wishlist" || activeTab === "hall" || activeTab === "memories") && (
@@ -2363,7 +2143,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         {item.date && (
                           <div className="mt-4 flex items-center gap-1.5 text-xs text-violet-600 font-bold">
                             <CalendarIcon className="w-3.5 h-3.5" />
-                            <span>تاریخ برنامه‌ریزی: {item.date}</span>
+                            <span>تاریخ برنامه‌ریزی: {formatPersianDate(item.date)}</span>
                           </div>
                         )}
                       </div>
@@ -2372,7 +2152,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       <div className="mt-6 pt-4 border-t border-white/40">
                         <div className="flex items-center justify-between text-xs font-bold text-slate-600 mb-2">
                           <span>میزان پیشرفت دو نفره:</span>
-                          <span className="text-rose-600 font-mono text-sm">{item.progress}%</span>
+                          <span className="text-rose-600 font-black text-sm">{toPersianDigits(item.progress)}٪</span>
                         </div>
 
                         {/* Dynamic Progress Indicator */}
@@ -2466,7 +2246,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         </div>
                         <h3 className="text-sm font-bold text-slate-800">{cat.label} برآورده شده</h3>
                         <span className="text-xs bg-amber-500/20 text-amber-800 px-2 py-0.5 rounded-full font-bold border border-amber-500/10">
-                          {catItems.length} مورد
+                          {toPersianDigits(catItems.length)} مورد
                         </span>
                       </div>
 
@@ -2784,6 +2564,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             <ImpoPeriodTracker 
               userProfile={userProfile} 
               onSendPoke={handleSendPeriodSupportPoke}
+              onUpdateGender={(gender) => {
+                setEditGender(gender);
+                if (onUpdateUserProfile) {
+                  onUpdateUserProfile({ ...userProfile, gender });
+                }
+              }}
             />
           </div>
         )}
@@ -3411,8 +3197,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
                   {/* Zoom Control */}
                   <div className="w-full space-y-1 px-4 text-right">
-                    <label className="text-[10px] font-bold text-slate-500 flex justify-between">
-                      <span>بزرگنمایی: {Math.round(cropScale * 100)}%</span>
+                    <label className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>بزرگنمایی: {toPersianDigits(Math.round(cropScale * 100))}٪</span>
                       <span>زوم 🔍</span>
                     </label>
                     <input
@@ -3555,18 +3341,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         </button>
                       ))}
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600">یا آدرس تصویر پروفایل دلخواه (URL یا مسیر عکس)</label>
-                    <input
-                      type="text"
-                      value={editPhotoURL && !PRESET_AVATARS.includes(editPhotoURL) ? editPhotoURL : ""}
-                      onChange={(e) => setEditPhotoURL(e.target.value)}
-                      placeholder="https://toghrool.ir/uploads/avatars/my-avatar.jpg"
-                      className="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-left font-mono"
-                      dir="ltr"
-                    />
                   </div>
 
                   <button
@@ -4329,12 +4103,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
               <div className="flex justify-between items-center gap-2 mt-6 pt-4 border-t border-slate-100/60">
                 <button
-                  onClick={() => {
-                    if (window.confirm("آیا از حذف این خاطره مطمئن هستید؟")) {
-                      handleDeleteMemory(selectedMemory.id);
-                      setSelectedMemory(null);
-                    }
-                  }}
+                  onClick={() => handleDeleteMemory(selectedMemory.id)}
                   className="px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border border-red-100"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -4347,462 +4116,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   بستن
                 </button>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* --- PERIOD TRACKER: DAILY LOG MODAL --- */}
-      <AnimatePresence>
-        {showLogPeriodModal && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[90] text-right" dir="rtl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white/90 backdrop-blur-md border border-pink-100 rounded-3xl w-full max-w-lg p-6 shadow-2xl overflow-y-auto max-h-[90vh]"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-sm font-black text-slate-800 flex items-center gap-1.5">
-                  <Droplet className="w-4 h-4 text-rose-500 fill-rose-500" />
-                  ثبت وضعیت سلامت روزانه 🩸
-                </h3>
-                <button 
-                  onClick={() => setShowLogPeriodModal(false)}
-                  className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSavePeriodLog} className="space-y-4 text-right">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Log Date picker */}
-                  <div>
-                    <label className="block text-xs font-black text-slate-600 mb-1.5">تاریخ گزارش:</label>
-                    <JalaliDatePicker
-                      value={logFormDate}
-                      onChange={(dateVal) => {
-                        setLogFormDate(dateVal);
-                        // If log exists for this date, prefill
-                        const existing = periodLogs.find(l => l.date === dateVal);
-                        if (existing) {
-                          setLogFormFlow(existing.flow || "medium");
-                          setLogFormMood(existing.mood || "neutral");
-                          setLogFormSymptoms(existing.symptoms || []);
-                          setLogFormNotes(existing.notes || "");
-                          setLogFormIsPeriodStart(existing.isPeriodStart || false);
-                        } else {
-                          setLogFormFlow("medium");
-                          setLogFormMood("neutral");
-                          setLogFormSymptoms([]);
-                          setLogFormNotes("");
-                          setLogFormIsPeriodStart(false);
-                        }
-                      }}
-                      placeholder="انتخاب تاریخ گزارش..."
-                    />
-                  </div>
-
-                  {/* Period Start Toggle Switch */}
-                  <div className="flex items-center justify-between bg-rose-500/5 border border-rose-500/10 rounded-xl px-4 py-2 mt-4 sm:mt-5">
-                    <span className="text-xs font-black text-rose-700">شروع دوره جدید پریود؟</span>
-                    <label className="relative inline-flex items-center cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={logFormIsPeriodStart}
-                        onChange={(e) => setLogFormIsPeriodStart(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500" />
-                    </label>
-                  </div>
-                </div>
-
-                {/* Bleeding flow levels */}
-                <div>
-                  <label className="block text-xs font-black text-slate-600 mb-1.5">میزان خونریزی:</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { key: "none", name: "هیچ‌کدام" },
-                      { key: "light", name: "کم / سبک" },
-                      { key: "medium", name: "متوسط" },
-                      { key: "heavy", name: "زیاد / شدید" }
-                    ].map((flow) => (
-                      <button
-                        key={flow.key}
-                        type="button"
-                        onClick={() => setLogFormFlow(flow.key)}
-                        className={`py-2 px-1 text-center rounded-xl text-[10px] font-black border transition-all cursor-pointer ${
-                          logFormFlow === flow.key
-                            ? "bg-rose-500 text-white border-rose-500 shadow-sm"
-                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                        }`}
-                      >
-                        {flow.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Emotional/Mood levels */}
-                <div>
-                  <label className="block text-xs font-black text-slate-600 mb-1.5">وضعیت روحی و عاطفی:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { key: "happy", name: "خوشحال 😊" },
-                      { key: "sensitive", name: "حساس 🥺" },
-                      { key: "tired", name: "خسته 😴" },
-                      { key: "crampy", name: "کلافه 🌪️" },
-                      { key: "anxious", name: "مضطرب 😰" },
-                      { key: "neutral", name: "معمولی 😐" }
-                    ].map((mood) => (
-                      <button
-                        key={mood.key}
-                        type="button"
-                        onClick={() => setLogFormMood(mood.key)}
-                        className={`py-2 text-center rounded-xl text-[10px] font-black border transition-all cursor-pointer ${
-                          logFormMood === mood.key
-                            ? "bg-rose-500 text-white border-rose-500 shadow-sm"
-                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                        }`}
-                      >
-                        {mood.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Physical Symptoms */}
-                <div>
-                  <label className="block text-xs font-black text-slate-600 mb-1.5">نشانه‌ها و علائم بدنی (چندگزینه‌ای):</label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { key: "cramps", name: "درد شکم 💥" },
-                      { key: "headache", name: "سردرد 🤕" },
-                      { key: "bloating", name: "نفخ بدنی 🎈" },
-                      { key: "backache", name: "کمردرد 🪵" },
-                      { key: "fatigue", name: "خستگی 🥱" },
-                      { key: "tender_breasts", name: "حساسیت سینه‌ها 🍒" },
-                      { key: "insomnia", name: "بی‌خوابی 🦉" }
-                    ].map((sym) => {
-                      const isChecked = logFormSymptoms.includes(sym.key);
-                      return (
-                        <button
-                          key={sym.key}
-                          type="button"
-                          onClick={() => {
-                            if (isChecked) {
-                              setLogFormSymptoms(logFormSymptoms.filter(s => s !== sym.key));
-                            } else {
-                              setLogFormSymptoms([...logFormSymptoms, sym.key]);
-                            }
-                          }}
-                          className={`py-1.5 px-3 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
-                            isChecked
-                              ? "bg-rose-50 text-rose-700 border-rose-300 shadow-xs"
-                              : "bg-slate-50 text-slate-600 border-slate-200/80 hover:bg-slate-100"
-                          }`}
-                        >
-                          {sym.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Text Notes */}
-                <div>
-                  <label className="block text-xs font-black text-slate-600 mb-1.5">یادداشت شخصی یا احساسات:</label>
-                  <textarea
-                    value={logFormNotes}
-                    onChange={(e) => setLogFormNotes(e.target.value)}
-                    placeholder="می‌توانید بنویسید چه حسی دارید یا پارتنرتان چطور می‌تواند کمکتان کند..."
-                    className="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500 h-20 resize-none font-medium"
-                  />
-                </div>
-
-                {/* Submit action */}
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer"
-                >
-                  ذخیره و به اشتراک‌گذاری با یار 💕
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* --- PERIOD TRACKER: SETTINGS MODAL --- */}
-      <AnimatePresence>
-        {showPeriodSettingsModal && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[90] text-right" dir="rtl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white/90 backdrop-blur-md border border-slate-100 rounded-3xl w-full max-w-md p-6 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-sm font-black text-slate-800 flex items-center gap-1.5">
-                  <Settings className="w-4 h-4 text-slate-500" />
-                  تنظیمات ردیاب عادت ماهانه ⚙️
-                </h3>
-                <button 
-                  onClick={() => setShowPeriodSettingsModal(false)}
-                  className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Tab Selector inside Modal */}
-              <div className="flex border-b border-slate-100 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setSettingsModalTab("general")}
-                  className={`flex-1 pb-2 text-xs font-black transition-all border-b-2 text-center ${
-                    settingsModalTab === "general" 
-                      ? "border-rose-500 text-rose-600 font-extrabold" 
-                      : "border-transparent text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  تنظیمات مشترک (زوجین) 👥
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSettingsModalTab("advanced")}
-                  className={`flex-1 pb-2 text-xs font-black transition-all border-b-2 text-center ${
-                    settingsModalTab === "advanced" 
-                      ? "border-purple-500 text-purple-600 font-extrabold" 
-                      : "border-transparent text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  تنظیمات پیشرفته (شخصی) 🔐
-                </button>
-              </div>
-
-              {settingsModalTab === "general" ? (
-                <form onSubmit={handleSavePeriodSettings} className="space-y-4 text-right">
-                  <div>
-                    <label className="block text-xs font-black text-slate-600 mb-1.5">تاریخ شروع آخرین دوره پریود:</label>
-                    <JalaliDatePicker
-                      value={settingsFormLastPeriodStartDate}
-                      onChange={setSettingsFormLastPeriodStartDate}
-                      placeholder="انتخاب تاریخ شروع..."
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-black text-slate-600 mb-1.5">طول چرخه (روز):</label>
-                      <input
-                        type="number"
-                        min="15"
-                        max="50"
-                        required
-                        value={settingsFormCycleLength}
-                        onChange={(e) => setSettingsFormCycleLength(Number(e.target.value))}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-black text-slate-600 mb-1.5">طول خونریزی (روز):</label>
-                      <input
-                        type="number"
-                        min="2"
-                        max="15"
-                        required
-                        value={settingsFormPeriodLength}
-                        onChange={(e) => setSettingsFormPeriodLength(Number(e.target.value))}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
-                      />
-                    </div>
-                  </div>
-
-                  {personalUseAdvanced && (
-                    <p className="text-[10px] text-purple-600 font-bold bg-purple-50 p-2 rounded-xl leading-relaxed">
-                      💡 در حال حاضر تنظیمات پیشرفته و شخصی شما فعال است. تقویم از داده‌های شخصی شما استفاده می‌کند. برای استفاده از داده‌های مشترک زوجین بالا، در تب تنظیمات پیشرفته گزینه انصراف را کلیک کنید.
-                    </p>
-                  )}
-
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowPeriodSettingsModal(false)}
-                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer text-center"
-                    >
-                      لغو
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 py-2 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer text-center shadow-md shadow-rose-100"
-                    >
-                      به‌روزرسانی تنظیمات
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <form onSubmit={handleSavePersonalPeriodSettings} className="space-y-4 text-right">
-                  {/* Personal advanced settings info */}
-                  <div className="bg-purple-50/70 border border-purple-100 rounded-2xl p-3 text-[11px] text-purple-800 font-semibold leading-relaxed">
-                    با تکمیل این بخش، بازه‌های پیش‌بینی تقویم عادت ماهانه منحصراً برای حساب شما شخصی‌سازی می‌شود و اطلاعات مشترک زوجین نادیده گرفته خواهد شد. 🔐
-                  </div>
-
-                  {/* Active Toggle */}
-                  <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                    <span className="text-xs font-black text-slate-700">فعال‌سازی تنظیمات پیشرفته شخصی</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={personalUseAdvanced}
-                        onChange={(e) => setPersonalUseAdvanced(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
-                  </div>
-
-                  {/* Date picker for personal starting date */}
-                  <div>
-                    <label className="block text-xs font-black text-slate-600 mb-1">تاریخ شروع آخرین قاعدگی شما:</label>
-                    <JalaliDatePicker
-                      value={personalLastPeriodStartDate}
-                      onChange={setPersonalLastPeriodStartDate}
-                      placeholder="اگر خالی باشد از تاریخ مشترک استفاده می‌شود..."
-                    />
-                  </div>
-
-                  {/* Cycle Ranges (Min, Max, Typical) */}
-                  <div className="space-y-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                    <span className="text-[11px] font-black text-slate-500 block">بازه طول چرخه قاعدگی (روز):</span>
-                    
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-600 mb-1">حداقل:</label>
-                        <input
-                          type="number"
-                          min="15"
-                          max="45"
-                          required
-                          value={personalCycleMin}
-                          onChange={(e) => setPersonalCycleMin(Number(e.target.value))}
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-600 mb-1">متوسط (اصلی):</label>
-                        <input
-                          type="number"
-                          min="15"
-                          max="50"
-                          required
-                          value={personalCycleTypical}
-                          onChange={(e) => setPersonalCycleTypical(Number(e.target.value))}
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-600 mb-1">حداکثر:</label>
-                        <input
-                          type="number"
-                          min="20"
-                          max="55"
-                          required
-                          value={personalCycleMax}
-                          onChange={(e) => setPersonalCycleMax(Number(e.target.value))}
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Period length */}
-                    <div>
-                      <label className="block text-xs font-black text-slate-600 mb-1">متوسط مدت قاعدگی (روز):</label>
-                      <input
-                        type="number"
-                        min="2"
-                        max="15"
-                        required
-                        value={personalPeriodLength}
-                        onChange={(e) => setPersonalPeriodLength(Number(e.target.value))}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none"
-                      />
-                    </div>
-
-                    {/* Show PMS predictions */}
-                    <div>
-                      <label className="block text-xs font-black text-slate-600 mb-1">نمایش پیش‌بینی PMS:</label>
-                      <select
-                        value={personalShowPmsPredictions ? "true" : "false"}
-                        onChange={(e) => setPersonalShowPmsPredictions(e.target.value === "true")}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none"
-                      >
-                        <option value="true">بله، نشان بده</option>
-                        <option value="false">خیر، فاز لوتئال معمولی</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* PMS Notification Preferences */}
-                  <div className="bg-purple-50/40 p-3 rounded-2xl border border-purple-50 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-purple-900">اعلان پیش‌بینی شروع PMS 🔔</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={personalPmsNotificationEnabled}
-                          onChange={(e) => setPersonalPmsNotificationEnabled(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-8 h-4.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-purple-600"></div>
-                      </label>
-                    </div>
-
-                    {personalPmsNotificationEnabled && (
-                      <div className="flex items-center justify-between gap-2 mt-2">
-                        <span className="text-[11px] font-black text-slate-500">ارسال یادآور چند روز قبل از PMS؟</span>
-                        <select
-                          value={personalPmsNotificationDaysBefore}
-                          onChange={(e) => setPersonalPmsNotificationDaysBefore(Number(e.target.value))}
-                          className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none"
-                        >
-                          <option value="1">۱ روز قبل</option>
-                          <option value="2">۲ روز قبل</option>
-                          <option value="3">۳ روز قبل</option>
-                          <option value="4">۴ روز قبل</option>
-                          <option value="5">۵ روز قبل</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPersonalUseAdvanced(false);
-                        setShowPeriodSettingsModal(false);
-                        triggerAlert("تنظیمات ردیاب شما به حالت زوجین مشترک بازگشت. 👥");
-                      }}
-                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer text-center"
-                    >
-                      حالت مشترک زوجین
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer text-center shadow-md shadow-purple-100"
-                    >
-                      ذخیره تنظیمات پیشرفته
-                    </button>
-                  </div>
-                </form>
-              )}
             </motion.div>
           </div>
         )}
@@ -4871,95 +4184,68 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         )}
       </AnimatePresence>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 py-2.5 px-3 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] pb-4">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar justify-between w-full">
+      {/* Mobile Bottom Navigation Bar (5 Pillars with Persian Labels) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-200/70 py-2 px-2 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] pb-3" dir="rtl">
+        <div className="grid grid-cols-5 gap-1 w-full max-w-md mx-auto">
           <button
             onClick={() => setActiveTab("wishlist")}
-            className={`p-2.5 rounded-xl transition-all flex flex-col items-center justify-center shrink-0 ${
-              activeTab === "wishlist"
-                ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md shadow-rose-200 scale-105"
-                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            className={`py-1.5 px-1 rounded-2xl transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
+              activeTab === "wishlist" || activeTab === "hall"
+                ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md shadow-rose-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             }`}
-            title="ویش‌لیست مشترک"
           >
-            <Heart className={`w-5 h-5 ${activeTab === "wishlist" ? "fill-white text-white" : "text-slate-400"}`} />
-          </button>
-
-          <button
-            onClick={() => setActiveTab("hall")}
-            className={`p-2.5 rounded-xl transition-all flex flex-col items-center justify-center shrink-0 ${
-              activeTab === "hall"
-                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-md shadow-amber-200 scale-105"
-                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-            }`}
-            title="تالار افتخارات"
-          >
-            <Sparkles className="w-5 h-5" />
+            <Heart className={`w-4 h-4 ${activeTab === "wishlist" || activeTab === "hall" ? "fill-white text-white" : "text-rose-500"}`} />
+            <span className="text-[10px] font-black leading-none">آرزوها</span>
           </button>
 
           <button
             onClick={() => setActiveTab("calendar")}
-            className={`p-2.5 rounded-xl transition-all flex flex-col items-center justify-center shrink-0 ${
+            className={`py-1.5 px-1 rounded-2xl transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
               activeTab === "calendar"
-                ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-md shadow-violet-200 scale-105"
-                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-md shadow-violet-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             }`}
-            title="تقویم دو نفره"
           >
-            <CalendarIcon className="w-5 h-5" />
+            <CalendarIcon className={`w-4 h-4 ${activeTab === "calendar" ? "text-white" : "text-violet-500"}`} />
+            <span className="text-[10px] font-black leading-none">تقویم</span>
           </button>
 
           <button
             onClick={() => setActiveTab("memories")}
-            className={`p-2.5 rounded-xl transition-all flex flex-col items-center justify-center shrink-0 ${
-              activeTab === "memories"
-                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-200 scale-105"
-                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            className={`py-1.5 px-1 rounded-2xl transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
+              activeTab === "memories" || activeTab.startsWith("tab-")
+                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             }`}
-            title="خاطرات مشترک"
           >
-            <Camera className={`w-5 h-5 ${activeTab === "memories" ? "fill-white text-white" : "text-pink-500"}`} />
+            <Camera className={`w-4 h-4 ${activeTab === "memories" || activeTab.startsWith("tab-") ? "text-white" : "text-pink-500"}`} />
+            <span className="text-[10px] font-black leading-none">خاطرات</span>
           </button>
 
           <button
             onClick={() => setActiveTab("period")}
-            className={`p-2.5 rounded-xl transition-all flex flex-col items-center justify-center shrink-0 ${
+            className={`py-1.5 px-1 rounded-2xl transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
               activeTab === "period"
-                ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md shadow-rose-200 scale-105"
-                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md shadow-rose-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             }`}
-            title="ردیاب پریود"
           >
-            <Droplet className={`w-5 h-5 ${activeTab === "period" ? "fill-white text-white" : "text-rose-500"}`} />
+            <Droplet className={`w-4 h-4 ${activeTab === "period" ? "fill-white text-white" : "text-rose-500"}`} />
+            <span className="text-[10px] font-black leading-none">سلامت</span>
           </button>
 
           <button
             onClick={() => setActiveTab("finance")}
-            className={`p-2.5 rounded-xl transition-all flex flex-col items-center justify-center shrink-0 ${
+            className={`py-1.5 px-1 rounded-2xl transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
               activeTab === "finance"
-                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-200 scale-105"
-                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-200"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             }`}
-            title="مدیریت مالی"
           >
-            <Wallet className="w-5 h-5" />
+            <Wallet className={`w-4 h-4 ${activeTab === "finance" ? "text-white" : "text-emerald-600"}`} />
+            <span className="text-[10px] font-black leading-none">مالی</span>
           </button>
-
-          {customTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(`tab-${tab.id}`)}
-              className={`p-2.5 rounded-xl transition-all flex flex-col items-center justify-center shrink-0 ${
-                activeTab === `tab-${tab.id}`
-                  ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md shadow-teal-200 scale-105"
-                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-              }`}
-              title={tab.title}
-            >
-              <span className="text-base sm:text-lg leading-none">{tab.icon || "✨"}</span>
-            </button>
-          ))}
         </div>
       </div>
     </div>

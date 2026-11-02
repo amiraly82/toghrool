@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { fetchFromPhpApi } from "../apiClient";
 import { UserProfile, PrivateExpense, PrivateBudget } from "../types";
+import JalaliDatePicker from "./JalaliDatePicker";
+import { formatPersianDate, toPersianDigits } from "../utils/jalali";
 
 // Jalali Month and Date Formatter Helpers
 const JALALI_MONTHS = [
@@ -58,6 +60,7 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
   // Success indicator triggers
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Load user data from MySQL backend
   useEffect(() => {
@@ -102,7 +105,7 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
     e.preventDefault();
     const numAmount = parseFloat(amount.replace(/,/g, ""));
     if (isNaN(numAmount) || numAmount <= 0) {
-      alert("لطفاً مبلغ معتبری وارد کنید.");
+      setError("لطفاً مبلغ معتبری وارد کنید.");
       return;
     }
 
@@ -144,13 +147,12 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
   // Handle deleting transaction
   const handleDeleteTransaction = async (id: string) => {
-    if (!window.confirm("آیا از حذف این تراکنش مطمئن هستید؟")) return;
-
     try {
       setError(null);
       const res = await fetchFromPhpApi('deleteExpense', { id });
       if (res && res.status === 'success') {
         setExpenses(prev => prev.filter(e => e.id !== id));
+        setDeleteConfirmId(null);
         triggerSuccess("تراکنش با موفقیت حذف شد.");
       } else {
         setError(res?.message || "حذف تراکنش با خطا مواجه شد.");
@@ -310,8 +312,8 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
                     style={{ width: `${Math.min(100, (totalIncome / budget.monthlyIncomeGoal) * 100)}%` }}
                   />
                 </div>
-                <span className="text-[9px] font-black text-slate-400 shrink-0">
-                  {Math.round((totalIncome / budget.monthlyIncomeGoal) * 100)}% از هدف
+                <span className="text-[11px] font-black text-slate-500 shrink-0">
+                  {toPersianDigits(Math.round((totalIncome / budget.monthlyIncomeGoal) * 100))}٪ از هدف
                 </span>
               </div>
             ) : (
@@ -436,17 +438,12 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
             {/* Date */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 block">تاریخ تراکنش</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  required
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-pink-300 focus:ring-2 focus:ring-pink-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 text-right outline-none transition-all cursor-pointer"
-                />
-                <Calendar className="absolute left-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
-              </div>
+              <label className="text-xs font-bold text-slate-600 block">تاریخ تراکنش (شمسی)</label>
+              <JalaliDatePicker
+                value={date}
+                onChange={setDate}
+                placeholder="انتخاب تاریخ تراکنش..."
+              />
             </div>
 
             {/* Description */}
@@ -518,9 +515,9 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
                             style={{ width: `${percent}%` }}
                           />
                         </div>
-                        <div className="flex justify-between items-center text-[9px] font-black">
-                          <span className={isOverBudget ? "text-red-500 animate-pulse" : "text-slate-400"}>
-                            {isOverBudget ? "⚠️ فراتر از سقف بودجه" : `${Math.round(percent)}% مصرف شده`}
+                        <div className="flex justify-between items-center text-[11px] font-black">
+                          <span className={isOverBudget ? "text-red-500 animate-pulse" : "text-slate-500"}>
+                            {isOverBudget ? "⚠️ فراتر از سقف بودجه" : `${toPersianDigits(Math.round(percent))}٪ مصرف شده`}
                           </span>
                           {limit - spent > 0 ? (
                             <span className="text-emerald-600 font-sans">باقی‌مانده: {formatToman(limit - spent)}</span>
@@ -596,7 +593,7 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
                   </div>
 
                   {/* Micro Legends */}
-                  <div className="grid grid-cols-2 gap-2 w-full text-[9px] font-bold">
+                  <div className="grid grid-cols-2 gap-2 w-full text-[11px] font-bold">
                     {DEFAULT_CATEGORIES.map((cat, i) => {
                       const spent = expensesByCategory[cat.name] || 0;
                       if (spent === 0) return null;
@@ -604,7 +601,7 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
                       return (
                         <div key={cat.id} className="flex items-center gap-1 text-slate-600 truncate">
                           <span className={`w-2 h-2 rounded-full ${colors[i % colors.length]} shrink-0`} />
-                          <span className="truncate">{cat.name}: {Math.round((spent / totalExpense) * 100)}%</span>
+                          <span className="truncate">{cat.name}: {toPersianDigits(Math.round((spent / totalExpense) * 100))}٪</span>
                         </div>
                       );
                     })}
@@ -715,17 +712,17 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
                         {item.description || "—"}
                       </td>
                       {/* Date */}
-                      <td className="py-3.5 px-4 text-slate-500 font-sans text-[11px] font-semibold">
-                        {item.date}
+                      <td className="py-3.5 px-4 text-slate-600 font-sans text-xs font-bold">
+                        {formatPersianDate(item.date)}
                       </td>
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-center">
                         <button
-                          onClick={() => handleDeleteTransaction(item.id)}
+                          onClick={() => setDeleteConfirmId(item.id)}
                           className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-all cursor-pointer inline-flex items-center"
                           title="حذف تراکنش"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -741,6 +738,45 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
           </div>
         )}
       </div>
+
+      {/* --- DELETE CONFIRM MODAL --- */}
+      <AnimatePresence>
+        {deleteConfirmId && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white/95 border border-rose-100 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center space-y-4"
+              dir="rtl"
+            >
+              <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-black text-slate-800">حذف تراکنش مالی</h4>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                آیا از حذف این تراکنش مطمئن هستید؟ این عملیات قابل بازگشت نیست.
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                >
+                  انصراف
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteTransaction(deleteConfirmId)}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-black shadow-md shadow-rose-200 transition-all cursor-pointer"
+                >
+                  بله، حذف شود
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* --- BUDGET SETTINGS MODAL --- */}
       <AnimatePresence>

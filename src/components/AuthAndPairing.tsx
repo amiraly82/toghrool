@@ -38,65 +38,6 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
   const [pairingLoading, setPairingLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Quick Demo Login Helper
-  const handleDemoLogin = async (partnerNumber: 1 | 2) => {
-    setAuthLoading(true);
-    setError("");
-
-    try {
-      // 1. Try PHP API first (for cPanel MySQL hosting without Firebase dependency)
-      try {
-        const res = await fetchFromPhpApi('demoLogin', { partnerNumber });
-        if (res && res.status === 'success' && res.user) {
-          localStorage.setItem("custom_user_session", JSON.stringify({
-            uid: res.user.uid,
-            email: res.user.email,
-            displayName: res.user.displayName
-          }));
-          localStorage.setItem("cached_user_profile", JSON.stringify(res.user));
-          onRefreshProfile();
-          setAuthLoading(false);
-          return;
-        }
-      } catch (phpErr) {
-        console.warn("PHP API demo login skipped/failed, falling back to Local:", phpErr);
-      }
-
-      const demoEmail1 = "demo_partner1@wishlist.com";
-      const demoEmail2 = "demo_partner2@wishlist.com";
-      const uid1 = "demo_user_p1";
-      const uid2 = "demo_user_p2";
-      const coupleId = "couple_demo_user_p1_demo_user_p2";
-
-      const targetUid = partnerNumber === 1 ? uid1 : uid2;
-      const targetEmail = partnerNumber === 1 ? demoEmail1 : demoEmail2;
-      const targetName = partnerNumber === 1 ? "امیر" : "سارا";
-
-      const localProfile: UserProfile = {
-        uid: targetUid,
-        email: targetEmail,
-        displayName: targetName,
-        coupleCode: partnerNumber === 1 ? "AMIR01" : "SARA02",
-        partnerEmail: partnerNumber === 1 ? demoEmail2 : demoEmail1,
-        partnerUid: partnerNumber === 1 ? uid2 : uid1,
-        coupleId: coupleId
-      };
-
-      localStorage.setItem("custom_user_session", JSON.stringify({
-        uid: targetUid,
-        email: targetEmail,
-        displayName: targetName
-      }));
-      localStorage.setItem("cached_user_profile", JSON.stringify(localProfile));
-
-      onRefreshProfile();
-    } catch (err: any) {
-      setError("خطا در ورود دمو: " + (err.message || "لطفاً اتصال خود را بررسی کنید"));
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || (isSignUp && !name)) {
@@ -330,31 +271,6 @@ export default function AuthAndPairing({ userProfile, loading, onRefreshProfile 
                   )}
                 </button>
               </form>
-
-              <div className="relative my-6 flex items-center justify-center">
-                <div className="border-t border-white/60 w-full absolute" />
-                <span className="bg-white/40 backdrop-blur-xl px-3 text-[10px] text-slate-500 font-bold z-10 border border-white/40 rounded-full">یا ورود با اکانت تستی دو نفره</span>
-              </div>
-
-              {/* Demo Multi-user Quick Entrance buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleDemoLogin(1)}
-                  disabled={authLoading}
-                  className="py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 font-bold rounded-xl text-xs border border-rose-500/20 transition-all flex items-center justify-center gap-1 cursor-pointer backdrop-blur-md"
-                >
-                  <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 animate-heart" />
-                  پارتنر ۱ (امیر)
-                </button>
-                <button
-                  onClick={() => handleDemoLogin(2)}
-                  disabled={authLoading}
-                  className="py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 font-bold rounded-xl text-xs border border-indigo-500/20 transition-all flex items-center justify-center gap-1 cursor-pointer backdrop-blur-md"
-                >
-                  <Heart className="w-3.5 h-3.5 fill-indigo-500 text-indigo-500 animate-heart" />
-                  پارتنر ۲ (سارا)
-                </button>
-              </div>
 
               <div className="text-center mt-6">
                 <button
