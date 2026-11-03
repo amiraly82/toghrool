@@ -482,6 +482,58 @@ function ensurePhase1Schema($pdo) {
     }
 }
 
+function ensurePhase2Schema($pdo) {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `daily_answers` (
+            `id` VARCHAR(64) PRIMARY KEY,
+            `coupleId` VARCHAR(128) NOT NULL,
+            `questionId` INT NOT NULL,
+            `questionDate` VARCHAR(32) NOT NULL,
+            `user1Uid` VARCHAR(64) NOT NULL,
+            `user1Answer` TEXT DEFAULT NULL,
+            `user1AnsweredAt` BIGINT DEFAULT NULL,
+            `user2Uid` VARCHAR(64) DEFAULT NULL,
+            `user2Answer` TEXT DEFAULT NULL,
+            `user2AnsweredAt` BIGINT DEFAULT NULL,
+            `isRevealed` TINYINT(1) DEFAULT 0,
+            `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY `uniq_couple_qdate` (`coupleId`, `questionDate`),
+            INDEX `idx_couple` (`coupleId`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `love_vouchers` (
+            `id` VARCHAR(64) PRIMARY KEY,
+            `coupleId` VARCHAR(128) NOT NULL,
+            `giverUid` VARCHAR(64) NOT NULL,
+            `giverName` VARCHAR(255) NOT NULL,
+            `receiverUid` VARCHAR(64) DEFAULT NULL,
+            `title` VARCHAR(255) NOT NULL,
+            `description` TEXT DEFAULT NULL,
+            `icon` VARCHAR(64) DEFAULT 'Heart',
+            `status` VARCHAR(32) DEFAULT 'available',
+            `redeemedAt` BIGINT DEFAULT NULL,
+            `completedAt` BIGINT DEFAULT NULL,
+            `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_couple` (`coupleId`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $mColsStmt = $pdo->query("SHOW COLUMNS FROM `memories`");
+        $mCols = $mColsStmt ? $mColsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        if (!in_array('isTimeCapsule', $mCols, true)) {
+            $pdo->exec("ALTER TABLE `memories` ADD COLUMN `isTimeCapsule` TINYINT(1) DEFAULT 0");
+        }
+        if (!in_array('unlockDate', $mCols, true)) {
+            $pdo->exec("ALTER TABLE `memories` ADD COLUMN `unlockDate` VARCHAR(32) DEFAULT NULL");
+        }
+    } catch (Exception $e) {
+        error_log("Phase2 schema check notice: " . $e->getMessage());
+    }
+}
+
 function requirePeriodTarget($pdo) {
     global $input;
     ensurePeriodSchema($pdo);
@@ -1969,6 +2021,8 @@ switch ($action) {
         foreach ($memories as &$m) {
             $mId = $m['id'];
             $m['comments'] = $commentsByMem[$mId] ?? [];
+            $m['isTimeCapsule'] = (bool)($m['isTimeCapsule'] ?? 0);
+            $m['unlockDate'] = $m['unlockDate'] ?? null;
             if (!empty($m['reactions'])) {
                 $decoded = json_decode($m['reactions'], true);
                 $m['reactions'] = is_array($decoded) ? $decoded : [];
@@ -1983,6 +2037,7 @@ switch ($action) {
 
     case 'addMemory':
         ensureMemoriesSchema($pdo);
+        ensurePhase2Schema($pdo);
         $user = requireCoupleMember($pdo);
         $coupleId = $user['coupleId'];
         $mem = $input['memory'] ?? [];
@@ -1998,7 +2053,10 @@ switch ($action) {
         $reactionsJson = !empty($mem['reactions']) ? (is_string($mem['reactions']) ? $mem['reactions'] : json_encode($mem['reactions'], JSON_UNESCAPED_UNICODE)) : json_encode([]);
 
         $rawImageUrl = !empty($mem['rawImageUrl']) ? $mem['rawImageUrl'] : ($mem['imageUrl'] ?? '');
-        $stmt = $pdo->prepare("INSERT INTO memories (id, coupleId, title, date, imageUrl, rawImageUrl, content, createdBy, createdByName, reactions, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        $isTimeCapsule = !empty($mem['isTimeCapsule']) ? 1 : 0;
+        $unlockDate = !empty($mem['unlockDate']) ? trim($mem['unlockDate']) : null;
+
+        $stmt = $pdo->prepare("INSERT INTO memories (id, coupleId, title, date, imageUrl, rawImageUrl, content, isTimeCapsule, unlockDate, createdBy, createdByName, reactions, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         $stmt->execute([
             $id,
             $coupleId,
@@ -2007,6 +2065,8 @@ switch ($action) {
             $mem['imageUrl'] ?? '',
             $rawImageUrl,
             $mem['content'] ?? '',
+            $isTimeCapsule,
+            $unlockDate,
             $user['uid'],
             $user['displayName'],
             $reactionsJson
@@ -2519,6 +2579,298 @@ switch ($action) {
         $stmt = $pdo->prepare("INSERT INTO private_budgets (userId, budgets, monthlyIncomeGoal, updatedAt) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE budgets = VALUES(budgets), monthlyIncomeGoal = VALUES(monthlyIncomeGoal), updatedAt = NOW()");
         $stmt->execute([$user['uid'], $budgets, $goal]);
         echo json_encode(['status' => 'success']);
+        break;
+
+    // ----------------------------------------------------
+    // PHASE 2: DAILY INTIMACY QUESTION & BLIND REVEAL
+    // ----------------------------------------------------
+    case 'getDailyQuestion':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $myUid = $user['uid'];
+        
+        $date = trim($_GET['date'] ?? $input['date'] ?? '');
+        if (!$date) {
+            $tz = new DateTimeZone('Asia/Tehran');
+            $now = new DateTime('now', $tz);
+            $date = $now->format('Y-m-d');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM daily_answers WHERE coupleId = ? AND questionDate = ? LIMIT 1");
+        $stmt->execute([$coupleId, $date]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $myAnswer = null;
+        $myAnsweredAt = null;
+        $partnerAnswer = null;
+        $partnerAnsweredAt = null;
+        $hasPartnerAnswered = false;
+        $isRevealed = false;
+
+        if ($row) {
+            $isRevealed = (bool)$row['isRevealed'];
+            if ($row['user1Uid'] === $myUid) {
+                $myAnswer = $row['user1Answer'];
+                $myAnsweredAt = $row['user1AnsweredAt'] ? (int)$row['user1AnsweredAt'] : null;
+                $hasPartnerAnswered = !empty($row['user2Answer']);
+                $partnerAnsweredAt = $row['user2AnsweredAt'] ? (int)$row['user2AnsweredAt'] : null;
+                if ($isRevealed) {
+                    $partnerAnswer = $row['user2Answer'];
+                }
+            } else if ($row['user2Uid'] === $myUid) {
+                $myAnswer = $row['user2Answer'];
+                $myAnsweredAt = $row['user2AnsweredAt'] ? (int)$row['user2AnsweredAt'] : null;
+                $hasPartnerAnswered = !empty($row['user1Answer']);
+                $partnerAnsweredAt = $row['user1AnsweredAt'] ? (int)$row['user1AnsweredAt'] : null;
+                if ($isRevealed) {
+                    $partnerAnswer = $row['user1Answer'];
+                }
+            } else {
+                $hasPartnerAnswered = !empty($row['user1Answer']);
+                $partnerAnsweredAt = $row['user1AnsweredAt'] ? (int)$row['user1AnsweredAt'] : null;
+            }
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'date' => $date,
+            'myAnswer' => $myAnswer,
+            'myAnsweredAt' => $myAnsweredAt,
+            'hasPartnerAnswered' => $hasPartnerAnswered,
+            'partnerAnswer' => $partnerAnswer,
+            'partnerAnsweredAt' => $partnerAnsweredAt,
+            'isRevealed' => $isRevealed
+        ]);
+        break;
+
+    case 'answerDailyQuestion':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $myUid = $user['uid'];
+        $partnerUid = $user['partnerUid'] ?? '';
+        $questionId = (int)($input['questionId'] ?? 1);
+        $answer = trim($input['answer'] ?? '');
+        $now = time();
+
+        $date = trim($input['date'] ?? '');
+        if (!$date) {
+            $tz = new DateTimeZone('Asia/Tehran');
+            $dt = new DateTime('now', $tz);
+            $date = $dt->format('Y-m-d');
+        }
+
+        if (empty($answer)) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'متن پاسخ نمی‌تواند خالی باشد.']);
+            exit();
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM daily_answers WHERE coupleId = ? AND questionDate = ? LIMIT 1");
+        $stmt->execute([$coupleId, $date]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $isRevealed = false;
+        $partnerAnswer = null;
+
+        if (!$row) {
+            // First partner answering
+            $id = generateId('dans_');
+            $ins = $pdo->prepare("INSERT INTO daily_answers (id, coupleId, questionId, questionDate, user1Uid, user1Answer, user1AnsweredAt, isRevealed, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())");
+            $ins->execute([$id, $coupleId, $questionId, $date, $myUid, $answer, $now]);
+
+            if ($partnerUid) {
+                $pokeId = generateId('poke_');
+                $pStmt = $pdo->prepare("INSERT INTO pokes (id, coupleId, senderUid, senderName, recipientUid, message, itemId, itemTitle, isRead, createdAt) VALUES (?, ?, ?, ?, ?, ?, 'daily_q', 'سوال روزانه صمیمیت', 0, NOW())");
+                $pStmt->execute([
+                    $pokeId,
+                    $coupleId,
+                    $myUid,
+                    $user['displayName'],
+                    $partnerUid,
+                    "پارتنر شما به سوال صمیمیت امروز پاسخ داد! نوبت شماست که پاسخ بدید تا قفل جواب‌ها باز بشه 🎁✨"
+                ]);
+            }
+        } else {
+            if ($row['user1Uid'] === $myUid) {
+                $upd = $pdo->prepare("UPDATE daily_answers SET user1Answer = ?, user1AnsweredAt = ? WHERE id = ?");
+                $upd->execute([$answer, $now, $row['id']]);
+                $isRevealed = (bool)$row['isRevealed'];
+                if ($isRevealed) {
+                    $partnerAnswer = $row['user2Answer'];
+                }
+            } else {
+                $upd = $pdo->prepare("UPDATE daily_answers SET user2Uid = ?, user2Answer = ?, user2AnsweredAt = ?, isRevealed = 1 WHERE id = ?");
+                $upd->execute([$myUid, $answer, $now, $row['id']]);
+                $isRevealed = true;
+                $partnerAnswer = $row['user1Answer'];
+
+                if ($partnerUid) {
+                    $pokeId = generateId('poke_');
+                    $pStmt = $pdo->prepare("INSERT INTO pokes (id, coupleId, senderUid, senderName, recipientUid, message, itemId, itemTitle, isRead, createdAt) VALUES (?, ?, ?, ?, ?, ?, 'daily_q_reveal', 'پاسخ‌های صمیمیت بازگشایی شد', 0, NOW())");
+                    $pStmt->execute([
+                        $pokeId,
+                        $coupleId,
+                        $myUid,
+                        $user['displayName'],
+                        $partnerUid,
+                        "قفل پاسخ‌های سوال صمیمیت امروز بازگشایی شد! پاسخ پارتنرت رو بخون 🥰🎉"
+                    ]);
+                }
+            }
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'myAnswer' => $answer,
+            'myAnsweredAt' => $now,
+            'partnerAnswer' => $partnerAnswer,
+            'isRevealed' => $isRevealed
+        ]);
+        break;
+
+    case 'getDailyQuestionsHistory':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+
+        $stmt = $pdo->prepare("SELECT * FROM daily_answers WHERE coupleId = ? AND isRevealed = 1 ORDER BY questionDate DESC LIMIT 60");
+        $stmt->execute([$coupleId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode(['status' => 'success', 'history' => $rows]);
+        break;
+
+    // ----------------------------------------------------
+    // PHASE 2: LOVE VOUCHERS (COUPON BOOK)
+    // ----------------------------------------------------
+    case 'getLoveVouchers':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $myUid = $user['uid'];
+        $partnerUid = $user['partnerUid'] ?? '';
+
+        $stmt = $pdo->prepare("SELECT * FROM love_vouchers WHERE coupleId = ? ORDER BY createdAt DESC");
+        $stmt->execute([$coupleId]);
+        $vouchers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($vouchers)) {
+            $starterVouchers = [
+                ['title' => 'ماساژ ۳۰ دقیقه‌ای بدون چون‌وچرا 💆‍♂️', 'description' => 'شامل شانه، گردن و کمر همراه با روغن یا لوسیون دلخواه بدون توقف!', 'icon' => 'Heart'],
+                ['title' => 'حق وتوی انتخاب فیلم یا سریال امشب 🎬', 'description' => 'بدون مخالفت یا غر زدن، تا آخرین ثانیه فیلم همراهت می‌شینم.', 'icon' => 'Film'],
+                ['title' => 'انتخاب بی‌دردسر رستوران یا شام امشب 🍕', 'description' => 'جمله «هر چی تو بگی» ممنوع! هر چی هوس کردی دقیقاً همونو سفارش می‌دیم.', 'icon' => 'Pizza'],
+                ['title' => 'صبحانه اختصاصی آماده در تخت خواب ☕', 'description' => 'با چای یا قهوه دمی تازه، میوه و نان گرم قبل از اینکه بیدار شی.', 'icon' => 'Coffee'],
+                ['title' => 'آشتی فوری و معافیت از ادامه دلخوری 🕊️', 'description' => 'با خرج کردن این کوپن، بحث فوراً تموم میشه، همدیگه رو بغل می‌کنیم و می‌بخشیم.', 'icon' => 'Sparkles'],
+                ['title' => 'معافیت کامل از کارهای خونه برای امروز 🧽', 'description' => 'شستن ظرف‌ها، مرتب کردن و تمیزکاری امروز ۱۰۰٪ به عهده من!', 'icon' => 'Gift']
+            ];
+
+            foreach ($starterVouchers as $idx => $v) {
+                $vid = generateId('vouch_');
+                $iStmt = $pdo->prepare("INSERT INTO love_vouchers (id, coupleId, giverUid, giverName, receiverUid, title, description, icon, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())");
+                $iStmt->execute([
+                    $vid,
+                    $coupleId,
+                    $myUid,
+                    $user['displayName'],
+                    $partnerUid,
+                    $v['title'],
+                    $v['description'],
+                    $v['icon']
+                ]);
+            }
+
+            $stmt->execute([$coupleId]);
+            $vouchers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        echo json_encode(['status' => 'success', 'vouchers' => $vouchers]);
+        break;
+
+    case 'createLoveVoucher':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $title = trim($input['title'] ?? '');
+        $description = trim($input['description'] ?? '');
+        $icon = trim($input['icon'] ?? 'Heart');
+
+        if (empty($title)) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'عنوان کوپن الزامی است.']);
+            exit();
+        }
+
+        $id = generateId('vouch_');
+        $stmt = $pdo->prepare("INSERT INTO love_vouchers (id, coupleId, giverUid, giverName, receiverUid, title, description, icon, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW())");
+        $stmt->execute([
+            $id,
+            $coupleId,
+            $user['uid'],
+            $user['displayName'],
+            $user['partnerUid'] ?? null,
+            $title,
+            $description,
+            $icon
+        ]);
+
+        echo json_encode(['status' => 'success', 'id' => $id]);
+        break;
+
+    case 'redeemLoveVoucher':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $id = trim($input['id'] ?? '');
+        $now = time();
+
+        if (empty($id)) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'شناسه کوپن مشخص نشده است.']);
+            exit();
+        }
+
+        $vStmt = $pdo->prepare("SELECT * FROM love_vouchers WHERE id = ? AND coupleId = ?");
+        $vStmt->execute([$id, $coupleId]);
+        $vRow = $vStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$vRow) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'کوپن یافت نشد.']);
+            exit();
+        }
+
+        $stmt = $pdo->prepare("UPDATE love_vouchers SET status = 'redeemed', redeemedAt = ? WHERE id = ? AND coupleId = ?");
+        $stmt->execute([$now, $id, $coupleId]);
+
+        if (!empty($user['partnerUid'])) {
+            $pokeId = generateId('poke_');
+            $pStmt = $pdo->prepare("INSERT INTO pokes (id, coupleId, senderUid, senderName, recipientUid, message, itemId, itemTitle, isRead, createdAt) VALUES (?, ?, ?, ?, ?, ?, 'voucher_redeem', 'استفاده از کوپن عشق', 0, NOW())");
+            $pStmt->execute([
+                $pokeId,
+                $coupleId,
+                $user['uid'],
+                $user['displayName'],
+                $user['partnerUid'],
+                "پارتنر شما کوپن «" . $vRow['title'] . "» را سوزاند! وقت عمل به تعهده 😉🎟️"
+            ]);
+        }
+
+        echo json_encode(['status' => 'success', 'redeemedAt' => $now]);
+        break;
+
+    case 'completeLoveVoucher':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $id = trim($input['id'] ?? '');
+        $now = time();
+
+        $stmt = $pdo->prepare("UPDATE love_vouchers SET status = 'completed', completedAt = ? WHERE id = ? AND coupleId = ?");
+        $stmt->execute([$now, $id, $coupleId]);
+
+        echo json_encode(['status' => 'success', 'completedAt' => $now]);
         break;
 
     // ----------------------------------------------------

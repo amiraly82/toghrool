@@ -122,6 +122,8 @@ CREATE TABLE IF NOT EXISTS `memories` (
   `imageUrl` longtext DEFAULT NULL,
   `rawImageUrl` longtext DEFAULT NULL,
   `content` text NOT NULL,
+  `isTimeCapsule` tinyint(1) DEFAULT 0,
+  `unlockDate` varchar(32) DEFAULT NULL,
   `reactions` longtext DEFAULT NULL,
   `createdBy` varchar(64) NOT NULL,
   `createdByName` varchar(255) NOT NULL,
@@ -142,6 +144,41 @@ CREATE TABLE IF NOT EXISTS `memory_comments` (
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_memory` (`memoryId`),
+  KEY `idx_couple` (`coupleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: daily_answers (Phase 2 Blind Reveal)
+CREATE TABLE IF NOT EXISTS `daily_answers` (
+  `id` varchar(64) NOT NULL PRIMARY KEY,
+  `coupleId` varchar(128) NOT NULL,
+  `questionId` int(11) NOT NULL,
+  `questionDate` varchar(32) NOT NULL,
+  `user1Uid` varchar(64) NOT NULL,
+  `user1Answer` text DEFAULT NULL,
+  `user1AnsweredAt` bigint(20) DEFAULT NULL,
+  `user2Uid` varchar(64) DEFAULT NULL,
+  `user2Answer` text DEFAULT NULL,
+  `user2AnsweredAt` bigint(20) DEFAULT NULL,
+  `isRevealed` tinyint(1) DEFAULT 0,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uniq_couple_qdate` (`coupleId`, `questionDate`),
+  KEY `idx_couple` (`coupleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: love_vouchers (Phase 2 Coupon Book)
+CREATE TABLE IF NOT EXISTS `love_vouchers` (
+  `id` varchar(64) NOT NULL PRIMARY KEY,
+  `coupleId` varchar(128) NOT NULL,
+  `giverUid` varchar(64) NOT NULL,
+  `giverName` varchar(255) NOT NULL,
+  `receiverUid` varchar(64) DEFAULT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `icon` varchar(64) DEFAULT 'Heart',
+  `status` varchar(32) DEFAULT 'available',
+  `redeemedAt` bigint(20) DEFAULT NULL,
+  `completedAt` bigint(20) DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
   KEY `idx_couple` (`coupleId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

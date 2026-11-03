@@ -174,11 +174,50 @@ export interface Memory {
   imageUrl: string;
   rawImageUrl?: string;
   content: string;
+  isTimeCapsule?: boolean;
+  unlockDate?: string | null;
   createdBy: string;
   createdByName: string;
   createdAt: any;
   reactions?: MemoryReaction[];
   comments?: MemoryComment[];
+}
+
+export type DailyQuestionCategory = 'nostalgia' | 'deep' | 'fun' | 'future';
+
+export interface DailyQuestion {
+  id: number;
+  text: string;
+  category: DailyQuestionCategory;
+  categoryLabel: string;
+}
+
+export interface DailyQuestionAnswerState {
+  date: string;
+  question: DailyQuestion;
+  myAnswer: string | null;
+  myAnsweredAt?: number | null;
+  hasPartnerAnswered: boolean;
+  partnerAnswer: string | null;
+  partnerAnsweredAt?: number | null;
+  isRevealed: boolean;
+}
+
+export type LoveVoucherStatus = 'available' | 'redeemed' | 'completed';
+
+export interface LoveVoucher {
+  id: string;
+  coupleId: string;
+  giverUid: string;
+  giverName: string;
+  receiverUid?: string | null;
+  title: string;
+  description: string;
+  icon: string;
+  status: LoveVoucherStatus;
+  redeemedAt?: number | null;
+  completedAt?: number | null;
+  createdAt: any;
 }
 
 export interface PrivateExpense {

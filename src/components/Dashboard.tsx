@@ -5,7 +5,7 @@ import {
   Heart, Plus, Trash2, Calendar as CalendarIcon, BookOpen, Film, ShoppingBag, MapPin, Compass, 
   Send, ExternalLink, Flame, Sparkles, LogOut, CheckCircle, Bell, BellOff, RefreshCw, ChevronLeft, ChevronRight, 
   MessageCircleHeart, X, Edit2, User, Palette, Layers, Pizza, Coffee, Music, Smile, Camera, Gift, Settings,
-  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download, Maximize2
+  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download, Maximize2, Ticket, Lock, Unlock
 } from "lucide-react";
 
 import FinanceSection from "./FinanceSection";
@@ -14,6 +14,8 @@ import JalaliDatePicker from "./JalaliDatePicker";
 import DateRouletteModal from "./DateRouletteModal";
 import EmotionalStatusSheet from "./EmotionalStatusSheet";
 import EmpathyCoPilotCard from "./EmpathyCoPilotCard";
+import DailyQuestionCard from "./DailyQuestionCard";
+import LoveVouchersModal from "./LoveVouchersModal";
 import { getNeedStatusOption, getBatteryVisual } from "../utils/emotionalStatus";
 import { toPersianDigits } from "../utils/jalali";
 
@@ -232,9 +234,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [memoryFormDate, setMemoryFormDate] = useState("");
   const [memoryFormContent, setMemoryFormContent] = useState("");
   const [memoryFormImageUrl, setMemoryFormImageUrl] = useState("");
+  const [memoryFormIsTimeCapsule, setMemoryFormIsTimeCapsule] = useState(false);
+  const [memoryFormUnlockDate, setMemoryFormUnlockDate] = useState("");
   const [isUploadingMemoryImage, setIsUploadingMemoryImage] = useState(false);
   const [memoryCommentText, setMemoryCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [showLoveVouchersModal, setShowLoveVouchersModal] = useState(false);
 
   // Dynamic state for custom settings
   const [partnerProfile, setPartnerProfile] = useState<UserProfile | null>(null);
@@ -1607,6 +1612,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         imageUrl: processedImg || "",
         rawImageUrl: processedRawImg || processedImg || "",
         content: memoryFormContent.trim(),
+        isTimeCapsule: memoryFormIsTimeCapsule,
+        unlockDate: memoryFormIsTimeCapsule ? (memoryFormUnlockDate || null) : null,
         createdBy: userProfile.uid,
         createdByName: userProfile.displayName || "پارتنر"
       };
@@ -1634,6 +1641,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       setMemoryFormDate("");
       setMemoryFormContent("");
       setMemoryFormImageUrl("");
+      setMemoryFormIsTimeCapsule(false);
+      setMemoryFormUnlockDate("");
       setMemoryRawImageSrc(null);
       setMemoryCropImageSrc(null);
       setShowAddMemoryModal(false);
@@ -2275,6 +2284,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               </button>
               <button
                 type="button"
+                onClick={() => setShowLoveVouchersModal(true)}
+                className="px-4 sm:px-5 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap text-[#78746B] hover:text-[#1B1B1A]"
+              >
+                <Ticket className="w-3.5 h-3.5 stroke-[1.8] text-[#EC407A]" />
+                <span>کوپن‌های عشق 🎟️</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab("calendar")}
                 className={`md:hidden px-4 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === "calendar"
@@ -2380,6 +2397,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* --- TAB 1: WISHLIST --- */}
         {activeTab === "wishlist" && (
           <div dir="rtl" className="space-y-7">
+            {/* Phase 2: Daily 3-Minute Intimacy Ritual Card */}
+            <DailyQuestionCard
+              userProfile={userProfile}
+              partnerProfile={partnerProfile}
+            />
+
             {/* Editorial Pastel Pink Couple Summary Banner (Reference Assistant Card Style) */}
             <div className="bg-[#F6C3E5] rounded-[28px] p-5 sm:p-6 relative overflow-hidden">
               <svg
@@ -2406,6 +2429,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setShowLoveVouchersModal(true)}
+                    className="py-2.5 px-3.5 bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] text-xs sm:text-sm font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E5ADD2] shadow-sm"
+                    title="دفترچه کوپن‌های عاشقانه"
+                  >
+                    <span className="text-base">🎟️</span>
+                    <span className="hidden sm:inline">کوپن‌های عشق</span>
+                  </button>
                   <button
                     onClick={() => setShowDateRoulette(true)}
                     className="py-2.5 px-3.5 bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] text-xs sm:text-sm font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E5ADD2] shadow-sm"
@@ -3174,55 +3205,91 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {filteredMemories.map((memory, idx) => (
-                    <motion.div
-                      key={memory.id}
-                      initial={{ opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.04 }}
-                      onClick={() => setSelectedMemory(memory)}
-                      className="group bg-[#FFFDF8] border border-[#E8E2D4] hover:border-[#1B1B1A]/35 rounded-[26px] overflow-hidden transition-colors flex flex-col text-right relative cursor-pointer"
-                    >
-                      {/* Optional Memory Image Cover */}
-                      {memory.imageUrl && (
-                        <div className="relative h-40 overflow-hidden bg-[#EFECE2]">
-                          <img
-                            src={memory.imageUrl}
-                            alt={memory.title}
-                            referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        </div>
-                      )}
+                  {filteredMemories.map((memory, idx) => {
+                    const isCapsule = !!memory.isTimeCapsule;
+                    const todayIso = new Date().toISOString().split("T")[0];
+                    const isLocked = isCapsule && !!memory.unlockDate && memory.unlockDate > todayIso;
 
-                      <div className="p-5 flex-1 flex flex-col justify-between gap-3">
-                        <div>
-                          {/* Date and Author Tag */}
-                          <div className="flex items-center justify-between gap-2 mb-2.5">
-                            <span className="text-[10px] font-bold text-[#78746B] bg-[#EFECE2] px-2.5 py-1 rounded-full">
-                              {toPersianDigits(memory.date)}
-                            </span>
-                            <span className="text-[10px] font-bold text-[#1B1B1A] bg-[#F6C3E5] px-2.5 py-1 rounded-full">
-                              {memory.createdByName}
+                    return (
+                      <motion.div
+                        key={memory.id}
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.04 }}
+                        onClick={() => {
+                          if (isLocked) {
+                            triggerAlert(`این خاطره به عنوان یک کپسول زمان تا تاریخ ${memory.unlockDate} قفل است و محتوای آن برای هر دوی شما محفوظ و مهروموم شده است! ⏳🔒`);
+                            return;
+                          }
+                          setSelectedMemory(memory);
+                        }}
+                        className={`group bg-[#FFFDF8] border rounded-[26px] overflow-hidden transition-all flex flex-col text-right relative cursor-pointer ${
+                          isLocked ? "border-[#E5ADD2] bg-gradient-to-br from-[#FFFDF8] to-[#FFF0F7]" : "border-[#E8E2D4] hover:border-[#1B1B1A]/35"
+                        }`}
+                      >
+                        {/* Optional Memory Image Cover or Locked Capsule Banner */}
+                        {isLocked ? (
+                          <div className="relative h-36 bg-[#FAF6EC] border-b border-[#E8E2D4] flex flex-col items-center justify-center text-center p-4 overflow-hidden">
+                            <div className="w-10 h-10 rounded-full bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center mb-1.5 shadow-xs animate-pulse">
+                              <Lock className="w-5 h-5" />
+                            </div>
+                            <span className="text-xs font-black text-[#1B1B1A]">کپسول زمان قفل‌شده 🔒</span>
+                            <span className="text-[10px] text-[#78746B] mt-0.5">
+                              بازگشایی در: {memory.unlockDate ? toPersianDigits(memory.unlockDate) : "موعد مقرر"}
                             </span>
                           </div>
+                        ) : memory.imageUrl ? (
+                          <div className="relative h-40 overflow-hidden bg-[#EFECE2]">
+                            <img
+                              src={memory.imageUrl}
+                              alt={memory.title}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          </div>
+                        ) : null}
 
-                          {/* Memory Title */}
-                          <h3 className="text-sm sm:text-base font-black text-[#1B1B1A] leading-snug mb-1.5">
-                            {memory.title}
-                          </h3>
+                        <div className="p-5 flex-1 flex flex-col justify-between gap-3">
+                          <div>
+                            {/* Date and Author Tag */}
+                            <div className="flex items-center justify-between gap-2 mb-2.5">
+                              <span className="text-[10px] font-bold text-[#78746B] bg-[#EFECE2] px-2.5 py-1 rounded-full">
+                                {toPersianDigits(memory.date)}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                {isCapsule && !isLocked && (
+                                  <span className="text-[10px] font-bold text-[#15803D] bg-[#DCFCE7] px-2 py-0.5 rounded-full border border-[#BBF7D0]">
+                                    گشوده‌شده 🔓
+                                  </span>
+                                )}
+                                <span className="text-[10px] font-bold text-[#1B1B1A] bg-[#F6C3E5] px-2.5 py-1 rounded-full">
+                                  {memory.createdByName}
+                                </span>
+                              </div>
+                            </div>
 
-                          {/* Memory Content */}
-                          <p className="text-[#78746B] text-xs leading-relaxed whitespace-pre-wrap break-words font-medium line-clamp-3">
-                            {memory.content}
-                          </p>
+                            {/* Memory Title */}
+                            <h3 className="text-sm sm:text-base font-black text-[#1B1B1A] leading-snug mb-1.5">
+                              {memory.title}
+                            </h3>
 
-                          {memory.content && memory.content.length > 100 && (
-                            <span className="text-[11px] font-black text-[#1B1B1A] mt-2 inline-block underline decoration-[#F6C3E5] decoration-2 underline-offset-4">
-                              مطالعه کامل خاطره
-                            </span>
-                          )}
-                        </div>
+                            {/* Memory Content */}
+                            {isLocked ? (
+                              <p className="text-[#A6A297] text-xs font-medium italic select-none blur-[3px]">
+                                این متن تا روز بازگشایی کپسول زمان مخفی و محفوظ است و سپس نمایان خواهد شد.
+                              </p>
+                            ) : (
+                              <p className="text-[#78746B] text-xs leading-relaxed whitespace-pre-wrap break-words font-medium line-clamp-3">
+                                {memory.content}
+                              </p>
+                            )}
+
+                            {!isLocked && memory.content && memory.content.length > 100 && (
+                              <span className="text-[11px] font-black text-[#1B1B1A] mt-2 inline-block underline decoration-[#F6C3E5] decoration-2 underline-offset-4">
+                                مطالعه کامل خاطره
+                              </span>
+                            )}
+                          </div>
 
                         {/* Reactions and Comments Bar on Card */}
                         {(() => {
@@ -3309,7 +3376,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         })()}
                       </div>
                     </motion.div>
-                  ))}
+                  );
+                })}
                 </div>
               );
             })()}
@@ -4499,6 +4567,46 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   />
                 </div>
 
+                {/* Phase 2: Time Capsule Option */}
+                <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3.5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">⏳</span>
+                      <div>
+                        <span className="text-xs font-black text-[#1B1B1A] block">کپسول زمان (نامه به آینده)</span>
+                        <span className="text-[10px] text-[#78746B]">قفل کردن محتوای این خاطره تا تاریخی معین</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMemoryFormIsTimeCapsule(!memoryFormIsTimeCapsule)}
+                      className={`w-11 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 ${
+                        memoryFormIsTimeCapsule ? 'bg-[#1B1B1A]' : 'bg-[#EFECE2]'
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                          memoryFormIsTimeCapsule ? '-translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {memoryFormIsTimeCapsule && (
+                    <div className="pt-2 border-t border-[#E8E2D4] space-y-1.5">
+                      <label className="text-xs font-bold text-[#78746B] block">تاریخ بازگشایی و گشودن کپسول</label>
+                      <JalaliDatePicker
+                        value={memoryFormUnlockDate}
+                        onChange={setMemoryFormUnlockDate}
+                        placeholder="انتخاب تاریخ بازگشایی..."
+                      />
+                      <span className="text-[10px] text-[#D97706] font-medium block">
+                        🔒 تا این تاریخ، محتوای این خاطره برای هر دو نفر شما مهروموم و قفل خواهد ماند.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={isUploadingMemoryImage}
@@ -5058,6 +5166,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         onSelectWish={(wish) => {
           setActiveTab("wishlist");
         }}
+      />
+
+      {/* --- PHASE 2: LOVE VOUCHERS MODAL --- */}
+      <LoveVouchersModal
+        isOpen={showLoveVouchersModal}
+        onClose={() => setShowLoveVouchersModal(false)}
+        userProfile={userProfile}
+        partnerProfile={partnerProfile}
       />
 
       {/* --- FLOATING CHARCOAL BOTTOM DOCK WITH RAISED PASTEL PINK '+' ACTION BUTTON (EXACT REFERENCE STYLE) --- */}
