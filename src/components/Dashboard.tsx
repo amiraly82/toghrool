@@ -2082,106 +2082,83 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       </AnimatePresence>
 
       <main className="max-w-5xl mx-auto px-4 mt-6">
-        {/* --- COUPLE EMOTIONAL STATUS & MISS-YOU PING BAR (PHASE 1) --- */}
-        <div className="w-full mb-6" dir="rtl">
-          <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[24px] p-3 sm:p-3.5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-            {/* User & Partner Emotional Status Pills */}
-            <div className="flex flex-wrap items-center justify-between sm:justify-start w-full sm:w-auto gap-2.5">
-              <button
-                type="button"
-                onClick={() => setShowEmotionalStatusSheet(true)}
-                className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] border border-[#E8E2D4] transition-all cursor-pointer group text-right"
-                title="ویرایش وضعیت باتری و حال دل من"
-              >
-                <div className="relative">
-                  {renderAvatar(userProfile, "❤️", "w-7 h-7 sm:w-8 sm:h-8")}
-                  <span className="absolute -bottom-1 -left-1 text-[10px]">
-                    {getNeedStatusOption(myNeedStatus).emoji}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1.5 leading-none">
-                    <span className="text-[11px] font-bold text-[#1B1B1A]">من:</span>
-                    <span className="text-[11px] font-black text-[#1B1B1A]">
-                      {getNeedStatusOption(myNeedStatus).label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div className="w-14 sm:w-16 h-1.5 bg-[#E8E2D4] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${myBatteryLevel}%`,
-                          backgroundColor: getBatteryVisual(myBatteryLevel).color
-                        }}
-                      />
-                    </div>
-                    <span className="text-[10px] font-bold text-[#78746B]">{toPersianDigits(myBatteryLevel)}٪</span>
-                    <Edit2 className="w-2.5 h-2.5 text-[#A6A297] group-hover:text-[#1B1B1A] transition-colors mr-0.5" />
-                  </div>
-                </div>
-              </button>
+        {/* --- COUPLE INTIMACY & EMOTIONAL STATUS CAPSULE (PHASE 1 - COMPACT & EDITORIAL) --- */}
+        <div className="w-full mb-5" dir="rtl">
+          <div className="flex items-center justify-between w-full max-w-xl mx-auto bg-[#EFECE2]/90 backdrop-blur-xs border border-[#E5E0D2] rounded-full p-1.5 px-3 shadow-2xs gap-1.5 sm:gap-2 transition-all">
+            {/* User Emotional Status Pill (Interactive) */}
+            <button
+              type="button"
+              onClick={() => setShowEmotionalStatusSheet(true)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-full hover:bg-[#FAF6EC] text-[#1B1B1A] transition-colors cursor-pointer group min-w-0"
+              title="ویرایش وضعیت حال دل و باتری من"
+            >
+              <span className="text-sm shrink-0">
+                {getNeedStatusOption(myNeedStatus).emoji}
+              </span>
+              <span className="text-xs font-black truncate max-w-[85px] sm:max-w-none">
+                {getNeedStatusOption(myNeedStatus).shortLabel || getNeedStatusOption(myNeedStatus).label}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#78746B] shrink-0">
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: getBatteryVisual(myBatteryLevel).color }}
+                />
+                <span>{toPersianDigits(myBatteryLevel)}٪</span>
+              </span>
+              <Edit2 className="w-2.5 h-2.5 text-[#A6A297] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 hidden sm:inline" />
+            </button>
 
-              {/* Partner Emotional Status */}
-              {userProfile.partnerUid ? (
-                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#FAF6EC] border border-[#E8E2D4] text-right">
-                  <div className="relative">
-                    {renderAvatar(partnerProfile, "💖", "w-7 h-7 sm:w-8 sm:h-8")}
-                    <span className="absolute -bottom-1 -left-1 text-[10px]">
-                      {getNeedStatusOption(partnerProfile?.needStatus || 'calm').emoji}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1.5 leading-none">
-                      <span className="text-[11px] font-bold text-[#1B1B1A]">
-                        {partnerProfile?.displayName || 'پارتنر'}:
-                      </span>
-                      <span className="text-[11px] font-black text-[#1B1B1A]">
-                        {getNeedStatusOption(partnerProfile?.needStatus || 'calm').label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className="w-14 sm:w-16 h-1.5 bg-[#E8E2D4] rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${partnerProfile?.batteryLevel ?? 80}%`,
-                            backgroundColor: getBatteryVisual(partnerProfile?.batteryLevel ?? 80).color
-                          }}
-                        />
-                      </div>
-                      <span className="text-[10px] font-bold text-[#78746B]">
-                        {toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onOpenPairingModal}
-                  className="px-3 py-2 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] border border-dashed border-[#D5CEBC] text-[11px] font-bold text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
-                >
-                  + اتصال پارتنر
-                </button>
-              )}
-            </div>
-
-            {/* Tactile Miss-You Ping (الان به یادتم) Button */}
+            {/* Tactile Miss-You Ping Center Heart (Compact Beating Heart) */}
             <button
               type="button"
               onClick={() => handleSendLovePing()}
               disabled={isSendingLovePing}
-              className={`w-full sm:w-auto px-4 py-2 rounded-full font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 shadow-sm active:scale-95 ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-xs active:scale-85 ${
                 isSendingLovePing
                   ? 'bg-[#E5ADD2] text-[#1B1B1A] cursor-not-allowed opacity-80'
-                  : 'bg-gradient-to-r from-[#F6C3E5] to-[#F9C6B8] hover:from-[#f3b2dd] hover:to-[#f7b5a5] text-[#1B1B1A] border border-[#E5ADD2]'
+                  : 'bg-[#F6C3E5] hover:bg-[#EEB2DA] text-[#D94E4E] border border-[#E5ADD2]'
               }`}
-              title="ارسال تپش قلب و یادآوری عاشقانه آنی به پارتنر"
+              title="الان به یادتم! (ارسال تپش قلب آنی به پارتنر)"
             >
-              <Heart className={`w-4 h-4 text-[#D94E4E] fill-current ${isSendingLovePing ? 'animate-ping' : 'animate-pulse'}`} />
-              <span>{isSendingLovePing ? 'در حال ارسال عشق...' : 'الان به یادتم 💖'}</span>
+              <Heart
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D94E4E] fill-current ${
+                  isSendingLovePing ? 'animate-ping' : 'animate-pulse'
+                }`}
+              />
             </button>
+
+            {/* Partner Emotional Status Pill */}
+            {userProfile.partnerUid ? (
+              <div
+                className="flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-full text-[#1B1B1A] min-w-0"
+                title={`وضعیت ${partnerProfile?.displayName || 'پارتنر'}: ${getNeedStatusOption(partnerProfile?.needStatus || 'calm').label}`}
+              >
+                <span className="text-sm shrink-0">
+                  {getNeedStatusOption(partnerProfile?.needStatus || 'calm').emoji}
+                </span>
+                <span className="text-xs font-black truncate max-w-[85px] sm:max-w-none">
+                  {partnerProfile?.displayName ? `${partnerProfile.displayName}: ` : ''}
+                  {getNeedStatusOption(partnerProfile?.needStatus || 'calm').shortLabel || getNeedStatusOption(partnerProfile?.needStatus || 'calm').label}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#78746B] shrink-0">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{
+                      backgroundColor: getBatteryVisual(partnerProfile?.batteryLevel ?? 80).color
+                    }}
+                  />
+                  <span>{toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪</span>
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenPairingModal}
+                className="flex-1 py-1 px-2 rounded-full border border-dashed border-[#D5CEBC] text-[11px] font-bold text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#FAF6EC] transition-colors cursor-pointer text-center truncate"
+              >
+                + اتصال پارتنر
+              </button>
+            )}
           </div>
         </div>
 
