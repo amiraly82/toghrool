@@ -22,6 +22,7 @@ import {
   triggerDeviceNotification,
   triggerHardwareVibration,
   requestDeviceNotificationPermission,
+  playHeartbeatAudio,
   HEARTBEAT_VIBRATION_PATTERN
 } from "../utils/deviceNotifications";
 import { getNeedStatusOption, getBatteryVisual } from "../utils/emotionalStatus";
@@ -281,6 +282,33 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     }
   };
 
+  const [activeLovePingAlert, setActiveLovePingAlert] = useState<Poke | null>(null);
+  const [notificationBannerDismissed, setNotificationBannerDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("toghrool_notif_banner_dismissed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const getNotifiedPokeIds = (): Set<string> => {
+    try {
+      const raw = localStorage.getItem("toghrool_notified_poke_ids");
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch {
+      return new Set();
+    }
+  };
+
+  const markPokeIdNotified = (id: string) => {
+    try {
+      const set = getNotifiedPokeIds();
+      set.add(id);
+      const arr = Array.from(set).slice(-150);
+      localStorage.setItem("toghrool_notified_poke_ids", JSON.stringify(arr));
+    } catch {}
+  };
+
   // Phase 2: Auto-open Daily Intimacy Routine Modal once a day if not answered yet
   useEffect(() => {
     if (!userProfile?.coupleId && !userProfile?.uid) return;
@@ -525,30 +553,32 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             const unread = pokeRes.pokes.filter((p: Poke) => !p.read);
             setPokes(unread);
 
-            if (!hasInitializedPokes.current) {
-              unread.forEach((p: Poke) => notifiedPokeIds.current.add(p.id));
-              hasInitializedPokes.current = true;
-            } else {
-              unread.forEach((newPoke: Poke) => {
-                if (!notifiedPokeIds.current.has(newPoke.id)) {
-                  notifiedPokeIds.current.add(newPoke.id);
+            const seenSet = getNotifiedPokeIds();
 
-                  const isLovePing =
-                    newPoke.itemId === 'love_ping' ||
-                    (newPoke.itemTitle && newPoke.itemTitle.includes('به یادتم')) ||
-                    (newPoke.message && newPoke.message.includes('به یادتم'));
+            unread.forEach((newPoke: Poke) => {
+              if (!seenSet.has(newPoke.id) && !notifiedPokeIds.current.has(newPoke.id)) {
+                notifiedPokeIds.current.add(newPoke.id);
+                markPokeIdNotified(newPoke.id);
 
-                  triggerDeviceNotification({
-                    title: isLovePing
-                      ? `💖 ${newPoke.senderName || 'پارتنرت'} الان به یادته!`
-                      : `💌 پیام از ${newPoke.senderName || 'پارتنرت'}`,
-                    body: newPoke.message || 'یک پالس قلبی برات فرستاد 💕',
-                    tag: `poke_${newPoke.id}`,
-                    isLovePing
-                  });
+                const isLovePing =
+                  newPoke.itemId === 'love_ping' ||
+                  (newPoke.itemTitle && newPoke.itemTitle.includes('به یادتم')) ||
+                  (newPoke.message && newPoke.message.includes('به یادتم'));
+
+                triggerDeviceNotification({
+                  title: isLovePing
+                    ? `💖 ${newPoke.senderName || 'پارتنرت'} الان به یادته!`
+                    : `💌 پیام از ${newPoke.senderName || 'پارتنرت'}`,
+                  body: newPoke.message || 'یک پالس قلبی برات فرستاد 💕',
+                  tag: `poke_${newPoke.id}`,
+                  isLovePing
+                });
+
+                if (isLovePing) {
+                  setActiveLovePingAlert(newPoke);
                 }
-              });
-            }
+              }
+            });
           }
         } catch (e) {}
       }
@@ -2469,6 +2499,54 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Notification Permission Activation Banner */}
+        {!notificationsEnabled && !notificationBannerDismissed && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            dir="rtl"
+            className="bg-[#FFF0F7] border border-[#F8BBD0] rounded-2xl p-3 sm:p-3.5 mb-5 flex items-center justify-between gap-3 text-right shadow-2xs max-w-2xl mx-auto"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#EC407A] to-[#F6C3E5] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Bell className="w-4 h-4 stroke-[2]" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-black text-[#1B1B1A] truncate">
+                  نوتیفیکیشن موبایل و ویبره ضربان قلب را فعال کنید
+                </p>
+                <p className="text-[10px] sm:text-[11px] text-[#78746B] truncate">
+                  برای اینکه با ارسال «الان به یادتم» پارتنرتان، فوراً گوشی بلرزد و باخبر شوید
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={requestNotificationPermission}
+                className="px-3.5 py-1.5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-xs font-bold rounded-full transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+              >
+                <span>فعال‌سازی</span>
+                <Sparkles className="w-3 h-3 text-[#F6DC6B]" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNotificationBannerDismissed(true);
+                  try {
+                    localStorage.setItem("toghrool_notif_banner_dismissed", "true");
+                  } catch {}
+                }}
+                className="w-7 h-7 rounded-full text-[#78746B] hover:text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                title="بستن پیام"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           </motion.div>
         )}
@@ -5334,6 +5412,78 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   className="px-6 py-2.5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] rounded-full text-xs font-bold transition-colors cursor-pointer"
                 >
                   متوجه شدم
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- ROMANTIC HEARTBEAT LOVE PING ALERT MODAL --- */}
+      <AnimatePresence>
+        {activeLovePingAlert && (
+          <div
+            className="fixed inset-0 bg-[#1B1B1A]/60 backdrop-blur-sm flex items-center justify-center p-4 z-[99] text-center"
+            dir="rtl"
+            onClick={() => {
+              handleDismissAlert(activeLovePingAlert.id);
+              setActiveLovePingAlert(null);
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#FFFDF8] border-2 border-[#F8BBD0] rounded-[36px] w-full max-w-sm p-6 sm:p-7 shadow-2xl relative overflow-hidden text-center"
+            >
+              {/* Beating Heart Icon with Pulsing Halo */}
+              <div className="relative w-24 h-24 mx-auto mb-3 flex items-center justify-center">
+                <span className="absolute inset-0 rounded-full bg-[#EC407A]/20 animate-ping" />
+                <span className="absolute inset-2 rounded-full bg-[#F6C3E5]/40 animate-pulse" />
+                <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-tr from-[#EC407A] to-[#F6C3E5] flex items-center justify-center shadow-lg text-white">
+                  <Heart className="w-9 h-9 fill-current animate-pulse text-white" />
+                </div>
+              </div>
+
+              <span className="text-[11px] font-bold text-[#EC407A] bg-[#FFF0F7] px-3 py-1 rounded-full border border-[#F8BBD0] inline-block mb-2">
+                💓 پالس تپش قلب و یادآوری آنی
+              </span>
+
+              <h3 className="text-base sm:text-lg font-black text-[#1B1B1A] mb-2 leading-relaxed">
+                {activeLovePingAlert.senderName || "پارتنرت"} همین الان به یادته!
+              </h3>
+
+              <div className="bg-[#FAF6EC] border border-[#E8E2D4] rounded-2xl p-3.5 mb-5 text-center">
+                <p className="text-xs sm:text-sm font-semibold text-[#1B1B1A] leading-relaxed whitespace-pre-line">
+                  «{activeLovePingAlert.message}»
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = activeLovePingAlert.id;
+                    handleDismissAlert(id);
+                    setActiveLovePingAlert(null);
+                    handleSendLovePing("منم همین الان داشتم بهت فکر می‌کردم عزیزدلم! 💕");
+                  }}
+                  className="w-full py-3.5 bg-gradient-to-r from-[#1B1B1A] to-[#2F2E2C] hover:opacity-95 text-[#FAF6EC] rounded-full text-xs sm:text-sm font-black transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <Heart className="w-4 h-4 text-[#F6C3E5] fill-current" />
+                  <span>منم همین الان به یادتم! 🥰</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleDismissAlert(activeLovePingAlert.id);
+                    setActiveLovePingAlert(null);
+                  }}
+                  className="w-full py-2.5 bg-[#FAF6EC] hover:bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] rounded-full text-xs font-bold transition-colors cursor-pointer"
+                >
+                  متوجه شدم و بستن
                 </button>
               </div>
             </motion.div>
