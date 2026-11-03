@@ -1,5 +1,5 @@
 // Service Worker for Toghrool Progressive Web App (PWA)
-const CACHE_NAME = 'toghrool-cache-v1';
+const CACHE_NAME = 'toghrool-cache-v2';
 
 const STATIC_PRECACHE = [
   '/',
@@ -100,5 +100,55 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+});
+
+// Mobile System Notification Click Handler: Opens/focuses the app window
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+// Background Push Notification Event Handler (Web Push)
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  try {
+    const data = event.data.json();
+    const title = data.title || 'طغرل';
+    const isLovePing = !!data.isLovePing;
+    const vibrationPattern = isLovePing
+      ? [140, 100, 220, 350, 140, 100, 220, 350, 140, 100, 220]
+      : [120, 80, 120];
+
+    const options = {
+      body: data.body || '',
+      icon: data.icon || '/icons/icon-192.png',
+      badge: data.badge || '/icons/icon-192.png',
+      tag: data.tag || (isLovePing ? 'toghrool_love_ping' : 'toghrool_push'),
+      renotify: true,
+      vibrate: vibrationPattern,
+      data: {
+        url: data.url || '/',
+        isLovePing
+      }
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (err) {
+    console.error('Error handling push event in SW:', err);
   }
 });

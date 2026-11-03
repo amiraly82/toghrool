@@ -1075,6 +1075,12 @@ switch ($action) {
         ensurePhase1Schema($pdo);
         $user = requireAuth($pdo);
 
+        if (empty($user['coupleCode'])) {
+            $user['coupleCode'] = generateCoupleCode();
+            $upCodeStmt = $pdo->prepare("UPDATE users SET coupleCode = ? WHERE uid = ?");
+            $upCodeStmt->execute([$user['coupleCode'], $user['uid']]);
+        }
+
         // Partner data sanitized: NO partner email exposed!
         $partnerData = null;
         if (!empty($user['partnerUid'])) {

@@ -5,7 +5,8 @@ import {
   Heart, Plus, Trash2, Calendar as CalendarIcon, BookOpen, Film, ShoppingBag, MapPin, Compass, 
   Send, ExternalLink, Flame, Sparkles, LogOut, CheckCircle, Bell, BellOff, RefreshCw, ChevronLeft, ChevronRight, 
   MessageCircleHeart, X, Edit2, User, Palette, Layers, Pizza, Coffee, Music, Smile, Camera, Gift, Settings,
-  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download, Maximize2, Lock, Unlock
+  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download, Maximize2, Lock, Unlock,
+  Copy, Check, Key, Share2
 } from "lucide-react";
 
 import FinanceSection from "./FinanceSection";
@@ -17,6 +18,12 @@ import EmpathyCoPilotCard from "./EmpathyCoPilotCard";
 import DailyQuestionCard from "./DailyQuestionCard";
 import DailyQuestionModal from "./DailyQuestionModal";
 import { getTehranDateString } from "../utils/dailyQuestions";
+import {
+  triggerDeviceNotification,
+  triggerHardwareVibration,
+  requestDeviceNotificationPermission,
+  HEARTBEAT_VIBRATION_PATTERN
+} from "../utils/deviceNotifications";
 import { getNeedStatusOption, getBatteryVisual } from "../utils/emotionalStatus";
 import { toPersianDigits } from "../utils/jalali";
 
@@ -243,6 +250,36 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [showDailyQuestionModal, setShowDailyQuestionModal] = useState(false);
   const [dailyQuestionRefreshTrigger, setDailyQuestionRefreshTrigger] = useState(0);
   const hasCheckedDailyAutoPopup = useRef(false);
+  const [copiedCoupleCode, setCopiedCoupleCode] = useState(false);
+  const notifiedPokeIds = useRef<Set<string>>(new Set());
+  const hasInitializedPokes = useRef(false);
+
+  const handleCopyCoupleCode = () => {
+    if (userProfile?.coupleCode) {
+      navigator.clipboard.writeText(userProfile.coupleCode);
+      setCopiedCoupleCode(true);
+      triggerHardwareVibration([80, 50, 80]);
+      setTimeout(() => setCopiedCoupleCode(false), 2000);
+    }
+  };
+
+  const handleShareCoupleCode = async () => {
+    if (!userProfile?.coupleCode) return;
+    const shareText = `سلام عزیزم! با این کد در اپلیکیشن دونفره طغرل به من وصل شو:\nکد اتصال شما: ${userProfile.coupleCode}\nورود مستقیم: https://toghrool.ir`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: "کد اتصال در اپلیکیشن طغرل",
+          text: shareText,
+          url: "https://toghrool.ir"
+        });
+      } catch (e) {
+        handleCopyCoupleCode();
+      }
+    } else {
+      handleCopyCoupleCode();
+    }
+  };
 
   // Phase 2: Auto-open Daily Intimacy Routine Modal once a day if not answered yet
   useEffect(() => {
@@ -487,6 +524,31 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           if (isMounted && pokeRes && pokeRes.status === 'success' && Array.isArray(pokeRes.pokes)) {
             const unread = pokeRes.pokes.filter((p: Poke) => !p.read);
             setPokes(unread);
+
+            if (!hasInitializedPokes.current) {
+              unread.forEach((p: Poke) => notifiedPokeIds.current.add(p.id));
+              hasInitializedPokes.current = true;
+            } else {
+              unread.forEach((newPoke: Poke) => {
+                if (!notifiedPokeIds.current.has(newPoke.id)) {
+                  notifiedPokeIds.current.add(newPoke.id);
+
+                  const isLovePing =
+                    newPoke.itemId === 'love_ping' ||
+                    (newPoke.itemTitle && newPoke.itemTitle.includes('به یادتم')) ||
+                    (newPoke.message && newPoke.message.includes('به یادتم'));
+
+                  triggerDeviceNotification({
+                    title: isLovePing
+                      ? `💖 ${newPoke.senderName || 'پارتنرت'} الان به یادته!`
+                      : `💌 پیام از ${newPoke.senderName || 'پارتنرت'}`,
+                    body: newPoke.message || 'یک پالس قلبی برات فرستاد 💕',
+                    tag: `poke_${newPoke.id}`,
+                    isLovePing
+                  });
+                }
+              });
+            }
           }
         } catch (e) {}
       }
@@ -1142,19 +1204,20 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     });
   };
 
-  // Request browser notification permission
+  // Request browser & mobile device notification permission
   const requestNotificationPermission = async () => {
     if (!("Notification" in window)) {
-      triggerAlert("مرورگر شما از اعلان‌ها پشتیبانی نمی‌کند.");
+      triggerAlert("دستگاه یا مرورگر شما از اعلان‌های سیستمی پشتیبانی نمی‌کند.");
       return;
     }
     try {
-      const permission = await Notification.requestPermission();
-      setNotificationsEnabled(permission === "granted");
-      if (permission === "granted") {
-        triggerAlert("اعلان‌های مرورگر با موفقیت فعال شدند! 🔔");
+      const granted = await requestDeviceNotificationPermission();
+      setNotificationsEnabled(granted);
+      if (granted) {
+        triggerHardwareVibration(HEARTBEAT_VIBRATION_PATTERN);
+        triggerAlert("نوتیفیکیشن موبایل و ویبره ضربان قلب با موفقیت فعال شد! 🔔💖");
       } else {
-        triggerAlert("شما دسترسی اعلان‌ها را رد کردید یا مسدود است.");
+        triggerAlert("دسترسی نوتیفیکیشن داده نشد یا در تنظیمات مسدود است.");
       }
     } catch (err) {
       console.error("Error requesting notification permission:", err);
@@ -1502,11 +1565,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
     setIsSendingLovePing(true);
 
-    if (typeof navigator !== "undefined" && navigator.vibrate) {
-      try {
-        navigator.vibrate([100, 50, 150]);
-      } catch (e) {}
-    }
+    triggerHardwareVibration(HEARTBEAT_VIBRATION_PATTERN);
 
     confetti({
       particleCount: 50,
@@ -4095,6 +4154,125 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     )}
                   </button>
                 </form>
+              )}
+
+              {/* --- COUPLE PAIRING & INVITE CODE (Always accessible) --- */}
+              {!cropImageSrc && (
+                <div className="mt-6 pt-4 border-t border-[#E8E2D4] text-right" dir="rtl">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-black text-[#1B1B1A] flex items-center gap-1.5">
+                      <Key className="w-3.5 h-3.5 text-[#D97706]" />
+                      <span>کد اتصال دونفره شما</span>
+                    </h4>
+                    <span className="text-[10px] font-bold text-[#78746B] bg-[#FAF6EC] px-2 py-0.5 rounded-full border border-[#E8E2D4]">
+                      اختصاصی
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-[#78746B] mb-3 leading-relaxed">
+                    این کد اختصاصی شماست. پارتنر شما در صفحه ورود یا اتصال می‌تواند این کد را وارد کند تا حساب‌های شما فوراً به یکدیگر متصل شوند:
+                  </p>
+
+                  <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3 flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-base sm:text-lg font-black tracking-widest text-[#1B1B1A] select-all bg-[#FAF6EC] border border-dashed border-[#D5CEBC] px-3.5 py-1.5 rounded-xl">
+                        {userProfile.coupleCode || "---"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={handleCopyCoupleCode}
+                        className="px-3 py-2 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                        title="کپی کردن کد"
+                      >
+                        {copiedCoupleCode ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-[#10B981]" />
+                            <span>کپی شد!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>کپی کد</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleShareCoupleCode}
+                        className="p-2 bg-[#FAF6EC] hover:bg-[#EFECE2] border border-[#E8E2D4] text-[#1B1B1A] rounded-xl transition-colors cursor-pointer flex items-center justify-center active:scale-95"
+                        title="ارسال مستقیم برای پارتنر"
+                      >
+                        <Share2 className="w-4 h-4 text-[#78746B]" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* --- MOBILE NOTIFICATIONS & HEARTBEAT VIBRATION --- */}
+              {!cropImageSrc && (
+                <div className="mt-5 pt-4 border-t border-[#E8E2D4] text-right" dir="rtl">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-black text-[#1B1B1A] flex items-center gap-1.5">
+                      <Bell className="w-3.5 h-3.5 text-[#EC407A]" />
+                      <span>نوتیفیکیشن موبایل و ویبره ضربان قلب</span>
+                    </h4>
+                    <span
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        notificationsEnabled
+                          ? "bg-[#DCE6B5] text-[#1B1B1A]"
+                          : "bg-[#FEE2E2] text-[#D94E4E]"
+                      }`}
+                    >
+                      {notificationsEnabled ? "فعال" : "غیرفعال"}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-[#78746B] mb-3 leading-relaxed">
+                    با فعال بودن این بخش، هنگام دریافت «الان به یادتم» و پیام‌های عاشقانه، نوتیفیکیشن در نوار اعلانات گوشی شما همراه با لرزش طبیعی ضربان قلب پخش می‌شود.
+                  </p>
+
+                  <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3 flex items-center justify-between gap-2.5">
+                    {notificationsEnabled ? (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
+                          <span className="text-xs font-bold text-[#1B1B1A]">اعلان‌های گوشی فعال است</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            triggerHardwareVibration(HEARTBEAT_VIBRATION_PATTERN);
+                            triggerDeviceNotification({
+                              title: "💖 تست نوتیفیکیشن و ضربان قلب طغرل",
+                              body: "ویبره ضربان قلب با موفقیت تست شد!",
+                              isLovePing: true
+                            });
+                          }}
+                          className="px-3 py-1.5 bg-[#FAF6EC] hover:bg-[#EFECE2] border border-[#E8E2D4] text-[#1B1B1A] text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <span>💓 تست ضربان قلب</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[11px] text-[#78746B] font-medium">دسترسی نوتیفیکیشن هنوز تایید نشده است.</span>
+                        <button
+                          type="button"
+                          onClick={requestNotificationPermission}
+                          className="px-3.5 py-2 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs shrink-0"
+                        >
+                          <Bell className="w-3.5 h-3.5 text-[#F6DC6B]" />
+                          <span>فعال‌سازی نوتیفیکیشن</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
 
               {/* Partner Management Section */}
