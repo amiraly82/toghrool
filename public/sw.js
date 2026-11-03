@@ -1,5 +1,5 @@
 // Service Worker for Toghrool Progressive Web App (PWA)
-const CACHE_NAME = 'toghrool-cache-v2';
+const CACHE_NAME = 'toghrool-cache-v3';
 
 const STATIC_PRECACHE = [
   '/',

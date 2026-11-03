@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/webpush.php';
 
 // Helper to get JSON input
 $rawInput = file_get_contents('php://input');
@@ -2298,6 +2299,23 @@ switch ($action) {
             $message
         ]);
 
+        // Background Web Push Notification to partner's mobile device
+        if (empty($recipientUid) && !empty($coupleId)) {
+            $pStmt = $pdo->prepare("SELECT uid FROM users WHERE coupleId = ? AND uid != ? LIMIT 1");
+            $pStmt->execute([$coupleId, $user['uid']]);
+            $recipientUid = $pStmt->fetchColumn() ?: '';
+        }
+
+        if (!empty($recipientUid)) {
+            sendPushToUser($pdo, $recipientUid, [
+                'title' => 'الان به یادتم 💖',
+                'body' => $user['displayName'] . ': ' . $message,
+                'isLovePing' => true,
+                'tag' => 'toghrool_love_ping_' . time(),
+                'url' => '/'
+            ]);
+        }
+
         echo json_encode(['status' => 'success', 'id' => $id]);
         break;
 
@@ -2470,6 +2488,25 @@ switch ($action) {
             $poke['itemId'] ?? '',
             $poke['itemTitle'] ?? ''
         ]);
+
+        // Background Web Push Notification to partner's mobile device
+        if (empty($recipientUid) && !empty($coupleId)) {
+            $pStmt = $pdo->prepare("SELECT uid FROM users WHERE coupleId = ? AND uid != ? LIMIT 1");
+            $pStmt->execute([$coupleId, $user['uid']]);
+            $recipientUid = $pStmt->fetchColumn() ?: '';
+        }
+
+        if (!empty($recipientUid)) {
+            $pokeTitle = !empty($poke['itemTitle']) ? ('یادآوری: ' . $poke['itemTitle']) : ('یادآوری از طرف ' . $user['displayName']);
+            $pokeBody = !empty($poke['message']) ? $poke['message'] : ($user['displayName'] . ' یک یادآوری برای شما فرستاد.');
+            sendPushToUser($pdo, $recipientUid, [
+                'title' => $pokeTitle,
+                'body' => $pokeBody,
+                'isLovePing' => false,
+                'tag' => 'toghrool_poke_' . time(),
+                'url' => '/'
+            ]);
+        }
 
         echo json_encode(['status' => 'success', 'id' => $id]);
         break;
@@ -2733,6 +2770,58 @@ switch ($action) {
         break;
 
     // ----------------------------------------------------
+    // WEB PUSH NOTIFICATIONS (RFC 8291 / RFC 8292)
+    // ----------------------------------------------------
+    case 'getVapidPublicKey':
+        $user = requireAuth($pdo);
+        echo json_encode([
+            'status' => 'success',
+            'publicKey' => TOGHROOL_VAPID_PUBLIC_KEY
+        ]);
+        break;
+
+    case 'savePushSubscription':
+        $user = requireAuth($pdo);
+        $subscription = $input['subscription'] ?? [];
+        $endpoint = trim($subscription['endpoint'] ?? '');
+        $keys = $subscription['keys'] ?? [];
+        $p256dh = trim($keys['p256dh'] ?? '');
+        $auth = trim($keys['auth'] ?? '');
+
+        if (!$endpoint || !$p256dh || !$auth) {
+            http_response_code(400);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'اطلاعات اشتراک پوش نامعتبر است.'
+            ]);
+            exit();
+        }
+
+        $coupleId = !empty($user['coupleId']) ? $user['coupleId'] : null;
+        saveUserPushSubscription($pdo, $user['uid'], $coupleId, $endpoint, $p256dh, $auth);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'اشتراک اعلان با موفقیت ثبت شد.'
+        ]);
+        break;
+
+    case 'testPushNotification':
+        $user = requireAuth($pdo);
+        $res = sendPushToUser($pdo, $user['uid'], [
+            'title' => 'تست اعلان طغرل 🔔',
+            'body' => 'اعلان پس‌زمینه با موفقیت در این دستگاه فعال شد!',
+            'isLovePing' => true,
+            'tag' => 'toghrool_test_' . time(),
+            'url' => '/'
+        ]);
+        echo json_encode([
+            'status' => 'success',
+            'results' => $res
+        ]);
+        break;
+
+    // ----------------------------------------------------
     // DEFAULT HEALTH STATUS
     // ----------------------------------------------------
     default:
@@ -2740,7 +2829,11 @@ switch ($action) {
             'status' => 'online',
             'app' => 'Toghrool Couple App API',
             'version' => '2.1-hardened',
-            'security' => 'Bearer token authentication enabled'
+            'security' => 'Bearer token authentication enabled',
+            'php' => PHP_VERSION,
+            'openssl' => extension_loaded('openssl'),
+            'curl' => extension_loaded('curl'),
+            'ec_derive' => function_exists('openssl_pkey_derive')
         ]);
         break;
 }

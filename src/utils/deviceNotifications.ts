@@ -1,4 +1,5 @@
 // Mobile System Notifications, Web Audio Heartbeat Synthesizer & Hardware Haptics for Toghrool
+import { fetchFromPhpApi } from "../apiClient";
 
 /**
  * Authentic rhythmic human heartbeat vibration pattern in milliseconds:
@@ -173,4 +174,74 @@ export async function requestDeviceNotificationPermission(): Promise<boolean> {
     console.error("Error requesting notification permission:", err);
   }
   return false;
+}
+
+/**
+ * Converts a base64 string to a Uint8Array for PushManager subscription
+ */
+export function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+/**
+ * Registers device with browser PushManager and transmits
+ * the subscription endpoint and public keys to the server.
+ * Enables push notifications even when the app/browser is completely closed.
+ */
+export async function subscribeUserToPushNotifications(): Promise<boolean> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return false;
+  }
+
+  try {
+    // 1. Fetch VAPID Public Key from backend
+    const keyRes = await fetchFromPhpApi("getVapidPublicKey", {}, "GET");
+    if (!keyRes || !keyRes.publicKey) {
+      console.warn("Could not retrieve VAPID public key from backend");
+      return false;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    if (!registration || !registration.pushManager) {
+      return false;
+    }
+
+    // 2. Check existing subscription or subscribe new
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      const convertedKey = urlBase64ToUint8Array(keyRes.publicKey);
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedKey
+      });
+    }
+
+    if (!subscription) {
+      return false;
+    }
+
+    // 3. Persist subscription keys to the server
+    const subJson = subscription.toJSON();
+    const saveRes = await fetchFromPhpApi("savePushSubscription", {
+      subscription: {
+        endpoint: subJson.endpoint,
+        keys: {
+          p256dh: subJson.keys?.p256dh,
+          auth: subJson.keys?.auth
+        }
+      }
+    }, "POST");
+
+    return !!(saveRes && saveRes.status === "success");
+  } catch (err) {
+    console.warn("Failed to subscribe to Web Push notifications:", err);
+    return false;
+  }
 }

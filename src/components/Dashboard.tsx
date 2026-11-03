@@ -22,6 +22,7 @@ import {
   triggerDeviceNotification,
   triggerHardwareVibration,
   requestDeviceNotificationPermission,
+  subscribeUserToPushNotifications,
   playHeartbeatAudio,
   HEARTBEAT_VIBRATION_PATTERN
 } from "../utils/deviceNotifications";
@@ -510,12 +511,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   } | null>(null);
   const [periodLogs, setPeriodLogs] = useState<any[]>([]);
 
-  // Notification permission check
+  // Notification permission check and background Web Push auto-registration
   useEffect(() => {
-    if ("Notification" in window) {
-      setNotificationsEnabled(Notification.permission === "granted");
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const isGranted = Notification.permission === "granted";
+      setNotificationsEnabled(isGranted);
+      if (isGranted && userProfile?.uid) {
+        subscribeUserToPushNotifications().catch(() => {});
+      }
     }
-  }, []);
+  }, [userProfile?.uid]);
 
   // Continuous Data Synchronization with Host PHP API (MySQL)
   useEffect(() => {
@@ -1245,7 +1250,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       setNotificationsEnabled(granted);
       if (granted) {
         triggerHardwareVibration(HEARTBEAT_VIBRATION_PATTERN);
-        triggerAlert("نوتیفیکیشن موبایل و ویبره ضربان قلب با موفقیت فعال شد! 🔔💖");
+        playHeartbeatAudio();
+        await subscribeUserToPushNotifications();
+        triggerAlert("نوتیفیکیشن موبایل و ویبره ضربان قلب با موفقیت فعال شد! حتی در زمان بسته بودن برنامه، اعلان‌ها برای شما ارسال می‌شوند. 🔔💖");
       } else {
         triggerAlert("دسترسی نوتیفیکیشن داده نشد یا در تنظیمات مسدود است.");
       }
@@ -4323,13 +4330,17 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         </div>
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={async () => {
                             triggerHardwareVibration(HEARTBEAT_VIBRATION_PATTERN);
+                            playHeartbeatAudio();
                             triggerDeviceNotification({
                               title: "💖 تست نوتیفیکیشن و ضربان قلب طغرل",
                               body: "ویبره ضربان قلب با موفقیت تست شد!",
                               isLovePing: true
                             });
+                            try {
+                              await fetchFromPhpApi('testPushNotification', {}, 'POST');
+                            } catch (e) {}
                           }}
                           className="px-3 py-1.5 bg-[#FAF6EC] hover:bg-[#EFECE2] border border-[#E8E2D4] text-[#1B1B1A] text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1"
                         >

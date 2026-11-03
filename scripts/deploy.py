@@ -111,7 +111,7 @@ def main():
                 root_files[fname] = f.read()
 
     php_dir = os.path.join(base_dir, 'php-backend')
-    for php_file in ['api.php', 'config.php', 'db_credentials.php', '.htaccess', 'schema.sql', 'migration_period_sharing.sql', 'migration_security.sql']:
+    for php_file in ['api.php', 'config.php', 'db_credentials.php', 'webpush.php', '.htaccess', 'schema.sql', 'migration_period_sharing.sql', 'migration_security.sql']:
         p_path = os.path.join(php_dir, php_file)
         if os.path.exists(p_path):
             with open(p_path, 'rb') as f:
