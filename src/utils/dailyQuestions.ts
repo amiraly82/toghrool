@@ -149,6 +149,20 @@ export const DAILY_QUESTIONS_POOL: Array<{ id: number; text: string; category: D
   { id: 100, text: "یک آرزو کن که همین امشب برای دوتامون برآورده بشه...", category: "future" }
 ];
 
+export function getTehranDateString(): string {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Tehran",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    return formatter.format(new Date());
+  } catch {
+    return new Date().toISOString().split("T")[0];
+  }
+}
+
 export function getDailyQuestionForDate(dateStr: string): DailyQuestion {
   // Deterministic hash based on date string (YYYY-MM-DD)
   let hash = 0;

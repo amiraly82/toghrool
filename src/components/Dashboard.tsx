@@ -15,7 +15,9 @@ import DateRouletteModal from "./DateRouletteModal";
 import EmotionalStatusSheet from "./EmotionalStatusSheet";
 import EmpathyCoPilotCard from "./EmpathyCoPilotCard";
 import DailyQuestionCard from "./DailyQuestionCard";
+import DailyQuestionModal from "./DailyQuestionModal";
 import LoveVouchersModal from "./LoveVouchersModal";
+import { getTehranDateString } from "../utils/dailyQuestions";
 import { getNeedStatusOption, getBatteryVisual } from "../utils/emotionalStatus";
 import { toPersianDigits } from "../utils/jalali";
 
@@ -240,6 +242,34 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [memoryCommentText, setMemoryCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [showLoveVouchersModal, setShowLoveVouchersModal] = useState(false);
+  const [showDailyQuestionModal, setShowDailyQuestionModal] = useState(false);
+  const [dailyQuestionRefreshTrigger, setDailyQuestionRefreshTrigger] = useState(0);
+  const hasCheckedDailyAutoPopup = useRef(false);
+
+  // Phase 2: Auto-open Daily Intimacy Routine Modal once a day if not answered yet
+  useEffect(() => {
+    if (!userProfile?.coupleId && !userProfile?.uid) return;
+    if (hasCheckedDailyAutoPopup.current) return;
+    hasCheckedDailyAutoPopup.current = true;
+
+    const todayStr = getTehranDateString();
+    const userKey = userProfile.uid || "me";
+    const seenKey = `toghrool_daily_q_modal_${userKey}_${todayStr}`;
+    const alreadySeenToday = localStorage.getItem(seenKey);
+
+    if (alreadySeenToday) return;
+
+    fetchFromPhpApi("getDailyQuestion", { date: todayStr })
+      .then((res) => {
+        if (res && res.status === "success" && !res.myAnswer) {
+          setShowDailyQuestionModal(true);
+          localStorage.setItem(seenKey, "true");
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed checking daily question auto popup:", err);
+      });
+  }, [userProfile?.coupleId, userProfile?.uid]);
 
   // Dynamic state for custom settings
   const [partnerProfile, setPartnerProfile] = useState<UserProfile | null>(null);
@@ -2401,6 +2431,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             <DailyQuestionCard
               userProfile={userProfile}
               partnerProfile={partnerProfile}
+              onOpenModal={() => setShowDailyQuestionModal(true)}
+              refreshKey={dailyQuestionRefreshTrigger}
             />
 
             {/* Editorial Pastel Pink Couple Summary Banner (Reference Assistant Card Style) */}
@@ -5174,6 +5206,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         onClose={() => setShowLoveVouchersModal(false)}
         userProfile={userProfile}
         partnerProfile={partnerProfile}
+      />
+
+      {/* --- PHASE 2: DAILY INTIMACY ROUTINE MODAL --- */}
+      <DailyQuestionModal
+        isOpen={showDailyQuestionModal}
+        onClose={() => setShowDailyQuestionModal(false)}
+        userProfile={userProfile}
+        partnerProfile={partnerProfile}
+        onAnswerSubmitted={() => setDailyQuestionRefreshTrigger((prev) => prev + 1)}
       />
 
       {/* --- FLOATING CHARCOAL BOTTOM DOCK WITH RAISED PASTEL PINK '+' ACTION BUTTON (EXACT REFERENCE STYLE) --- */}
