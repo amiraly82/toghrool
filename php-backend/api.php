@@ -2333,9 +2333,6 @@ switch ($action) {
                 $params[] = $updates[$f];
             }
         }
-                $params[] = $updates[$f];
-            }
-        }
 
         if (isset($updates['progress'])) {
             $fields[] = "`progress` = ?";
