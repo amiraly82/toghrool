@@ -203,22 +203,6 @@ export interface DailyQuestionAnswerState {
   isRevealed: boolean;
 }
 
-export type LoveVoucherStatus = 'available' | 'redeemed' | 'completed';
-
-export interface LoveVoucher {
-  id: string;
-  coupleId: string;
-  giverUid: string;
-  giverName: string;
-  receiverUid?: string | null;
-  title: string;
-  description: string;
-  icon: string;
-  status: LoveVoucherStatus;
-  redeemedAt?: number | null;
-  completedAt?: number | null;
-  createdAt: any;
-}
 
 export interface PrivateExpense {
   id: string;

@@ -5,7 +5,7 @@ import {
   Heart, Plus, Trash2, Calendar as CalendarIcon, BookOpen, Film, ShoppingBag, MapPin, Compass, 
   Send, ExternalLink, Flame, Sparkles, LogOut, CheckCircle, Bell, BellOff, RefreshCw, ChevronLeft, ChevronRight, 
   MessageCircleHeart, X, Edit2, User, Palette, Layers, Pizza, Coffee, Music, Smile, Camera, Gift, Settings,
-  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download, Maximize2, Ticket, Lock, Unlock
+  Droplet, HeartHandshake, Search, Wallet, Smartphone, Download, Maximize2, Lock, Unlock
 } from "lucide-react";
 
 import FinanceSection from "./FinanceSection";
@@ -16,7 +16,6 @@ import EmotionalStatusSheet from "./EmotionalStatusSheet";
 import EmpathyCoPilotCard from "./EmpathyCoPilotCard";
 import DailyQuestionCard from "./DailyQuestionCard";
 import DailyQuestionModal from "./DailyQuestionModal";
-import LoveVouchersModal from "./LoveVouchersModal";
 import { getTehranDateString } from "../utils/dailyQuestions";
 import { getNeedStatusOption, getBatteryVisual } from "../utils/emotionalStatus";
 import { toPersianDigits } from "../utils/jalali";
@@ -241,7 +240,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [isUploadingMemoryImage, setIsUploadingMemoryImage] = useState(false);
   const [memoryCommentText, setMemoryCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [showLoveVouchersModal, setShowLoveVouchersModal] = useState(false);
   const [showDailyQuestionModal, setShowDailyQuestionModal] = useState(false);
   const [dailyQuestionRefreshTrigger, setDailyQuestionRefreshTrigger] = useState(0);
   const hasCheckedDailyAutoPopup = useRef(false);
@@ -2314,14 +2312,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               </button>
               <button
                 type="button"
-                onClick={() => setShowLoveVouchersModal(true)}
-                className="px-4 sm:px-5 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap text-[#78746B] hover:text-[#1B1B1A]"
-              >
-                <Ticket className="w-3.5 h-3.5 stroke-[1.8] text-[#EC407A]" />
-                <span>کوپن‌های عشق 🎟️</span>
-              </button>
-              <button
-                type="button"
                 onClick={() => setActiveTab("calendar")}
                 className={`md:hidden px-4 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === "calendar"
@@ -2461,14 +2451,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => setShowLoveVouchersModal(true)}
-                    className="py-2.5 px-3.5 bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] text-xs sm:text-sm font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E5ADD2] shadow-sm"
-                    title="دفترچه کوپن‌های عاشقانه"
-                  >
-                    <span className="text-base">🎟️</span>
-                    <span className="hidden sm:inline">کوپن‌های عشق</span>
-                  </button>
                   <button
                     onClick={() => setShowDateRoulette(true)}
                     className="py-2.5 px-3.5 bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] text-xs sm:text-sm font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E5ADD2] shadow-sm"
@@ -5198,14 +5180,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         onSelectWish={(wish) => {
           setActiveTab("wishlist");
         }}
-      />
-
-      {/* --- PHASE 2: LOVE VOUCHERS MODAL --- */}
-      <LoveVouchersModal
-        isOpen={showLoveVouchersModal}
-        onClose={() => setShowLoveVouchersModal(false)}
-        userProfile={userProfile}
-        partnerProfile={partnerProfile}
       />
 
       {/* --- PHASE 2: DAILY INTIMACY ROUTINE MODAL --- */}
