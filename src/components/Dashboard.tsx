@@ -11,6 +11,10 @@ import {
 import FinanceSection from "./FinanceSection";
 import ImpoPeriodTracker from "./ImpoPeriodTracker";
 import JalaliDatePicker from "./JalaliDatePicker";
+import DateRouletteModal from "./DateRouletteModal";
+import EmotionalStatusSheet from "./EmotionalStatusSheet";
+import EmpathyCoPilotCard from "./EmpathyCoPilotCard";
+import { getNeedStatusOption, getBatteryVisual } from "../utils/emotionalStatus";
 import { toPersianDigits } from "../utils/jalali";
 
 // @ts-ignore
@@ -117,7 +121,7 @@ const FLOW_LABELS: Record<string, string> = {
   heavy: "زیاد / شدید 🔥",
 };
 import { auth } from "../firebase";
-import { WishlistItem, UserProfile, LinkPreview, Poke, Memory, MemoryComment, MemoryReaction, ImpoPeriodSettings } from "../types";
+import { WishlistItem, UserProfile, LinkPreview, Poke, Memory, MemoryComment, MemoryReaction, ImpoPeriodSettings, WishlistBudget } from "../types";
 import { calculateCycleStatus } from "../utils/impoCycleEngine";
 import { fetchFromPhpApi, clearAuthSession } from "../apiClient";
 
@@ -327,6 +331,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<string>("place");
+  const [newBudget, setNewBudget] = useState<WishlistBudget>("medium");
   const [newDesc, setNewDesc] = useState("");
   const [newLink, setNewLink] = useState("");
   const [newDate, setNewDate] = useState("");
@@ -338,11 +343,20 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [editingWish, setEditingWish] = useState<WishlistItem | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editCategory, setEditCategory] = useState<string>("place");
+  const [editBudget, setEditBudget] = useState<WishlistBudget>("medium");
   const [editDesc, setEditDesc] = useState("");
   const [editLink, setEditLink] = useState("");
   const [editDate, setEditDate] = useState("");
   const [fetchingEditPreview, setFetchingEditPreview] = useState(false);
   const [editPreviewData, setEditPreviewData] = useState<LinkPreview | null>(null);
+
+  // Phase 1: Emotional Status & Date Roulette States
+  const [myBatteryLevel, setMyBatteryLevel] = useState<number>(userProfile.batteryLevel ?? 80);
+  const [myNeedStatus, setMyNeedStatus] = useState<string>(userProfile.needStatus ?? "calm");
+  const [showEmotionalStatusSheet, setShowEmotionalStatusSheet] = useState(false);
+  const [isSendingLovePing, setIsSendingLovePing] = useState(false);
+  const [showDateRoulette, setShowDateRoulette] = useState(false);
+  const [budgetFilter, setBudgetFilter] = useState<'all' | 'economy' | 'medium' | 'luxury'>('all');
 
   // Notifications
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -485,19 +499,33 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             uid: userProfile.uid,
             partnerUid: userProfile.partnerUid || ''
           });
-          if (isMounted && hbRes && hbRes.status === 'success' && hbRes.partner) {
-            setPartnerProfile(prev => ({
-              uid: hbRes.partner.uid,
-              email: prev?.email || '',
-              displayName: hbRes.partner.displayName || prev?.displayName || 'پارتنر',
-              coupleCode: prev?.coupleCode || '',
-              partnerEmail: userProfile.email,
-              partnerUid: userProfile.uid,
-              coupleId: userProfile.coupleId,
-              photoURL: hbRes.partner.photoURL,
-              isOnline: !!hbRes.partner.isOnline,
-              lastActiveAt: hbRes.partner.lastActiveAt
-            }));
+          if (isMounted && hbRes && hbRes.status === 'success') {
+            if (hbRes.partner) {
+              setPartnerProfile(prev => ({
+                uid: hbRes.partner.uid,
+                email: prev?.email || '',
+                displayName: hbRes.partner.displayName || prev?.displayName || 'پارتنر',
+                coupleCode: prev?.coupleCode || '',
+                partnerEmail: userProfile.email,
+                partnerUid: userProfile.uid,
+                coupleId: userProfile.coupleId,
+                photoURL: hbRes.partner.photoURL,
+                isOnline: !!hbRes.partner.isOnline,
+                lastActiveAt: hbRes.partner.lastActiveAt,
+                gender: hbRes.partner.gender,
+                batteryLevel: hbRes.partner.batteryLevel,
+                needStatus: hbRes.partner.needStatus,
+                needUpdatedAt: hbRes.partner.needUpdatedAt
+              }));
+            }
+            if (hbRes.user) {
+              if (typeof hbRes.user.batteryLevel === 'number') {
+                setMyBatteryLevel(hbRes.user.batteryLevel);
+              }
+              if (hbRes.user.needStatus) {
+                setMyNeedStatus(hbRes.user.needStatus);
+              }
+            }
           }
         } catch (e) {}
       }
@@ -1170,6 +1198,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         coupleId: userProfile.coupleId,
         title: newTitle,
         category: newCategory,
+        budget: newBudget,
         description: newDesc,
         link: newLink,
         linkPreview: previewData,
@@ -1193,6 +1222,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       // Reset form
       setNewTitle("");
       setNewCategory("place");
+      setNewBudget("medium");
       setNewDesc("");
       setNewLink("");
       setNewDate("");
@@ -1312,6 +1342,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     setEditingWish(item);
     setEditTitle(item.title);
     setEditCategory(item.category);
+    setEditBudget(item.budget || "medium");
     setEditDesc(item.description || "");
     setEditLink(item.link || "");
     setEditDate(item.date || "");
@@ -1326,6 +1357,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     const updates = {
       title: editTitle,
       category: editCategory,
+      budget: editBudget,
       description: editDesc,
       link: editLink,
       linkPreview: editPreviewData,
@@ -1400,6 +1432,71 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     } catch (e) {}
 
     triggerAlert("پیام همراهی و همدلی برای شریک زندگی شما ارسال شد! 💕");
+  };
+
+  const handleSaveEmotionalStatus = async (battery: number, need: string) => {
+    setMyBatteryLevel(battery);
+    setMyNeedStatus(need);
+    try {
+      await fetchFromPhpApi('updateEmotionalStatus', {
+        batteryLevel: battery,
+        needStatus: need
+      });
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile({
+          ...userProfile,
+          batteryLevel: battery,
+          needStatus: need
+        });
+      }
+      confetti({
+        particleCount: 25,
+        spread: 50,
+        origin: { y: 0.8 },
+        colors: ["#F6C3E5", "#A7B86C", "#F6DC6B"]
+      });
+    } catch (e) {
+      console.error("Failed to update emotional status", e);
+    }
+  };
+
+  const handleSendLovePing = async (customMsg?: string) => {
+    if (!userProfile.coupleId || !userProfile.partnerUid) {
+      triggerAlert("برای فرستادن یادآوری عاشقانه، ابتدا باید پارتنرتان را متصل کنید.");
+      return;
+    }
+    if (isSendingLovePing) return;
+
+    setIsSendingLovePing(true);
+
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      try {
+        navigator.vibrate([100, 50, 150]);
+      } catch (e) {}
+    }
+
+    confetti({
+      particleCount: 50,
+      spread: 70,
+      origin: { y: 0.7 },
+      colors: ["#F6C3E5", "#FF8DA1", "#FAF6EC", "#FF6B8B"]
+    });
+
+    const msg = customMsg || "الان به یادتم بود دلم برات پر کشید! 💖✨";
+
+    try {
+      await fetchFromPhpApi('sendLovePing', {
+        message: msg
+      });
+      setShowNotificationAlert("یادآوری عاشقانه با عشق برای پارتنرت ارسال شد! 💕");
+    } catch (e) {
+      console.error(e);
+      setShowNotificationAlert("ارسال با خطا مواجه شد.");
+    } finally {
+      setTimeout(() => {
+        setIsSendingLovePing(false);
+      }, 1000);
+    }
   };
 
   const handleDismissAlert = async (pokeId: string) => {
@@ -1690,7 +1787,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     const matchesSearch = !searchQuery.trim() || 
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
       (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return !item.isCompleted && matchesCategory && matchesSearch;
+    const matchesBudget = budgetFilter === "all" || (item.budget || "medium") === budgetFilter;
+    return !item.isCompleted && matchesCategory && matchesSearch && matchesBudget;
   });
 
   const hallOfFameItems = items.filter(item => {
@@ -1726,6 +1824,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       return null;
     }
   };
+
+  const currentPartnerCycleStatus = React.useMemo(() => {
+    if (!impoSettings && !periodSettings) return null;
+    try {
+      const today = getTehranDate();
+      return getMenstrualPhaseForDate(today);
+    } catch {
+      return null;
+    }
+  }, [impoSettings, periodSettings]);
 
   const currentActualToday = getTehranDate();
   const [actualTodayJy, actualTodayJm] = gregorianToJalali(
@@ -1901,41 +2009,198 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       <AnimatePresence>
         {pokes.length > 0 && (
           <div className="fixed top-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50" dir="rtl">
-            {pokes.map((poke) => (
-              <motion.div
-                key={poke.id}
-                initial={{ opacity: 0, y: -16, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.94 }}
-                className="bg-[#F6C3E5] text-[#1B1B1A] rounded-[26px] p-4 mb-3 border border-[#E5ADD2] flex items-start gap-3 relative overflow-hidden"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-24 h-24 absolute -bottom-6 -left-3 text-[#E5ADD2] fill-current -rotate-12 pointer-events-none select-none"
+            {pokes.map((poke) => {
+              const isLovePing = poke.itemId === 'love_ping';
+              return (
+                <motion.div
+                  key={poke.id}
+                  initial={{ opacity: 0, y: -16, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.94 }}
+                  className={`rounded-[26px] p-4 mb-3 border shadow-lg flex items-start gap-3 relative overflow-hidden ${
+                    isLovePing
+                      ? 'bg-gradient-to-r from-[#F6C3E5] to-[#F9C6B8] border-[#E5ADD2] text-[#1B1B1A]'
+                      : 'bg-[#F6C3E5] text-[#1B1B1A] border-[#E5ADD2]'
+                  }`}
                 >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-                <div className="w-10 h-10 rounded-full bg-[#FFFDF8] flex items-center justify-center shrink-0 relative z-10">
-                  <MessageCircleHeart className="w-5 h-5 text-[#1B1B1A] stroke-[1.7]" />
-                </div>
-                <div className="flex-1 relative z-10">
-                  <h4 className="text-[11px] font-bold text-[#1B1B1A]/70">یادآوری عاشقانه از پارتنر</h4>
-                  <p className="text-sm font-black mt-0.5 leading-snug">{poke.message}</p>
-                  <p className="text-[11px] text-[#1B1B1A]/75 mt-1 font-medium">مربوط به: {poke.itemTitle}</p>
-                </div>
-                <button
-                  onClick={() => handleDismissAlert(poke.id)}
-                  className="px-3.5 py-1.5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] rounded-full text-[11px] font-bold cursor-pointer shrink-0 relative z-10 transition-colors"
-                >
-                  فهمیدم
-                </button>
-              </motion.div>
-            ))}
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-24 h-24 absolute -bottom-6 -left-3 text-[#E5ADD2]/60 fill-current -rotate-12 pointer-events-none select-none"
+                  >
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                  <div className="w-10 h-10 rounded-full bg-[#FFFDF8] flex items-center justify-center shrink-0 relative z-10 shadow-sm">
+                    {isLovePing ? (
+                      <Heart className="w-5 h-5 text-[#D94E4E] fill-current animate-pulse" />
+                    ) : (
+                      <MessageCircleHeart className="w-5 h-5 text-[#1B1B1A] stroke-[1.7]" />
+                    )}
+                  </div>
+                  <div className="flex-1 relative z-10">
+                    <h4 className="text-[11px] font-bold text-[#1B1B1A]/70">
+                      {isLovePing ? "تپش قلب و یادآوری آنی پارتنر" : "یادآوری عاشقانه از پارتنر"}
+                    </h4>
+                    <p className="text-sm font-black mt-0.5 leading-snug">{poke.message}</p>
+                    {!isLovePing && (
+                      <p className="text-[11px] text-[#1B1B1A]/75 mt-1 font-medium">مربوط به: {poke.itemTitle}</p>
+                    )}
+                    {isLovePing && (
+                      <div className="flex items-center gap-2 mt-2.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleDismissAlert(poke.id);
+                            handleSendLovePing("منم همین الان داشتم بهت فکر می‌کردم عزیزدلم! 💕");
+                          }}
+                          className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] rounded-full text-[11px] font-black cursor-pointer transition-colors shadow-sm"
+                        >
+                          منم به یادتم! 🥰
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDismissAlert(poke.id)}
+                          className="px-3 py-1 bg-white/60 hover:bg-white text-[#1B1B1A] rounded-full text-[11px] font-bold cursor-pointer transition-colors"
+                        >
+                          بستن
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {!isLovePing && (
+                    <button
+                      onClick={() => handleDismissAlert(poke.id)}
+                      className="px-3.5 py-1.5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] rounded-full text-[11px] font-bold cursor-pointer shrink-0 relative z-10 transition-colors"
+                    >
+                      فهمیدم
+                    </button>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </AnimatePresence>
 
       <main className="max-w-5xl mx-auto px-4 mt-6">
+        {/* --- COUPLE EMOTIONAL STATUS & MISS-YOU PING BAR (PHASE 1) --- */}
+        <div className="w-full mb-6" dir="rtl">
+          <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[24px] p-3 sm:p-3.5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* User & Partner Emotional Status Pills */}
+            <div className="flex flex-wrap items-center justify-between sm:justify-start w-full sm:w-auto gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowEmotionalStatusSheet(true)}
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] border border-[#E8E2D4] transition-all cursor-pointer group text-right"
+                title="ویرایش وضعیت باتری و حال دل من"
+              >
+                <div className="relative">
+                  {renderAvatar(userProfile, "❤️", "w-7 h-7 sm:w-8 sm:h-8")}
+                  <span className="absolute -bottom-1 -left-1 text-[10px]">
+                    {getNeedStatusOption(myNeedStatus).emoji}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-1.5 leading-none">
+                    <span className="text-[11px] font-bold text-[#1B1B1A]">من:</span>
+                    <span className="text-[11px] font-black text-[#1B1B1A]">
+                      {getNeedStatusOption(myNeedStatus).label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="w-14 sm:w-16 h-1.5 bg-[#E8E2D4] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${myBatteryLevel}%`,
+                          backgroundColor: getBatteryVisual(myBatteryLevel).color
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-[#78746B]">{toPersianDigits(myBatteryLevel)}٪</span>
+                    <Edit2 className="w-2.5 h-2.5 text-[#A6A297] group-hover:text-[#1B1B1A] transition-colors mr-0.5" />
+                  </div>
+                </div>
+              </button>
+
+              {/* Partner Emotional Status */}
+              {userProfile.partnerUid ? (
+                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[#FAF6EC] border border-[#E8E2D4] text-right">
+                  <div className="relative">
+                    {renderAvatar(partnerProfile, "💖", "w-7 h-7 sm:w-8 sm:h-8")}
+                    <span className="absolute -bottom-1 -left-1 text-[10px]">
+                      {getNeedStatusOption(partnerProfile?.needStatus || 'calm').emoji}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1.5 leading-none">
+                      <span className="text-[11px] font-bold text-[#1B1B1A]">
+                        {partnerProfile?.displayName || 'پارتنر'}:
+                      </span>
+                      <span className="text-[11px] font-black text-[#1B1B1A]">
+                        {getNeedStatusOption(partnerProfile?.needStatus || 'calm').label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="w-14 sm:w-16 h-1.5 bg-[#E8E2D4] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${partnerProfile?.batteryLevel ?? 80}%`,
+                            backgroundColor: getBatteryVisual(partnerProfile?.batteryLevel ?? 80).color
+                          }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-[#78746B]">
+                        {toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenPairingModal}
+                  className="px-3 py-2 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] border border-dashed border-[#D5CEBC] text-[11px] font-bold text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
+                >
+                  + اتصال پارتنر
+                </button>
+              )}
+            </div>
+
+            {/* Tactile Miss-You Ping (الان به یادتم) Button */}
+            <button
+              type="button"
+              onClick={() => handleSendLovePing()}
+              disabled={isSendingLovePing}
+              className={`w-full sm:w-auto px-4 py-2 rounded-full font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 shadow-sm active:scale-95 ${
+                isSendingLovePing
+                  ? 'bg-[#E5ADD2] text-[#1B1B1A] cursor-not-allowed opacity-80'
+                  : 'bg-gradient-to-r from-[#F6C3E5] to-[#F9C6B8] hover:from-[#f3b2dd] hover:to-[#f7b5a5] text-[#1B1B1A] border border-[#E5ADD2]'
+              }`}
+              title="ارسال تپش قلب و یادآوری عاشقانه آنی به پارتنر"
+            >
+              <Heart className={`w-4 h-4 text-[#D94E4E] fill-current ${isSendingLovePing ? 'animate-ping' : 'animate-pulse'}`} />
+              <span>{isSendingLovePing ? 'در حال ارسال عشق...' : 'الان به یادتم 💖'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* --- EMPATHY CO-PILOT CARD (FOR PMS / PERIOD CARE) --- */}
+        {currentPartnerCycleStatus && (currentPartnerCycleStatus.phase === 'pms' || currentPartnerCycleStatus.phase === 'period') && (userProfile.gender === 'male' || partnerProfile?.gender === 'female') && (
+          <div className="mb-6">
+            <EmpathyCoPilotCard
+              partnerName={partnerProfile?.displayName || 'پارتنر شما'}
+              phase={currentPartnerCycleStatus.phase}
+              phaseTitle={currentPartnerCycleStatus.phase === 'pms' ? 'دوره سندرم پیش از قاعدگی (PMS)' : 'دوره قاعدگی'}
+              partnerWishlistItems={items.filter(i => !i.isCompleted)}
+              onViewWishlist={() => {
+                setActiveTab("wishlist");
+                window.scrollTo({ top: 300, behavior: 'smooth' });
+              }}
+            />
+          </div>
+        )}
+
         {/* Desktop Navigation Bar (5 Pillars — Editorial Pill Track) */}
         <div className="hidden md:block w-full mb-8" dir="rtl">
           <div className="flex items-center justify-center w-full">
@@ -2165,6 +2430,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
+                    onClick={() => setShowDateRoulette(true)}
+                    className="py-2.5 px-3.5 bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] text-xs sm:text-sm font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E5ADD2] shadow-sm"
+                    title="گردونه شانس دیت دونفره"
+                  >
+                    <span className="text-base">🎰</span>
+                    <span className="hidden sm:inline">گردونه دیت</span>
+                  </button>
+                  <button
                     onClick={() => setShowAddModal(true)}
                     className="py-2.5 px-5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-xs sm:text-sm font-bold rounded-full flex items-center gap-2 transition-colors cursor-pointer"
                   >
@@ -2240,6 +2513,54 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   );
                 })}
               </div>
+
+              {/* Budget Filter Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
+                <span className="text-[11px] font-bold text-[#78746B] ml-1 shrink-0">بودجه:</span>
+                <button
+                  onClick={() => setBudgetFilter('all')}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 ${
+                    budgetFilter === 'all'
+                      ? 'bg-[#1B1B1A] text-[#FAF6EC]'
+                      : 'bg-[#EFECE2] text-[#78746B] hover:bg-[#E5E0D2]'
+                  }`}
+                >
+                  همه بودجه‌ها
+                </button>
+                <button
+                  onClick={() => setBudgetFilter('economy')}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1 ${
+                    budgetFilter === 'economy'
+                      ? 'bg-[#A7B86C] text-[#1B1B1A]'
+                      : 'bg-[#EFECE2] text-[#78746B] hover:bg-[#E5E0D2]'
+                  }`}
+                >
+                  <span>🟢</span>
+                  <span>اقتصادی</span>
+                </button>
+                <button
+                  onClick={() => setBudgetFilter('medium')}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1 ${
+                    budgetFilter === 'medium'
+                      ? 'bg-[#F6DC6B] text-[#1B1B1A]'
+                      : 'bg-[#EFECE2] text-[#78746B] hover:bg-[#E5E0D2]'
+                  }`}
+                >
+                  <span>🟡</span>
+                  <span>میان‌رده</span>
+                </button>
+                <button
+                  onClick={() => setBudgetFilter('luxury')}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1 ${
+                    budgetFilter === 'luxury'
+                      ? 'bg-[#E2C9F4] text-[#1B1B1A]'
+                      : 'bg-[#EFECE2] text-[#78746B] hover:bg-[#E5E0D2]'
+                  }`}
+                >
+                  <span>🟣</span>
+                  <span>لاکچری</span>
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -2291,9 +2612,22 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                               )}
                             </div>
                             <div>
-                              <span className="text-[11px] font-bold text-[#78746B] block">
-                                {catConfig.label}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-bold text-[#78746B] block">
+                                  {catConfig.label}
+                                </span>
+                                {item.budget && (
+                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                                    item.budget === 'economy'
+                                      ? 'bg-[#DCE6B5] text-[#2D5A27]'
+                                      : item.budget === 'luxury'
+                                      ? 'bg-[#E2C9F4] text-[#4A154B]'
+                                      : 'bg-[#F6DC6B] text-[#5C4813]'
+                                  }`}>
+                                    {item.budget === 'economy' ? '🟢 اقتصادی' : item.budget === 'luxury' ? '🟣 لاکچری' : '🟡 میان‌رده'}
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-[10px] text-[#9E9A8F] font-medium">
                                 ثبت توسط {item.createdByName}
                               </span>
@@ -3182,6 +3516,48 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 </div>
 
                 <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#78746B] block">سطح بودجه / برآورد هزینه</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewBudget('economy')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        newBudget === 'economy'
+                          ? 'bg-[#A7B86C] text-[#1B1B1A] border-[#94A659] shadow-sm'
+                          : 'bg-[#EFECE2] text-[#78746B] border-transparent hover:bg-[#E5E0D2]'
+                      }`}
+                    >
+                      <span>🟢</span>
+                      <span>اقتصادی</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewBudget('medium')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        newBudget === 'medium'
+                          ? 'bg-[#F6DC6B] text-[#1B1B1A] border-[#E5C954] shadow-sm'
+                          : 'bg-[#EFECE2] text-[#78746B] border-transparent hover:bg-[#E5E0D2]'
+                      }`}
+                    >
+                      <span>🟡</span>
+                      <span>میان‌رده</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewBudget('luxury')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        newBudget === 'luxury'
+                          ? 'bg-[#E2C9F4] text-[#1B1B1A] border-[#CEB0E4] shadow-sm'
+                          : 'bg-[#EFECE2] text-[#78746B] border-transparent hover:bg-[#E5E0D2]'
+                      }`}
+                    >
+                      <span>🟣</span>
+                      <span>لاکچری</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#78746B] block">توضیحات (اختیاری)</label>
                   <textarea
                     value={newDesc}
@@ -3301,6 +3677,48 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#78746B] block">سطح بودجه / برآورد هزینه</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditBudget('economy')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        editBudget === 'economy'
+                          ? 'bg-[#A7B86C] text-[#1B1B1A] border-[#94A659] shadow-sm'
+                          : 'bg-[#EFECE2] text-[#78746B] border-transparent hover:bg-[#E5E0D2]'
+                      }`}
+                    >
+                      <span>🟢</span>
+                      <span>اقتصادی</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditBudget('medium')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        editBudget === 'medium'
+                          ? 'bg-[#F6DC6B] text-[#1B1B1A] border-[#E5C954] shadow-sm'
+                          : 'bg-[#EFECE2] text-[#78746B] border-transparent hover:bg-[#E5E0D2]'
+                      }`}
+                    >
+                      <span>🟡</span>
+                      <span>میان‌رده</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditBudget('luxury')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        editBudget === 'luxury'
+                          ? 'bg-[#E2C9F4] text-[#1B1B1A] border-[#CEB0E4] shadow-sm'
+                          : 'bg-[#EFECE2] text-[#78746B] border-transparent hover:bg-[#E5E0D2]'
+                      }`}
+                    >
+                      <span>🟣</span>
+                      <span>لاکچری</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -4645,6 +5063,25 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         )}
       </AnimatePresence>
+
+      {/* --- PHASE 1: EMOTIONAL STATUS BOTTOM SHEET --- */}
+      <EmotionalStatusSheet
+        isOpen={showEmotionalStatusSheet}
+        onClose={() => setShowEmotionalStatusSheet(false)}
+        currentBattery={myBatteryLevel}
+        currentStatus={myNeedStatus}
+        onSave={handleSaveEmotionalStatus}
+      />
+
+      {/* --- PHASE 1: DATE ROULETTE MODAL --- */}
+      <DateRouletteModal
+        isOpen={showDateRoulette}
+        onClose={() => setShowDateRoulette(false)}
+        items={items.filter(i => !i.isCompleted)}
+        onSelectWish={(wish) => {
+          setActiveTab("wishlist");
+        }}
+      />
 
       {/* --- FLOATING CHARCOAL BOTTOM DOCK WITH RAISED PASTEL PINK '+' ACTION BUTTON (EXACT REFERENCE STYLE) --- */}
       <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 max-w-md mx-auto" dir="rtl">

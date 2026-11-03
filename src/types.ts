@@ -14,6 +14,9 @@ export interface UserProfile {
   onboardingHealthData?: FemaleOnboardingHealthData;
   isOnline?: boolean;
   lastActiveAt?: number;
+  batteryLevel?: number; // 0 to 100
+  needStatus?: string;
+  needUpdatedAt?: number;
 }
 
 export interface FemaleOnboardingHealthData {
@@ -50,12 +53,14 @@ export interface LinkPreview {
 }
 
 export type WishlistCategory = 'place' | 'buy' | 'trip' | 'book' | 'movie';
+export type WishlistBudget = 'economy' | 'medium' | 'luxury';
 
 export interface WishlistItem {
   id: string;
   coupleId: string;
   title: string;
   category: string;
+  budget?: WishlistBudget;
   description: string;
   link: string;
   linkPreview: LinkPreview | null;

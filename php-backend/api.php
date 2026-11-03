@@ -454,6 +454,34 @@ function ensureMemoriesSchema($pdo) {
     }
 }
 
+function ensurePhase1Schema($pdo) {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    try {
+        $uColsStmt = $pdo->query("SHOW COLUMNS FROM `users`");
+        $uCols = $uColsStmt ? $uColsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        if (!in_array('batteryLevel', $uCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `batteryLevel` INT DEFAULT 80");
+        }
+        if (!in_array('needStatus', $uCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `needStatus` VARCHAR(128) DEFAULT 'calm'");
+        }
+        if (!in_array('needUpdatedAt', $uCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `needUpdatedAt` INT DEFAULT NULL");
+        }
+
+        $wColsStmt = $pdo->query("SHOW COLUMNS FROM `wishlist`");
+        $wCols = $wColsStmt ? $wColsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        if (!in_array('budget', $wCols, true)) {
+            $pdo->exec("ALTER TABLE `wishlist` ADD COLUMN `budget` VARCHAR(32) DEFAULT 'medium'");
+        }
+    } catch (Exception $e) {
+        error_log("Phase1 schema check notice: " . $e->getMessage());
+    }
+}
+
 function requirePeriodTarget($pdo) {
     global $input;
     ensurePeriodSchema($pdo);
@@ -1008,12 +1036,13 @@ switch ($action) {
     // USER PROFILE (TOKEN IDENTITY ONLY)
     // ----------------------------------------------------
     case 'getUser':
+        ensurePhase1Schema($pdo);
         $user = requireAuth($pdo);
 
         // Partner data sanitized: NO partner email exposed!
         $partnerData = null;
         if (!empty($user['partnerUid'])) {
-            $pStmt = $pdo->prepare("SELECT uid, displayName, photoURL, isOnline, lastActiveAt, gender FROM users WHERE uid = ?");
+            $pStmt = $pdo->prepare("SELECT uid, displayName, photoURL, isOnline, lastActiveAt, gender, batteryLevel, needStatus, needUpdatedAt FROM users WHERE uid = ?");
             $pStmt->execute([$user['partnerUid']]);
             $partnerRow = $pStmt->fetch();
             if ($partnerRow) {
@@ -1024,11 +1053,17 @@ switch ($action) {
                     'photoURL' => $partnerRow['photoURL'],
                     'isOnline' => $isRecent ? 1 : 0,
                     'lastActiveAt' => $partnerRow['lastActiveAt'],
-                    'gender' => $partnerRow['gender'] ?? 'female'
+                    'gender' => $partnerRow['gender'] ?? 'female',
+                    'batteryLevel' => (int)($partnerRow['batteryLevel'] ?? 80),
+                    'needStatus' => $partnerRow['needStatus'] ?? 'calm',
+                    'needUpdatedAt' => $partnerRow['needUpdatedAt'] ? (int)$partnerRow['needUpdatedAt'] : null
                 ];
             }
         }
 
+        $user['batteryLevel'] = (int)($user['batteryLevel'] ?? 80);
+        $user['needStatus'] = $user['needStatus'] ?? 'calm';
+        $user['needUpdatedAt'] = $user['needUpdatedAt'] ? (int)$user['needUpdatedAt'] : null;
         $user['partner'] = $partnerData;
         echo json_encode(['status' => 'success', 'user' => $user]);
         break;
@@ -2128,6 +2163,7 @@ switch ($action) {
     // HEARTBEAT & REAL-TIME PRESENCE
     // ----------------------------------------------------
     case 'heartbeat':
+        ensurePhase1Schema($pdo);
         $user = requireAuth($pdo);
         $uid = $user['uid'];
 
@@ -2136,7 +2172,7 @@ switch ($action) {
 
         $partnerData = null;
         if (!empty($user['partnerUid'])) {
-            $stmt = $pdo->prepare("SELECT uid, displayName, photoURL, isOnline, lastActiveAt, gender FROM users WHERE uid = ?");
+            $stmt = $pdo->prepare("SELECT uid, displayName, photoURL, isOnline, lastActiveAt, gender, batteryLevel, needStatus, needUpdatedAt FROM users WHERE uid = ?");
             $stmt->execute([$user['partnerUid']]);
             $partner = $stmt->fetch();
             if ($partner) {
@@ -2147,18 +2183,79 @@ switch ($action) {
                     'photoURL' => $partner['photoURL'],
                     'isOnline' => $isRecent ? 1 : 0,
                     'lastActiveAt' => $partner['lastActiveAt'],
-                    'gender' => $partner['gender'] ?? 'female'
+                    'gender' => $partner['gender'] ?? 'female',
+                    'batteryLevel' => (int)($partner['batteryLevel'] ?? 80),
+                    'needStatus' => $partner['needStatus'] ?? 'calm',
+                    'needUpdatedAt' => $partner['needUpdatedAt'] ? (int)$partner['needUpdatedAt'] : null
                 ];
             }
         }
 
-        echo json_encode(['status' => 'success', 'partner' => $partnerData]);
+        // Return user's own synced emotional status
+        $myStmt = $pdo->prepare("SELECT batteryLevel, needStatus, needUpdatedAt FROM users WHERE uid = ?");
+        $myStmt->execute([$uid]);
+        $myRow = $myStmt->fetch();
+
+        echo json_encode([
+            'status' => 'success', 
+            'partner' => $partnerData,
+            'user' => [
+                'batteryLevel' => (int)($myRow['batteryLevel'] ?? 80),
+                'needStatus' => $myRow['needStatus'] ?? 'calm',
+                'needUpdatedAt' => $myRow['needUpdatedAt'] ? (int)$myRow['needUpdatedAt'] : null
+            ]
+        ]);
+        break;
+
+    // ----------------------------------------------------
+    // EMOTIONAL STATUS (PHASE 1)
+    // ----------------------------------------------------
+    case 'updateEmotionalStatus':
+        ensurePhase1Schema($pdo);
+        $user = requireAuth($pdo);
+        $battery = isset($input['batteryLevel']) ? max(0, min(100, (int)$input['batteryLevel'])) : 80;
+        $needStatus = trim($input['needStatus'] ?? 'calm');
+        $now = time();
+
+        $stmt = $pdo->prepare("UPDATE users SET batteryLevel = ?, needStatus = ?, needUpdatedAt = ? WHERE uid = ?");
+        $stmt->execute([$battery, $needStatus, $now, $user['uid']]);
+
+        echo json_encode([
+            'status' => 'success',
+            'batteryLevel' => $battery,
+            'needStatus' => $needStatus,
+            'needUpdatedAt' => $now
+        ]);
+        break;
+
+    // ----------------------------------------------------
+    // LOVE PING (LONG-DISTANCE PING - PHASE 1)
+    // ----------------------------------------------------
+    case 'sendLovePing':
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $recipientUid = $user['partnerUid'] ?? '';
+        $id = generateId('poke_');
+        $message = trim($input['message'] ?? 'الان به یادتم بود دلم برات پر کشید! 💖✨');
+
+        $stmt = $pdo->prepare("INSERT INTO pokes (id, coupleId, senderUid, senderName, recipientUid, message, itemId, itemTitle, isRead, createdAt) VALUES (?, ?, ?, ?, ?, ?, 'love_ping', 'الان به یادتم', 0, NOW())");
+        $stmt->execute([
+            $id,
+            $coupleId,
+            $user['uid'],
+            $user['displayName'],
+            $recipientUid,
+            $message
+        ]);
+
+        echo json_encode(['status' => 'success', 'id' => $id]);
         break;
 
     // ----------------------------------------------------
     // WISHLIST ITEMS (SCOPED STRICTLY TO COUPLE)
     // ----------------------------------------------------
     case 'getWishlist':
+        ensurePhase1Schema($pdo);
         $user = requireCoupleMember($pdo);
         $coupleId = $user['coupleId'];
 
@@ -2169,6 +2266,7 @@ switch ($action) {
         foreach ($items as &$item) {
             $item['isCompleted'] = (bool)$item['isCompleted'];
             $item['progress'] = (int)$item['progress'];
+            $item['budget'] = $item['budget'] ?? 'medium';
             if ($item['linkPreview']) {
                 $item['linkPreview'] = json_decode($item['linkPreview'], true);
             }
@@ -2178,6 +2276,7 @@ switch ($action) {
         break;
 
     case 'addWishlistItem':
+        ensurePhase1Schema($pdo);
         $user = requireCoupleMember($pdo);
         $coupleId = $user['coupleId'];
         $item = $input['item'] ?? [];
@@ -2190,13 +2289,15 @@ switch ($action) {
 
         $id = generateId('wish_');
         $linkPreviewJson = !empty($item['linkPreview']) ? json_encode($item['linkPreview']) : null;
+        $budget = in_array($item['budget'] ?? '', ['economy', 'medium', 'luxury'], true) ? $item['budget'] : 'medium';
 
-        $stmt = $pdo->prepare("INSERT INTO wishlist (id, coupleId, title, category, description, link, linkPreview, date, progress, isCompleted, createdBy, createdByName, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        $stmt = $pdo->prepare("INSERT INTO wishlist (id, coupleId, title, category, budget, description, link, linkPreview, date, progress, isCompleted, createdBy, createdByName, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         $stmt->execute([
             $id,
             $coupleId,
             $item['title'],
             $item['category'] ?? 'place',
+            $budget,
             $item['description'] ?? '',
             $item['link'] ?? '',
             $linkPreviewJson,
@@ -2211,6 +2312,7 @@ switch ($action) {
         break;
 
     case 'updateWishlistItem':
+        ensurePhase1Schema($pdo);
         $user = requireCoupleMember($pdo);
         $coupleId = $user['coupleId'];
         $id = $input['id'] ?? '';
@@ -2225,9 +2327,12 @@ switch ($action) {
         $fields = [];
         $params = [];
 
-        foreach (['title', 'category', 'description', 'link', 'date', 'completedAt'] as $f) {
+        foreach (['title', 'category', 'budget', 'description', 'link', 'date', 'completedAt'] as $f) {
             if (isset($updates[$f])) {
                 $fields[] = "`$f` = ?";
+                $params[] = $updates[$f];
+            }
+        }
                 $params[] = $updates[$f];
             }
         }

@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `photoURL` longtext DEFAULT NULL,
   `isOnline` tinyint(1) DEFAULT 0,
   `lastActiveAt` bigint(20) DEFAULT NULL,
+  `batteryLevel` int(11) DEFAULT 80,
+  `needStatus` varchar(128) DEFAULT 'calm',
+  `needUpdatedAt` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`uid`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `coupleCode` (`coupleCode`)
@@ -78,6 +81,7 @@ CREATE TABLE IF NOT EXISTS `wishlist` (
   `coupleId` varchar(128) NOT NULL,
   `title` varchar(255) NOT NULL,
   `category` varchar(64) NOT NULL DEFAULT 'place',
+  `budget` varchar(32) DEFAULT 'medium',
   `description` text DEFAULT NULL,
   `link` text DEFAULT NULL,
   `linkPreview` json DEFAULT NULL,
