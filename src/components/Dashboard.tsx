@@ -17,6 +17,9 @@ import EmotionalStatusSheet from "./EmotionalStatusSheet";
 import EmpathyCoPilotCard from "./EmpathyCoPilotCard";
 import DailyQuestionCard from "./DailyQuestionCard";
 import DailyQuestionModal from "./DailyQuestionModal";
+import PartnerCheatSheetModal from "./PartnerCheatSheetModal";
+import WhiteFlagModal from "./WhiteFlagModal";
+import WhiteFlagReceivedModal from "./WhiteFlagReceivedModal";
 import { getTehranDateString } from "../utils/dailyQuestions";
 import {
   triggerDeviceNotification,
@@ -284,6 +287,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   };
 
   const [activeLovePingAlert, setActiveLovePingAlert] = useState<Poke | null>(null);
+  const [activeWhiteFlagAlert, setActiveWhiteFlagAlert] = useState<Poke | null>(null);
+  const [showPartnerCheatSheetModal, setShowPartnerCheatSheetModal] = useState(false);
+  const [showWhiteFlagModal, setShowWhiteFlagModal] = useState(false);
   const [notificationBannerDismissed, setNotificationBannerDismissed] = useState<boolean>(() => {
     try {
       return localStorage.getItem("toghrool_notif_banner_dismissed") === "true";
@@ -570,16 +576,29 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   (newPoke.itemTitle && newPoke.itemTitle.includes('به یادتم')) ||
                   (newPoke.message && newPoke.message.includes('به یادتم'));
 
+                const isWhiteFlag =
+                  newPoke.itemId === 'white_flag' ||
+                  (newPoke.itemTitle && newPoke.itemTitle.includes('پرچم سفید'));
+
+                const isWhiteFlagAccepted =
+                  newPoke.itemId === 'white_flag_accepted';
+
                 triggerDeviceNotification({
-                  title: isLovePing
+                  title: isWhiteFlag
+                    ? `🕊️ پرچم سفید از طرف ${newPoke.senderName || 'پارتنرت'}`
+                    : isWhiteFlagAccepted
+                    ? `💖 آشتی پذیرفته شد از طرف ${newPoke.senderName || 'پارتنرت'}!`
+                    : isLovePing
                     ? `💖 ${newPoke.senderName || 'پارتنرت'} الان به یادته!`
                     : `💌 پیام از ${newPoke.senderName || 'پارتنرت'}`,
-                  body: newPoke.message || 'یک پالس قلبی برات فرستاد 💕',
+                  body: newPoke.message || 'یک پیام محبت‌آمیز برات فرستاد 💕',
                   tag: `poke_${newPoke.id}`,
-                  isLovePing
+                  isLovePing: isLovePing || isWhiteFlag || isWhiteFlagAccepted
                 });
 
-                if (isLovePing) {
+                if (isWhiteFlag) {
+                  setActiveWhiteFlagAlert(newPoke);
+                } else if (isLovePing) {
                   setActiveLovePingAlert(newPoke);
                 }
               }
@@ -2259,6 +2278,18 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 }`}
               />
             </button>
+
+            {/* White Flag Peace Button */}
+            {userProfile.partnerUid && (
+              <button
+                type="button"
+                onClick={() => setShowWhiteFlagModal(true)}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] text-[#1B1B1A] border border-[#E8E2D4] flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-xs active:scale-85"
+                title="ارسال پرچم سفید و سیگنال آشتی 🕊️"
+              >
+                <span className="text-xs sm:text-sm">🕊️</span>
+              </button>
+            )}
 
             {/* Partner Emotional Status Pill */}
             {userProfile.partnerUid ? (
@@ -4364,6 +4395,41 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 </div>
               )}
 
+              {/* Partner Cheat-Sheet Card */}
+              {!cropImageSrc && (
+                <div className="mt-5 pt-4 border-t border-[#E8E2D4] text-right" dir="rtl">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-black text-[#1B1B1A] flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#EC407A]" />
+                      <span>تقلب‌نامه شناخت پارتنر</span>
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      setShowPartnerCheatSheetModal(true);
+                    }}
+                    className="w-full p-3.5 bg-[#FFFDF8] hover:bg-[#FAF6EC] border border-[#E8E2D4] rounded-2xl flex items-center justify-between text-right cursor-pointer transition-all shadow-2xs group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#F6C3E5] to-[#F9C6B8] flex items-center justify-center text-[#1B1B1A] shadow-xs group-hover:scale-105 transition-transform">
+                        <Sparkles className="w-4 h-4 text-[#EC407A]" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-[#1B1B1A]">مشاهده و ویرایش تقلب‌نامه 📝</p>
+                        <p className="text-[10px] text-[#78746B] font-medium mt-0.5">
+                          سایز لباس، قهوه محبوب، گل مورد علاقه و فانتزی‌های کوچک
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#EC407A] bg-[#FFF0F7] px-2.5 py-1 rounded-full border border-[#F8BBD0] shrink-0">
+                      مشاهده
+                    </span>
+                  </button>
+                </div>
+              )}
+
               {/* Partner Management Section */}
               {!cropImageSrc && userProfile.partnerUid && (
                 <div className="mt-6 pt-4 border-t border-[#E8E2D4] text-right" dir="rtl">
@@ -5528,6 +5594,44 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         userProfile={userProfile}
         partnerProfile={partnerProfile}
         onAnswerSubmitted={() => setDailyQuestionRefreshTrigger((prev) => prev + 1)}
+      />
+
+      {/* --- PHASE 2: PARTNER CHEAT-SHEET MODAL --- */}
+      <PartnerCheatSheetModal
+        isOpen={showPartnerCheatSheetModal}
+        onClose={() => setShowPartnerCheatSheetModal(false)}
+        userProfile={userProfile}
+        partnerProfile={partnerProfile}
+        onCheatSheetUpdated={(updated) => {
+          if (onUpdateUserProfile) {
+            onUpdateUserProfile({ ...userProfile, cheatSheet: updated });
+          }
+        }}
+        onSendPoke={(msg) => handleSendPoke(msg)}
+      />
+
+      {/* --- PHASE 2: WHITE FLAG (PEACE SIGNAL) SENDER MODAL --- */}
+      <WhiteFlagModal
+        isOpen={showWhiteFlagModal}
+        onClose={() => setShowWhiteFlagModal(false)}
+        partnerName={partnerProfile?.displayName || "پارتنرت"}
+        onSuccess={() => {
+          triggerAlert(`پرچم سفید و پیام آشتی با موفقیت برای ${partnerProfile?.displayName || "پارتنرت"} ارسال شد 🕊️🤍`);
+        }}
+      />
+
+      {/* --- PHASE 2: WHITE FLAG RECEIVED ALERT MODAL --- */}
+      <WhiteFlagReceivedModal
+        poke={activeWhiteFlagAlert}
+        onClose={() => {
+          if (activeWhiteFlagAlert) {
+            handleDismissAlert(activeWhiteFlagAlert.id);
+            setActiveWhiteFlagAlert(null);
+          }
+        }}
+        onAccepted={() => {
+          triggerAlert(`آتش‌بس و آشتی با موفقیت پذیرفته شد! 🫂💖`);
+        }}
       />
 
       {/* --- FLOATING CHARCOAL BOTTOM DOCK WITH RAISED PASTEL PINK '+' ACTION BUTTON (EXACT REFERENCE STYLE) --- */}

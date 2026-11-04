@@ -79,6 +79,16 @@ export const NEED_STATUS_OPTIONS: NeedStatusOption[] = [
     bgColor: "#F1F5F9",
     borderColor: "#CBD5E1",
     description: "شارژ روانیم تموم شده؛ نیاز به خواب و شارژ مجدد دارم."
+  },
+  {
+    id: "space",
+    label: "نیاز به خلوت و ریکاوری (Space Mode)",
+    shortLabel: "خلوت شخصی",
+    emoji: "🌿",
+    color: "#0D9488",
+    bgColor: "#F0FDFA",
+    borderColor: "#99F6E4",
+    description: "به کمی سکوت و فضای شخصی برای ریکاوری روانی نیاز دارم."
   }
 ];
 

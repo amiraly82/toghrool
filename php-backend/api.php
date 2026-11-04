@@ -182,6 +182,13 @@ function sanitizeUserForResponse(&$user) {
             $user['onboardingHealthData'] = $decoded;
         }
     }
+    if (!empty($user['cheatSheet']) && is_string($user['cheatSheet'])) {
+        $decodedCheat = json_decode($user['cheatSheet'], true);
+        if ($decodedCheat !== null) {
+            $user['cheatSheet'] = $decodedCheat;
+        }
+    }
+    $user['spaceMode'] = !empty($user['spaceMode']);
 }
 
 // Automatically ensure users table has onboarding & gender columns
@@ -513,6 +520,18 @@ function ensurePhase2Schema($pdo) {
         }
         if (!in_array('unlockDate', $mCols, true)) {
             $pdo->exec("ALTER TABLE `memories` ADD COLUMN `unlockDate` VARCHAR(32) DEFAULT NULL");
+        }
+
+        $uColsStmt = $pdo->query("SHOW COLUMNS FROM `users`");
+        $uCols = $uColsStmt ? $uColsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        if (!in_array('cheatSheet', $uCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `cheatSheet` TEXT DEFAULT NULL");
+        }
+        if (!in_array('spaceMode', $uCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `spaceMode` TINYINT(1) DEFAULT 0");
+        }
+        if (!in_array('spaceModeUntil', $uCols, true)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `spaceModeUntil` BIGINT DEFAULT NULL");
         }
     } catch (Exception $e) {
         error_log("Phase2 schema check notice: " . $e->getMessage());
@@ -1074,6 +1093,7 @@ switch ($action) {
     // ----------------------------------------------------
     case 'getUser':
         ensurePhase1Schema($pdo);
+        ensurePhase2Schema($pdo);
         $user = requireAuth($pdo);
 
         if (empty($user['coupleCode'])) {
@@ -1085,11 +1105,12 @@ switch ($action) {
         // Partner data sanitized: NO partner email exposed!
         $partnerData = null;
         if (!empty($user['partnerUid'])) {
-            $pStmt = $pdo->prepare("SELECT uid, displayName, photoURL, isOnline, lastActiveAt, gender, batteryLevel, needStatus, needUpdatedAt FROM users WHERE uid = ?");
+            $pStmt = $pdo->prepare("SELECT uid, displayName, photoURL, isOnline, lastActiveAt, gender, batteryLevel, needStatus, needUpdatedAt, cheatSheet, spaceMode, spaceModeUntil FROM users WHERE uid = ?");
             $pStmt->execute([$user['partnerUid']]);
             $partnerRow = $pStmt->fetch();
             if ($partnerRow) {
                 $isRecent = (time() - ((int)($partnerRow['lastActiveAt'] ?? 0))) < 60;
+                $decodedPartnerCheat = !empty($partnerRow['cheatSheet']) ? json_decode($partnerRow['cheatSheet'], true) : null;
                 $partnerData = [
                     'uid' => $partnerRow['uid'],
                     'displayName' => $partnerRow['displayName'],
@@ -1099,7 +1120,10 @@ switch ($action) {
                     'gender' => $partnerRow['gender'] ?? 'female',
                     'batteryLevel' => (int)($partnerRow['batteryLevel'] ?? 80),
                     'needStatus' => $partnerRow['needStatus'] ?? 'calm',
-                    'needUpdatedAt' => $partnerRow['needUpdatedAt'] ? (int)$partnerRow['needUpdatedAt'] : null
+                    'needUpdatedAt' => $partnerRow['needUpdatedAt'] ? (int)$partnerRow['needUpdatedAt'] : null,
+                    'cheatSheet' => $decodedPartnerCheat,
+                    'spaceMode' => !empty($partnerRow['spaceMode']),
+                    'spaceModeUntil' => $partnerRow['spaceModeUntil'] ? (int)$partnerRow['spaceModeUntil'] : null
                 ];
             }
         }
@@ -1107,6 +1131,9 @@ switch ($action) {
         $user['batteryLevel'] = (int)($user['batteryLevel'] ?? 80);
         $user['needStatus'] = $user['needStatus'] ?? 'calm';
         $user['needUpdatedAt'] = $user['needUpdatedAt'] ? (int)$user['needUpdatedAt'] : null;
+        $user['cheatSheet'] = !empty($user['cheatSheet']) ? (is_array($user['cheatSheet']) ? $user['cheatSheet'] : json_decode($user['cheatSheet'], true)) : null;
+        $user['spaceMode'] = !empty($user['spaceMode']);
+        $user['spaceModeUntil'] = $user['spaceModeUntil'] ? (int)$user['spaceModeUntil'] : null;
         $user['partner'] = $partnerData;
         echo json_encode(['status' => 'success', 'user' => $user]);
         break;
@@ -2215,6 +2242,7 @@ switch ($action) {
     // ----------------------------------------------------
     case 'heartbeat':
         ensurePhase1Schema($pdo);
+        ensurePhase2Schema($pdo);
         $user = requireAuth($pdo);
         $uid = $user['uid'];
 
@@ -2223,11 +2251,12 @@ switch ($action) {
 
         $partnerData = null;
         if (!empty($user['partnerUid'])) {
-            $stmt = $pdo->prepare("SELECT uid, displayName, photoURL, isOnline, lastActiveAt, gender, batteryLevel, needStatus, needUpdatedAt FROM users WHERE uid = ?");
+            $stmt = $pdo->prepare("SELECT uid, displayName, photoURL, isOnline, lastActiveAt, gender, batteryLevel, needStatus, needUpdatedAt, cheatSheet, spaceMode, spaceModeUntil FROM users WHERE uid = ?");
             $stmt->execute([$user['partnerUid']]);
             $partner = $stmt->fetch();
             if ($partner) {
                 $isRecent = (time() - ((int)($partner['lastActiveAt'] ?? 0))) < 60;
+                $decodedPartnerCheat = !empty($partner['cheatSheet']) ? json_decode($partner['cheatSheet'], true) : null;
                 $partnerData = [
                     'uid' => $partner['uid'],
                     'displayName' => $partner['displayName'],
@@ -2237,15 +2266,19 @@ switch ($action) {
                     'gender' => $partner['gender'] ?? 'female',
                     'batteryLevel' => (int)($partner['batteryLevel'] ?? 80),
                     'needStatus' => $partner['needStatus'] ?? 'calm',
-                    'needUpdatedAt' => $partner['needUpdatedAt'] ? (int)$partner['needUpdatedAt'] : null
+                    'needUpdatedAt' => $partner['needUpdatedAt'] ? (int)$partner['needUpdatedAt'] : null,
+                    'cheatSheet' => $decodedPartnerCheat,
+                    'spaceMode' => !empty($partner['spaceMode']),
+                    'spaceModeUntil' => $partner['spaceModeUntil'] ? (int)$partner['spaceModeUntil'] : null
                 ];
             }
         }
 
         // Return user's own synced emotional status
-        $myStmt = $pdo->prepare("SELECT batteryLevel, needStatus, needUpdatedAt FROM users WHERE uid = ?");
+        $myStmt = $pdo->prepare("SELECT batteryLevel, needStatus, needUpdatedAt, cheatSheet, spaceMode, spaceModeUntil FROM users WHERE uid = ?");
         $myStmt->execute([$uid]);
         $myRow = $myStmt->fetch();
+        $myCheat = !empty($myRow['cheatSheet']) ? json_decode($myRow['cheatSheet'], true) : null;
 
         echo json_encode([
             'status' => 'success', 
@@ -2253,7 +2286,10 @@ switch ($action) {
             'user' => [
                 'batteryLevel' => (int)($myRow['batteryLevel'] ?? 80),
                 'needStatus' => $myRow['needStatus'] ?? 'calm',
-                'needUpdatedAt' => $myRow['needUpdatedAt'] ? (int)$myRow['needUpdatedAt'] : null
+                'needUpdatedAt' => $myRow['needUpdatedAt'] ? (int)$myRow['needUpdatedAt'] : null,
+                'cheatSheet' => $myCheat,
+                'spaceMode' => !empty($myRow['spaceMode']),
+                'spaceModeUntil' => $myRow['spaceModeUntil'] ? (int)$myRow['spaceModeUntil'] : null
             ]
         ]);
         break;
@@ -2317,6 +2353,138 @@ switch ($action) {
         }
 
         echo json_encode(['status' => 'success', 'id' => $id]);
+        break;
+
+    // ----------------------------------------------------
+    // WHITE FLAG SIGNAL (PEACE & RECONCILIATION - PHASE 2)
+    // ----------------------------------------------------
+    case 'sendWhiteFlag':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $recipientUid = $user['partnerUid'] ?? '';
+        if (empty($recipientUid) && !empty($coupleId)) {
+            $pStmt = $pdo->prepare("SELECT uid FROM users WHERE coupleId = ? AND uid != ? LIMIT 1");
+            $pStmt->execute([$coupleId, $user['uid']]);
+            $recipientUid = $pStmt->fetchColumn() ?: '';
+        }
+
+        $id = generateId('poke_');
+        $message = trim($input['message'] ?? 'بیا قهر رو تموم کنیم، دلم برات تنگ شده 🕊️🤍');
+
+        $stmt = $pdo->prepare("INSERT INTO pokes (id, coupleId, senderUid, senderName, recipientUid, message, itemId, itemTitle, isRead, createdAt) VALUES (?, ?, ?, ?, ?, ?, 'white_flag', 'پرچم سفید 🏳️', 0, NOW())");
+        $stmt->execute([
+            $id,
+            $coupleId,
+            $user['uid'],
+            $user['displayName'],
+            $recipientUid,
+            $message
+        ]);
+
+        if (!empty($recipientUid)) {
+            sendPushToUser($pdo, $recipientUid, [
+                'title' => '🕊️ پرچم سفید از طرف ' . $user['displayName'],
+                'body' => $message,
+                'isLovePing' => true,
+                'tag' => 'white_flag_' . time(),
+                'url' => '/'
+            ]);
+        }
+
+        echo json_encode(['status' => 'success', 'id' => $id]);
+        break;
+
+    case 'acceptWhiteFlag':
+        ensurePhase2Schema($pdo);
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $recipientUid = $user['partnerUid'] ?? '';
+        if (empty($recipientUid) && !empty($coupleId)) {
+            $pStmt = $pdo->prepare("SELECT uid FROM users WHERE coupleId = ? AND uid != ? LIMIT 1");
+            $pStmt->execute([$coupleId, $user['uid']]);
+            $recipientUid = $pStmt->fetchColumn() ?: '';
+        }
+
+        $pokeId = trim($input['pokeId'] ?? '');
+        if ($pokeId) {
+            $upStmt = $pdo->prepare("UPDATE pokes SET isRead = 1 WHERE id = ? AND recipientUid = ?");
+            $upStmt->execute([$pokeId, $user['uid']]);
+        }
+
+        $id = generateId('poke_');
+        $replyMessage = trim($input['message'] ?? 'منم دلم برات تنگ شده بود، آتش‌بس پذیرفته شد! بیا بغلم 🫂💖');
+
+        $stmt = $pdo->prepare("INSERT INTO pokes (id, coupleId, senderUid, senderName, recipientUid, message, itemId, itemTitle, isRead, createdAt) VALUES (?, ?, ?, ?, ?, ?, 'white_flag_accepted', 'آشتی و بغل 🫂💖', 0, NOW())");
+        $stmt->execute([
+            $id,
+            $coupleId,
+            $user['uid'],
+            $user['displayName'],
+            $recipientUid,
+            $replyMessage
+        ]);
+
+        if (!empty($recipientUid)) {
+            sendPushToUser($pdo, $recipientUid, [
+                'title' => '💖 آشتی پذیرفته شد!',
+                'body' => $user['displayName'] . ': ' . $replyMessage,
+                'isLovePing' => true,
+                'tag' => 'white_flag_accepted_' . time(),
+                'url' => '/'
+            ]);
+        }
+
+        echo json_encode(['status' => 'success', 'id' => $id]);
+        break;
+
+    // ----------------------------------------------------
+    // PARTNER CHEAT-SHEET (PHASE 2)
+    // ----------------------------------------------------
+    case 'updateCheatSheet':
+        ensurePhase2Schema($pdo);
+        $user = requireAuth($pdo);
+        $cheatSheet = $input['cheatSheet'] ?? [];
+        $cheatJson = json_encode($cheatSheet, JSON_UNESCAPED_UNICODE);
+
+        $stmt = $pdo->prepare("UPDATE users SET cheatSheet = ? WHERE uid = ?");
+        $stmt->execute([$cheatJson, $user['uid']]);
+
+        echo json_encode([
+            'status' => 'success',
+            'cheatSheet' => $cheatSheet,
+            'message' => 'تقلب‌نامه شناخت با موفقیت ذخیره شد.'
+        ]);
+        break;
+
+    // ----------------------------------------------------
+    // SPACE MODE (PHASE 2)
+    // ----------------------------------------------------
+    case 'toggleSpaceMode':
+        ensurePhase2Schema($pdo);
+        $user = requireAuth($pdo);
+        $enable = !empty($input['enable']);
+        $durationHours = isset($input['hours']) ? max(1, min(72, (int)$input['hours'])) : 4;
+        $until = $enable ? (time() + ($durationHours * 3600)) : null;
+
+        $stmt = $pdo->prepare("UPDATE users SET spaceMode = ?, spaceModeUntil = ? WHERE uid = ?");
+        $stmt->execute([$enable ? 1 : 0, $until, $user['uid']]);
+
+        if ($enable && !empty($user['partnerUid'])) {
+            sendPushToUser($pdo, $user['partnerUid'], [
+                'title' => 'حالت خلوت و آرامش 🌿',
+                'body' => $user['displayName'] . ' برای ریکاوری انرژی به کمی خلوت نیاز دارد.',
+                'isLovePing' => false,
+                'tag' => 'space_mode_' . time(),
+                'url' => '/'
+            ]);
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'spaceMode' => $enable,
+            'spaceModeUntil' => $until
+        ]);
         break;
 
     // ----------------------------------------------------

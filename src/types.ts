@@ -1,3 +1,18 @@
+export interface PartnerCheatSheet {
+  clothingSize?: string;
+  shoeSize?: string;
+  ringSize?: string;
+  favoriteDrink?: string;
+  favoriteFlower?: string;
+  favoriteFood?: string;
+  favoriteColor?: string;
+  perfumeStyle?: string;
+  allergies?: string;
+  loveLanguage?: string;
+  littleFantasies?: string;
+  updatedAt?: number;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -17,6 +32,9 @@ export interface UserProfile {
   batteryLevel?: number; // 0 to 100
   needStatus?: string;
   needUpdatedAt?: number;
+  cheatSheet?: PartnerCheatSheet | null;
+  spaceMode?: boolean;
+  spaceModeUntil?: number | null;
 }
 
 export interface FemaleOnboardingHealthData {
