@@ -6,7 +6,7 @@ import {
   Send, ExternalLink, Flame, Sparkles, LogOut, CheckCircle, Bell, BellOff, RefreshCw, ChevronLeft, ChevronRight, 
   MessageCircleHeart, X, Edit2, User, Palette, Layers, Pizza, Coffee, Music, Smile, Camera, Gift, Settings,
   Droplet, HeartHandshake, Search, Wallet, Smartphone, Download, Maximize2, Lock, Unlock,
-  Copy, Check, Key, Share2
+  Copy, Check, Key, Share2, MoreHorizontal
 } from "lucide-react";
 
 import FinanceSection from "./FinanceSection";
@@ -21,6 +21,7 @@ import PartnerCheatSheetModal from "./PartnerCheatSheetModal";
 import WhiteFlagModal from "./WhiteFlagModal";
 import WhiteFlagReceivedModal from "./WhiteFlagReceivedModal";
 import AnniversaryModal, { calculateDaysBetween } from "./AnniversaryModal";
+import PartnerHubSheet from "./PartnerHubSheet";
 import { getTehranDateString } from "../utils/dailyQuestions";
 import {
   triggerDeviceNotification,
@@ -292,6 +293,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [showPartnerCheatSheetModal, setShowPartnerCheatSheetModal] = useState(false);
   const [showWhiteFlagModal, setShowWhiteFlagModal] = useState(false);
   const [showAnniversaryModal, setShowAnniversaryModal] = useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+  const [showPartnerHub, setShowPartnerHub] = useState(false);
   const [notificationBannerDismissed, setNotificationBannerDismissed] = useState<boolean>(() => {
     try {
       return localStorage.getItem("toghrool_notif_banner_dismissed") === "true";
@@ -2047,125 +2050,158 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     return jy === currentJalaliYear && jm === currentJalaliMonth;
   });
 
+  const daysTogether = userProfile.coupleInfo?.relationshipStartDate
+    ? calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate)
+    : null;
+
   return (
     <div className="min-h-screen pb-32 bg-[#FAF6EC] text-[#1B1B1A] relative">
-      {/* Editorial Warm Minimalist Header */}
-      <header className="sticky top-0 bg-[#FAF6EC]/95 border-b border-[#E8E2D4] z-30">
-        <div className="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Connected Couple Avatars */}
-            <div className="flex items-center relative pr-3 sm:pr-4">
-              <div className="relative z-10 transition-transform hover:scale-105">
-                {renderAvatar(userProfile, "❤️", "w-10 h-10 sm:w-11 sm:h-11")}
+      {/* Calm Header — identity on the right, ONE overflow menu on the left */}
+      <header className="sticky top-0 bg-[#FAF6EC]/95 backdrop-blur-sm border-b border-[#E8E2D4] z-30">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Couple avatars: mine opens profile, partner's opens Partner Hub */}
+            <div className="flex items-center shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(true)}
+                className="relative z-10 rounded-full cursor-pointer transition-transform active:scale-95"
+                aria-label="پروفایل من"
+              >
+                {renderAvatar(userProfile, "❤️", "w-10 h-10")}
+              </button>
+              {userProfile.partnerUid ? (
                 <button
-                  onClick={() => setShowProfileModal(true)}
-                  className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] rounded-full flex items-center justify-center border border-[#FAF6EC] cursor-pointer transition-colors"
-                  title="ویرایش پروفایل من"
+                  type="button"
+                  onClick={() => setShowPartnerHub(true)}
+                  className="relative -mr-3 rounded-full cursor-pointer transition-transform active:scale-95"
+                  aria-label="فضای پارتنر"
                 >
-                  <Edit2 className="w-2.5 h-2.5 stroke-[2]" />
-                </button>
-              </div>
-              {userProfile.partnerUid && (
-                <div className="absolute left-5 sm:left-6 z-0 -translate-x-1 hover:z-20 transition-transform hover:scale-105">
-                  {renderAvatar(partnerProfile, "💖", "w-10 h-10 sm:w-11 sm:h-11")}
+                  {renderAvatar(partnerProfile, "💖", "w-10 h-10")}
                   <span
-                    className={`absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#FAF6EC] transition-colors ${
+                    className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-[#FAF6EC] ${
                       isPartnerOnline ? "bg-[#A7B86C]" : "bg-[#C8C3B6]"
                     }`}
-                    title={isPartnerOnline ? "پارتنر شما آنلاین است" : "پارتنر شما آفلاین است"}
                   />
-                </div>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenPairingModal}
+                  className="-mr-3 w-10 h-10 rounded-full border-2 border-dashed border-[#C8C3B6] bg-[#FAF6EC] text-[#78746B] flex items-center justify-center cursor-pointer hover:border-[#1B1B1A] hover:text-[#1B1B1A] transition-colors"
+                  aria-label="اتصال پارتنر"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
               )}
             </div>
 
-            <div className="mr-2 sm:mr-3">
-              <h1 className="text-xs sm:text-base font-black text-[#1B1B1A] flex items-center gap-1.5 leading-none">
-                <span>{userProfile.displayName}</span>
-                <span className="text-[10px] sm:text-[11px] text-[#1B1B1A] font-bold bg-[#F6C3E5] px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                  همگام
-                </span>
+            <button
+              type="button"
+              onClick={() => (userProfile.partnerUid ? setShowPartnerHub(true) : onOpenPairingModal?.())}
+              className="min-w-0 text-right cursor-pointer"
+            >
+              <h1 className="text-sm sm:text-base font-black text-[#1B1B1A] leading-tight truncate">
+                {userProfile.partnerUid
+                  ? `${userProfile.displayName} و ${partnerProfile?.displayName || "پارتنر"}`
+                  : userProfile.displayName}
               </h1>
-              <p className="text-[10px] sm:text-xs text-[#78746B] mt-1.5 font-medium leading-none flex items-center gap-1.5">
-                <span>شریک رؤیاها:</span>
-                <span className="font-bold text-[#1B1B1A]">
-                  {partnerProfile?.displayName || (userProfile.partnerEmail ? userProfile.partnerEmail.split("@")[0] : "در انتظار...")}
-                </span>
-                {userProfile.partnerUid && (
-                  <span
-                    className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isPartnerOnline
-                        ? "bg-[#DCE6B5] text-[#1B1B1A]"
-                        : "bg-[#EFECE2] text-[#78746B]"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${isPartnerOnline ? "bg-[#1B1B1A]" : "bg-[#9E9A8F]"}`} />
-                    {isPartnerOnline ? "آنلاین" : "آفلاین"}
-                  </span>
-                )}
-                {userProfile.coupleInfo?.relationshipStartDate && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAnniversaryModal(true)}
-                    className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF0F7] text-[#EC407A] border border-[#F8BBD0] hover:bg-[#FCE7F3] transition-colors cursor-pointer"
-                    title="مشاهده روزشمار عشق و سالگردها"
-                  >
-                    <span>💍</span>
-                    <span>{toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز</span>
-                  </button>
-                )}
+              <p className="text-[11px] sm:text-xs text-[#78746B] font-medium mt-0.5 truncate">
+                {!userProfile.partnerUid
+                  ? "پارتنرت رو دعوت کن"
+                  : userProfile.coupleInfo?.relationshipStartDate
+                  ? `${toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز با هم`
+                  : isPartnerOnline
+                  ? "آنلاین"
+                  : "آفلاین"}
               </p>
-            </div>
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Quick Shared Calendar Shortcut on Mobile */}
+          {/* Single overflow menu replaces calendar / install / bell / logout buttons */}
+          <div className="relative shrink-0">
             <button
-              onClick={() => setActiveTab("calendar")}
-              className={`md:hidden w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
-                activeTab === "calendar"
-                  ? "bg-[#1B1B1A] text-[#F6C3E5]"
-                  : "bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A]"
-              }`}
-              title="تقویم مشترک"
+              type="button"
+              onClick={() => setShowHeaderMenu((v) => !v)}
+              className="relative w-10 h-10 rounded-full hover:bg-[#EFECE2] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+              aria-label="منو"
             >
-              <CalendarIcon className="w-4 h-4 stroke-[1.7]" />
+              <MoreHorizontal className="w-5 h-5 stroke-[1.8]" />
+              {!notificationsEnabled && (
+                <span className="absolute top-2 left-2 w-2 h-2 rounded-full bg-[#EC407A]" />
+              )}
             </button>
 
-            {/* Install PWA Button (Hidden when running as installed standalone app) */}
-            {!isStandalone && (
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install"))}
-                className="h-10 px-3 sm:px-3.5 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] transition-colors cursor-pointer flex items-center justify-center gap-1.5 text-xs font-bold shrink-0"
-                title="نصب وب‌اپلیکیشن روی گوشی"
-              >
-                <Smartphone className="w-4 h-4 stroke-[2] text-[#EC407A]" />
-                <span className="hidden sm:inline">نصب اپ</span>
-              </button>
-            )}
-
-            {/* Browser Notifications Toggle */}
-            <button
-              onClick={requestNotificationPermission}
-              className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
-                notificationsEnabled
-                  ? "bg-[#DCE6B5] text-[#1B1B1A] hover:bg-[#CFDCA1]"
-                  : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
-              }`}
-              title={notificationsEnabled ? "اعلان‌ها فعال هستند" : "فعال‌سازی اعلان‌های مرورگر"}
-            >
-              {notificationsEnabled ? <Bell className="w-4 h-4 stroke-[1.7]" /> : <BellOff className="w-4 h-4 stroke-[1.7] text-[#78746B]" />}
-            </button>
-
-            {/* Dashed Editorial Logout Pill / Circle */}
-            <button
-              onClick={handleLogout}
-              className="h-10 px-3 sm:px-4 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] hover:bg-[#EFECE2] text-[#1B1B1A] transition-colors cursor-pointer flex items-center justify-center gap-1.5 text-xs font-bold"
-              title="خروج از حساب"
-            >
-              <LogOut className="w-4 h-4 stroke-[1.7]" />
-              <span className="hidden sm:inline">خروج</span>
-            </button>
+            <AnimatePresence>
+              {showHeaderMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowHeaderMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 top-12 w-60 bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl shadow-xl z-50 overflow-hidden text-right"
+                    dir="rtl"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHeaderMenu(false);
+                        setShowProfileModal(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6EC] text-sm font-bold text-[#1B1B1A] cursor-pointer transition-colors"
+                    >
+                      <User className="w-4 h-4 text-[#78746B]" />
+                      <span>پروفایل و تنظیمات</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHeaderMenu(false);
+                        requestNotificationPermission();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6EC] text-sm font-bold text-[#1B1B1A] cursor-pointer transition-colors"
+                    >
+                      {notificationsEnabled ? (
+                        <Bell className="w-4 h-4 text-[#A7B86C]" />
+                      ) : (
+                        <BellOff className="w-4 h-4 text-[#EC407A]" />
+                      )}
+                      <span className="flex-1">اعلان‌ها</span>
+                      <span className={`text-[11px] font-bold ${notificationsEnabled ? "text-[#78746B]" : "text-[#EC407A]"}`}>
+                        {notificationsEnabled ? "فعال" : "فعال‌سازی"}
+                      </span>
+                    </button>
+                    {!isStandalone && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowHeaderMenu(false);
+                          window.dispatchEvent(new CustomEvent("open-pwa-install"));
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6EC] text-sm font-bold text-[#1B1B1A] cursor-pointer transition-colors"
+                      >
+                        <Smartphone className="w-4 h-4 text-[#78746B]" />
+                        <span>نصب اپ روی گوشی</span>
+                      </button>
+                    )}
+                    <div className="border-t border-[#EFECE2]" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHeaderMenu(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6EC] text-sm font-bold text-[#78746B] hover:text-[#1B1B1A] cursor-pointer transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>خروج از حساب</span>
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>
@@ -2247,20 +2283,20 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       </AnimatePresence>
 
       <main className="max-w-5xl mx-auto px-4 mt-6">
-        {/* --- COUPLE INTIMACY & EMOTIONAL STATUS CAPSULE (PHASE 1 - COMPACT & EDITORIAL) --- */}
+        {/* --- COUPLE INTIMACY & EMOTIONAL STATUS CAPSULE (STREAMLINED EDITORIAL) --- */}
         <div className="w-full mb-5" dir="rtl">
-          <div className="flex items-center justify-between w-full max-w-xl mx-auto bg-[#EFECE2]/90 backdrop-blur-xs border border-[#E5E0D2] rounded-full p-1.5 px-3 shadow-2xs gap-1.5 sm:gap-2 transition-all">
+          <div className="flex items-center justify-between w-full max-w-xl mx-auto bg-[#EFECE2]/90 backdrop-blur-xs border border-[#E5E0D2] rounded-full p-1.5 px-2.5 shadow-2xs gap-2 transition-all">
             {/* User Emotional Status Pill (Interactive) */}
             <button
               type="button"
               onClick={() => setShowEmotionalStatusSheet(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-full hover:bg-[#FAF6EC] text-[#1B1B1A] transition-colors cursor-pointer group min-w-0"
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-[#FAF6EC] text-[#1B1B1A] transition-colors cursor-pointer group min-w-0"
               title="ویرایش وضعیت حال دل و باتری من"
             >
               <span className="text-sm shrink-0">
                 {getNeedStatusOption(myNeedStatus).emoji}
               </span>
-              <span className="text-xs font-black truncate max-w-[85px] sm:max-w-none">
+              <span className="text-xs font-black truncate">
                 {getNeedStatusOption(myNeedStatus).shortLabel || getNeedStatusOption(myNeedStatus).label}
               </span>
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#78746B] shrink-0">
@@ -2273,47 +2309,21 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               <Edit2 className="w-2.5 h-2.5 text-[#A6A297] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 hidden sm:inline" />
             </button>
 
-            {/* Tactile Miss-You Ping Center Heart (Compact Beating Heart) */}
-            <button
-              type="button"
-              onClick={() => handleSendLovePing()}
-              disabled={isSendingLovePing}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-xs active:scale-85 ${
-                isSendingLovePing
-                  ? 'bg-[#E5ADD2] text-[#1B1B1A] cursor-not-allowed opacity-80'
-                  : 'bg-[#F6C3E5] hover:bg-[#EEB2DA] text-[#D94E4E] border border-[#E5ADD2]'
-              }`}
-              title="الان به یادتم! (ارسال تپش قلب آنی به پارتنر)"
-            >
-              <Heart
-                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D94E4E] fill-current ${
-                  isSendingLovePing ? 'animate-ping' : 'animate-pulse'
-                }`}
-              />
-            </button>
+            {/* Subtle Vertical Divider */}
+            <div className="w-px h-5 bg-[#D5CEBC] shrink-0" />
 
-            {/* White Flag Peace Button */}
-            {userProfile.partnerUid && (
+            {/* Partner Emotional Status Pill (Opens Partner Hub) */}
+            {userProfile.partnerUid ? (
               <button
                 type="button"
-                onClick={() => setShowWhiteFlagModal(true)}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] text-[#1B1B1A] border border-[#E8E2D4] flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-xs active:scale-85"
-                title="ارسال پرچم سفید و سیگنال آشتی 🕊️"
-              >
-                <span className="text-xs sm:text-sm">🕊️</span>
-              </button>
-            )}
-
-            {/* Partner Emotional Status Pill */}
-            {userProfile.partnerUid ? (
-              <div
-                className="flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-full text-[#1B1B1A] min-w-0"
-                title={`وضعیت ${partnerProfile?.displayName || 'پارتنر'}: ${getNeedStatusOption(partnerProfile?.needStatus || 'calm').label}`}
+                onClick={() => setShowPartnerHub(true)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-[#FAF6EC] text-[#1B1B1A] transition-colors cursor-pointer group min-w-0"
+                title={`وضعیت ${partnerProfile?.displayName || 'پارتنر'} (برای امکانات و ارسال عشق لمس کنید)`}
               >
                 <span className="text-sm shrink-0">
                   {getNeedStatusOption(partnerProfile?.needStatus || 'calm').emoji}
                 </span>
-                <span className="text-xs font-black truncate max-w-[85px] sm:max-w-none">
+                <span className="text-xs font-black truncate">
                   {partnerProfile?.displayName ? `${partnerProfile.displayName}: ` : ''}
                   {getNeedStatusOption(partnerProfile?.needStatus || 'calm').shortLabel || getNeedStatusOption(partnerProfile?.needStatus || 'calm').label}
                 </span>
@@ -2326,12 +2336,13 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   />
                   <span>{toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪</span>
                 </span>
-              </div>
+                <ChevronLeft className="w-3.5 h-3.5 text-[#A6A297] group-hover:text-[#1B1B1A] transition-colors shrink-0" />
+              </button>
             ) : (
               <button
                 type="button"
                 onClick={onOpenPairingModal}
-                className="flex-1 py-1 px-2 rounded-full border border-dashed border-[#D5CEBC] text-[11px] font-bold text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#FAF6EC] transition-colors cursor-pointer text-center truncate"
+                className="flex-1 py-1.5 px-3 rounded-full border border-dashed border-[#D5CEBC] text-[11px] font-bold text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#FAF6EC] transition-colors cursor-pointer text-center truncate"
               >
                 + اتصال پارتنر
               </button>
@@ -2844,27 +2855,27 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleSendPoke(item)}
-                              className="w-9 h-9 rounded-full bg-[#EFECE2] hover:bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-8 h-8 rounded-full bg-[#F6C3E5]/50 hover:bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer active:scale-90"
                               title="یادآوری عاشقانه به پارتنر"
                             >
                               <MessageCircleHeart className="w-4 h-4 stroke-[1.7]" />
                             </button>
                             <button
                               onClick={() => handleOpenEditModal(item)}
-                              className="w-9 h-9 rounded-full bg-[#EFECE2] hover:bg-[#F6DC6B] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-8 h-8 rounded-full text-[#A6A297] hover:text-[#1B1B1A] hover:bg-[#EFECE2] flex items-center justify-center transition-colors cursor-pointer active:scale-90"
                               title="ویرایش آرزو"
                             >
-                              <Edit2 className="w-4 h-4 stroke-[1.7]" />
+                              <Edit2 className="w-3.5 h-3.5 stroke-[1.7]" />
                             </button>
                             <button
                               onClick={() => handleDeleteItem(item.id)}
-                              className="w-9 h-9 rounded-full bg-[#EFECE2] hover:bg-[#F9C6B8] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-8 h-8 rounded-full text-[#A6A297] hover:text-[#D94E4E] hover:bg-[#F9C6B8]/40 flex items-center justify-center transition-colors cursor-pointer active:scale-90"
                               title="حذف آرزو"
                             >
-                              <Trash2 className="w-4 h-4 stroke-[1.7]" />
+                              <Trash2 className="w-3.5 h-3.5 stroke-[1.7]" />
                             </button>
                           </div>
                         </div>
@@ -3047,7 +3058,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                                 </span>
                                 <button
                                   onClick={() => handleDeleteItem(item.id)}
-                                  className="w-8 h-8 rounded-full bg-[#EFECE2] hover:bg-[#F9C6B8] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+                                  className="w-8 h-8 rounded-full text-[#A6A297] hover:text-[#D94E4E] hover:bg-[#F9C6B8]/40 flex items-center justify-center transition-colors cursor-pointer"
                                   title="حذف از تالار افتخارات"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 stroke-[1.7]" />
@@ -5708,6 +5719,20 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           }
           triggerAlert("تاریخ‌های سالگرد با موفقیت ذخیره شدند! 💍✨");
         }}
+      />
+
+      {/* --- PARTNER HUB BOTTOM SHEET (ALL RELATIONSHIP ACTIONS IN ONE CALM PLACE) --- */}
+      <PartnerHubSheet
+        isOpen={showPartnerHub}
+        onClose={() => setShowPartnerHub(false)}
+        partnerProfile={partnerProfile}
+        isPartnerOnline={isPartnerOnline}
+        daysTogether={daysTogether}
+        renderAvatar={renderAvatar}
+        onSendLovePing={() => handleSendLovePing()}
+        onOpenWhiteFlag={() => setShowWhiteFlagModal(true)}
+        onOpenCheatSheet={() => setShowPartnerCheatSheetModal(true)}
+        onOpenAnniversary={() => setShowAnniversaryModal(true)}
       />
 
       {/* --- FLOATING CHARCOAL BOTTOM DOCK WITH RAISED PASTEL PINK '+' ACTION BUTTON (EXACT REFERENCE STYLE) --- */}
