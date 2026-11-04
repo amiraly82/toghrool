@@ -20,6 +20,7 @@ import DailyQuestionModal from "./DailyQuestionModal";
 import PartnerCheatSheetModal from "./PartnerCheatSheetModal";
 import WhiteFlagModal from "./WhiteFlagModal";
 import WhiteFlagReceivedModal from "./WhiteFlagReceivedModal";
+import AnniversaryModal, { calculateDaysBetween } from "./AnniversaryModal";
 import { getTehranDateString } from "../utils/dailyQuestions";
 import {
   triggerDeviceNotification,
@@ -290,6 +291,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [activeWhiteFlagAlert, setActiveWhiteFlagAlert] = useState<Poke | null>(null);
   const [showPartnerCheatSheetModal, setShowPartnerCheatSheetModal] = useState(false);
   const [showWhiteFlagModal, setShowWhiteFlagModal] = useState(false);
+  const [showAnniversaryModal, setShowAnniversaryModal] = useState(false);
   const [notificationBannerDismissed, setNotificationBannerDismissed] = useState<boolean>(() => {
     try {
       return localStorage.getItem("toghrool_notif_banner_dismissed") === "true";
@@ -2099,6 +2101,17 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     <span className={`w-1.5 h-1.5 rounded-full ${isPartnerOnline ? "bg-[#1B1B1A]" : "bg-[#9E9A8F]"}`} />
                     {isPartnerOnline ? "آنلاین" : "آفلاین"}
                   </span>
+                )}
+                {userProfile.coupleInfo?.relationshipStartDate && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAnniversaryModal(true)}
+                    className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF0F7] text-[#EC407A] border border-[#F8BBD0] hover:bg-[#FCE7F3] transition-colors cursor-pointer"
+                    title="مشاهده روزشمار عشق و سالگردها"
+                  >
+                    <span>💍</span>
+                    <span>{toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز</span>
+                  </button>
                 )}
               </p>
             </div>
@@ -4430,6 +4443,47 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 </div>
               )}
 
+              {/* Anniversary & Love Days Counter Card */}
+              {!cropImageSrc && userProfile.coupleId && (
+                <div className="mt-4 pt-4 border-t border-[#E8E2D4] text-right" dir="rtl">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-black text-[#1B1B1A] flex items-center gap-1.5">
+                      <Heart className="w-3.5 h-3.5 text-[#EC407A] fill-current" />
+                      <span>روزشمار عشق و سالگردها</span>
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      setShowAnniversaryModal(true);
+                    }}
+                    className="w-full p-3.5 bg-[#FFFDF8] hover:bg-[#FAF6EC] border border-[#E8E2D4] rounded-2xl flex items-center justify-between text-right cursor-pointer transition-all shadow-2xs group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FFF0F7] to-[#FCE7F3] flex items-center justify-center text-[#EC407A] shadow-xs group-hover:scale-105 transition-transform border border-[#F8BBD0]">
+                        <span className="text-base">💍</span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-[#1B1B1A]">
+                          {userProfile.coupleInfo?.relationshipStartDate
+                            ? `${toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز عاشقی در کنار هم ❤️`
+                            : "تنظیم تاریخ آشنایی و سالگردها"}
+                        </p>
+                        <p className="text-[10px] text-[#78746B] font-medium mt-0.5">
+                          {userProfile.coupleInfo?.relationshipStartDate
+                            ? `شروع از ${toPersianDigits(formatPersianDate(userProfile.coupleInfo.relationshipStartDate))}`
+                            : "ثبت تاریخ آشنایی، ازدواج و شمارش روزهای دونفره"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#EC407A] bg-[#FFF0F7] px-2.5 py-1 rounded-full border border-[#F8BBD0] shrink-0">
+                      {userProfile.coupleInfo?.relationshipStartDate ? "مشاهده" : "تنظیم"}
+                    </span>
+                  </button>
+                </div>
+              )}
+
               {/* Partner Management Section */}
               {!cropImageSrc && userProfile.partnerUid && (
                 <div className="mt-6 pt-4 border-t border-[#E8E2D4] text-right" dir="rtl">
@@ -5631,6 +5685,28 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         }}
         onAccepted={() => {
           triggerAlert(`آتش‌بس و آشتی با موفقیت پذیرفته شد! 🫂💖`);
+        }}
+      />
+
+      {/* --- PHASE 3: ANNIVERSARY & LOVE DAYS MODAL --- */}
+      <AnniversaryModal
+        isOpen={showAnniversaryModal}
+        onClose={() => setShowAnniversaryModal(false)}
+        relationshipStartDate={userProfile.coupleInfo?.relationshipStartDate}
+        marriageDate={userProfile.coupleInfo?.marriageDate}
+        onSaved={(relDate, marrDate) => {
+          if (onUpdateUserProfile) {
+            onUpdateUserProfile({
+              ...userProfile,
+              coupleInfo: {
+                id: userProfile.coupleId || "",
+                relationshipStartDate: relDate,
+                marriageDate: marrDate,
+                createdAt: userProfile.coupleInfo?.createdAt
+              }
+            });
+          }
+          triggerAlert("تاریخ‌های سالگرد با موفقیت ذخیره شدند! 💍✨");
         }}
       />
 

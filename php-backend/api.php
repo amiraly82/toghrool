@@ -533,6 +533,15 @@ function ensurePhase2Schema($pdo) {
         if (!in_array('spaceModeUntil', $uCols, true)) {
             $pdo->exec("ALTER TABLE `users` ADD COLUMN `spaceModeUntil` BIGINT DEFAULT NULL");
         }
+
+        $cColsStmt = $pdo->query("SHOW COLUMNS FROM `couples`");
+        $cCols = $cColsStmt ? $cColsStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        if (!in_array('relationshipStartDate', $cCols, true)) {
+            $pdo->exec("ALTER TABLE `couples` ADD COLUMN `relationshipStartDate` VARCHAR(32) DEFAULT NULL");
+        }
+        if (!in_array('marriageDate', $cCols, true)) {
+            $pdo->exec("ALTER TABLE `couples` ADD COLUMN `marriageDate` VARCHAR(32) DEFAULT NULL");
+        }
     } catch (Exception $e) {
         error_log("Phase2 schema check notice: " . $e->getMessage());
     }
@@ -1135,6 +1144,15 @@ switch ($action) {
         $user['spaceMode'] = !empty($user['spaceMode']);
         $user['spaceModeUntil'] = $user['spaceModeUntil'] ? (int)$user['spaceModeUntil'] : null;
         $user['partner'] = $partnerData;
+
+        $coupleInfo = null;
+        if (!empty($user['coupleId'])) {
+            $cStmt = $pdo->prepare("SELECT id, relationshipStartDate, marriageDate, createdAt FROM couples WHERE id = ?");
+            $cStmt->execute([$user['coupleId']]);
+            $coupleInfo = $cStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        }
+        $user['coupleInfo'] = $coupleInfo;
+
         echo json_encode(['status' => 'success', 'user' => $user]);
         break;
 
@@ -1265,19 +1283,79 @@ switch ($action) {
     case 'unpair':
         $user = requireAuth($pdo);
         $uid = $user['uid'];
-
         $partnerUid = $user['partnerUid'];
         $coupleId = $user['coupleId'];
+
+        if ($coupleId) {
+            // 1. Immediately revoke health period sharing and couple period settings
+            try {
+                $pdo->prepare("DELETE FROM period_sharing WHERE coupleId = ? OR partnerUid IN (?, ?)")->execute([$coupleId, $uid, $partnerUid]);
+                $pdo->prepare("DELETE FROM couple_period_settings WHERE coupleId = ?")->execute([$coupleId]);
+            } catch (Exception $e) {}
+
+            // 2. Archive wishlist items so both retain their personal copy
+            try {
+                $wStmt = $pdo->prepare("SELECT * FROM wishlist WHERE coupleId = ?");
+                $wStmt->execute([$coupleId]);
+                $wishItems = $wStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                if (!empty($partnerUid) && !empty($wishItems)) {
+                    foreach ($wishItems as $item) {
+                        $newId = 'wish_' . bin2hex(random_bytes(10));
+                        $dupStmt = $pdo->prepare("INSERT INTO wishlist (id, coupleId, title, category, budget, description, link, linkPreview, date, progress, isCompleted, createdBy, createdByName, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                        $dupStmt->execute([
+                            $newId,
+                            $partnerUid, // Personal copy for partner
+                            $item['title'],
+                            $item['category'],
+                            $item['budget'] ?? 'medium',
+                            $item['description'],
+                            $item['link'],
+                            $item['linkPreview'],
+                            $item['date'],
+                            $item['progress'],
+                            $item['isCompleted'],
+                            $item['createdBy'],
+                            $item['createdByName']
+                        ]);
+                    }
+                }
+                // Convert original couple items to initiator personal copy
+                $pdo->prepare("UPDATE wishlist SET coupleId = ? WHERE coupleId = ?")->execute([$uid, $coupleId]);
+            } catch (Exception $e) {}
+
+            // 3. Remove push subscriptions linked to this couple
+            try {
+                $pdo->prepare("UPDATE push_subscriptions SET coupleId = NULL WHERE coupleId = ?")->execute([$coupleId]);
+            } catch (Exception $e) {}
+
+            // 4. Delete couples record
+            $pdo->prepare("DELETE FROM couples WHERE id = ?")->execute([$coupleId]);
+        }
 
         $pdo->prepare("UPDATE users SET partnerEmail = NULL, partnerUid = NULL, coupleId = NULL WHERE uid = ?")->execute([$uid]);
         if ($partnerUid) {
             $pdo->prepare("UPDATE users SET partnerEmail = NULL, partnerUid = NULL, coupleId = NULL WHERE uid = ?")->execute([$partnerUid]);
         }
-        if ($coupleId) {
-            $pdo->prepare("DELETE FROM couples WHERE id = ?")->execute([$coupleId]);
-        }
 
-        echo json_encode(['status' => 'success', 'message' => 'اتصال با موفقیت قطع شد.']);
+        echo json_encode(['status' => 'success', 'message' => 'اتصال با موفقیت قطع شد و داده‌های شخصی تفکیک شدند.']);
+        break;
+
+    case 'updateAnniversaries':
+        $user = requireCoupleMember($pdo);
+        $coupleId = $user['coupleId'];
+        $relationshipStartDate = trim($input['relationshipStartDate'] ?? '');
+        $marriageDate = trim($input['marriageDate'] ?? '');
+
+        $stmt = $pdo->prepare("UPDATE couples SET relationshipStartDate = ?, marriageDate = ? WHERE id = ?");
+        $stmt->execute([$relationshipStartDate ?: null, $marriageDate ?: null, $coupleId]);
+
+        echo json_encode([
+            'status' => 'success',
+            'relationshipStartDate' => $relationshipStartDate,
+            'marriageDate' => $marriageDate,
+            'message' => 'تاریخ‌های سالگرد با موفقیت ذخیره شد.'
+        ]);
         break;
 
     // ----------------------------------------------------

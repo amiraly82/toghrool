@@ -66,6 +66,7 @@ import {
 } from "../utils/jalali";
 import { fetchFromPhpApi } from "../apiClient";
 import JalaliDatePicker from "./JalaliDatePicker";
+import QuickCycleSetupModal from "./QuickCycleSetupModal";
 
 interface ImpoPeriodTrackerProps {
   userProfile: UserProfile;
@@ -184,11 +185,20 @@ export default function ImpoPeriodTracker({
     };
   });
 
-  const [, setHasConfigured] = useState<boolean>(() => {
+  const [hasConfigured, setHasConfigured] = useState<boolean>(() => {
     return !!(
       localStorage.getItem(`impo_period_configured_${storageKey}`) ||
       localStorage.getItem(`impo_period_configured_${userProfile.uid}`)
     );
+  });
+
+  const [showQuickSetupModal, setShowQuickSetupModal] = useState<boolean>(() => {
+    const isConfigured = !!(
+      localStorage.getItem(`impo_period_configured_${storageKey}`) ||
+      localStorage.getItem(`impo_period_configured_${userProfile.uid}`)
+    );
+    const isFemale = userProfile.gender !== "male";
+    return !isConfigured && isFemale;
   });
 
   // Daily Logs State
@@ -3203,6 +3213,38 @@ export default function ImpoPeriodTracker({
           </div>
         )}
       </AnimatePresence>
+
+      {/* --- QUICK 30-SECOND CYCLE SETUP MODAL (PHASE 3) --- */}
+      <QuickCycleSetupModal
+        isOpen={showQuickSetupModal}
+        onClose={() => setShowQuickSetupModal(false)}
+        onSave={(lastPeriodStartDate, cycleLength, periodLength) => {
+          const newSettings: ImpoPeriodSettings = {
+            ...settings,
+            lastPeriodStartDate,
+            cycleLength,
+            periodLength
+          };
+          setSettings(newSettings);
+          localStorage.setItem(`impo_period_settings_${storageKey}`, JSON.stringify(newSettings));
+          localStorage.setItem(`impo_period_settings_${userProfile.uid}`, JSON.stringify(newSettings));
+          localStorage.setItem(`impo_period_configured_${storageKey}`, "true");
+          localStorage.setItem(`impo_period_configured_${userProfile.uid}`, "true");
+          setHasConfigured(true);
+          setShowQuickSetupModal(false);
+          setTrackerToast("چرخه سلامت شما با موفقیت فعال و پیش‌بینی‌ها محاسبه شد! 🩸💖");
+          setTimeout(() => setTrackerToast(null), 3500);
+
+          fetchFromPhpApi("savePeriodSettings", {
+            coupleId: userProfile.coupleId,
+            settings: {
+              cycleLengthTypical: cycleLength,
+              periodLength,
+              lastPeriodStartDate
+            }
+          }, "POST").catch(() => {});
+        }}
+      />
     </div>
   );
 }

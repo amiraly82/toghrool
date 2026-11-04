@@ -35,6 +35,12 @@ export interface UserProfile {
   cheatSheet?: PartnerCheatSheet | null;
   spaceMode?: boolean;
   spaceModeUntil?: number | null;
+  coupleInfo?: {
+    id: string;
+    relationshipStartDate?: string | null;
+    marriageDate?: string | null;
+    createdAt?: string;
+  } | null;
 }
 
 export interface FemaleOnboardingHealthData {
