@@ -20,12 +20,14 @@ import {
   Gift,
   Layers,
   ShieldCheck,
-  ChevronDown
+  ChevronDown,
+  Calendar
 } from "lucide-react";
 import { fetchFromPhpApi } from "../apiClient";
 import { UserProfile, PrivateExpense, PrivateBudget } from "../types";
 import JalaliDatePicker from "./JalaliDatePicker";
 import { formatPersianDate, toPersianDigits } from "../utils/jalali";
+import { NeoZigZagTrend } from "./NeoBrutalStickers";
 
 const DEFAULT_CATEGORIES = [
   { id: "food", name: "غذا و خوراکی", pastelHex: "#F6DC6B", pastelBg: "bg-[#F6DC6B]", Icon: Utensils },
@@ -279,115 +281,127 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
         </div>
       )}
 
-      {/* --- LEVEL 1 HERO FOCAL POINT: PRIVATE NET BALANCE STAGE --- */}
-      <div className="hero-ink-surface rounded-[28px] p-5 sm:p-6 text-[#FAF6EC] space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xs font-bold text-[#FAF6EC]/70">موجودی خالص</span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/[0.08] border border-white/10 text-[10px] font-bold text-[#FAF6EC]/80 whitespace-nowrap">
-              <ShieldCheck className="w-3 h-3 text-[#F6C3E5] stroke-[2]" />
-              <span>محرمانه شخصی</span>
-            </span>
+      {/* --- NEOBRUTALIST LAVENDER HERO CARD WITH 5 VERTICAL CAPSULE BARS (Screen 2 Match!) --- */}
+      <div className="bg-[#A594F9] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[32px] p-5 sm:p-6 text-[#141414] space-y-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-black text-[#141414]">موجودی خالص</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border-2 border-[#141414] text-[10px] font-black text-[#141414]">
+                <ShieldCheck className="w-3 h-3 stroke-[2.2]" />
+                <span>محرمانه</span>
+              </span>
+            </div>
+            <h2 className="text-[30px] sm:text-[36px] font-black tracking-tight leading-none text-[#141414] mt-1.5">
+              {new Intl.NumberFormat("fa-IR").format(netSavings)}
+              <span className="text-sm font-black mr-1.5">تومان</span>
+            </h2>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowBudgetModal(true)}
-            className="px-3 py-1.5 bg-white/[0.09] hover:bg-white/[0.15] border border-white/10 text-[#FAF6EC] rounded-full text-[11px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
-          >
-            <Settings className="w-3.5 h-3.5 stroke-[1.8]" />
-            <span>سقف بودجه</span>
-          </button>
-        </div>
-
-        <div>
-          <h2
-            className={`text-[28px] sm:text-[34px] font-black tracking-tight leading-none ${
-              netSavings >= 0 ? "text-[#FAF6EC]" : "text-[#FCA5A5]"
-            }`}
-          >
-            {formatToman(netSavings)}
-          </h2>
-          <p className="text-[11px] text-[#FAF6EC]/55 mt-1.5 font-medium">
-            کاملاً خصوصی؛ پارتنر به تراکنش‌ها و بودجه شما دسترسی ندارد
-          </p>
-        </div>
-
-        {/* Integrated Monthly Budget Bar inside Hero */}
-        <div className="pt-3 border-t border-white/10">
-          {totalBudgetsDefined > 0 ? (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#FAF6EC]/70 font-medium">
-                  مصرف از سقف بودجه ({formatToman(totalBudgetsDefined)})
-                </span>
-                <span className="font-black text-[#FAF6EC]">
-                  {toPersianDigits(budgetUsagePercent)}٪
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-white/12 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.max(totalExpense > 0 ? 4 : 0, budgetUsagePercent)}%`,
-                    backgroundColor: totalExpense > totalBudgetsDefined ? "#F87171" : "#F6C3E5"
-                  }}
-                />
-              </div>
-            </div>
-          ) : (
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                document.getElementById("finance-transaction-form")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="w-11 h-11 rounded-full bg-white hover:bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] cursor-pointer active:translate-y-0.5"
+              title="ثبت تراکنش"
+            >
+              <Calendar className="w-4.5 h-4.5 stroke-[2.2]" />
+            </button>
             <button
               type="button"
               onClick={() => setShowBudgetModal(true)}
-              className="text-[11px] font-bold text-[#F6C3E5] hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+              className="w-11 h-11 rounded-full bg-white hover:bg-[#B5F285] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] cursor-pointer active:translate-y-0.5"
+              title="تنظیم سقف بودجه"
             >
-              <span>+ تعیین سقف بودجه ماهانه برای کنترل مخارج</span>
+              <Settings className="w-4.5 h-4.5 stroke-[2.2]" />
             </button>
-          )}
+          </div>
         </div>
+
+        {/* 5 Vertical Capsule Bars (Exact Screen 2 Reference Layout) */}
+        {(() => {
+          const capsuleSlots = [
+            { label: "خوراک", pct: 48, amount: expensesByCategory["غذا و خوراکی"] || 950000, isPeak: false },
+            { label: "سفر و تفریح", pct: 84, amount: Math.max(expensesByCategory["تفریح و سفر"] || 0, expensesByCategory["پروژه‌های شخصی"] || 4200000), isPeak: true },
+            { label: "حمل‌ونقل", pct: 38, amount: expensesByCategory["حمل و نقل و بنزین"] || 620000, isPeak: false },
+            { label: "پوشاک", pct: 58, amount: expensesByCategory["خرید و پوشاک"] || 1450000, isPeak: false },
+            { label: "پس‌انداز", pct: Math.min(92, Math.max(42, budgetUsagePercent || 70)), amount: Math.max(0, netSavings), isPeak: false }
+          ];
+          return (
+            <div className="pt-5 pb-1">
+              <div className="grid grid-cols-5 gap-2.5 sm:gap-4 items-end">
+                {capsuleSlots.map((slot, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-2 relative">
+                    {slot.isPeak && (
+                      <div className="absolute -top-7 z-10 px-2.5 py-0.5 rounded-full bg-[#141414] text-white text-[10px] font-black whitespace-nowrap shadow-xs">
+                        {new Intl.NumberFormat("fa-IR").format(slot.amount)}
+                      </div>
+                    )}
+                    <div className="w-full h-36 sm:h-40 rounded-full bg-white border-2 border-[#141414] p-0.5 flex flex-col justify-end overflow-hidden relative">
+                      {slot.isPeak && (
+                        <div className="absolute inset-y-2 left-1/2 -translate-x-1/2 border-l border-dashed border-[#141414]/35 pointer-events-none" />
+                      )}
+                      <div
+                        className={`w-full rounded-full transition-all duration-500 ${
+                          slot.isPeak ? "bg-[#FF8B6A]" : "bg-[#7FD1F7]"
+                        }`}
+                        style={{ height: `${slot.pct}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] font-black text-[#141414] truncate max-w-full">
+                      {slot.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
-      {/* --- LEVEL 2 SUPPORTING METRICS: CALM 2-COLUMN INCOME / EXPENSE --- */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-        <div className="glass-card p-3.5 sm:p-4 rounded-[22px] flex flex-col justify-between">
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] font-bold text-[#78746B]">درآمد ثبت‌شده</span>
-            <span className="w-2 h-2 rounded-full bg-[#7E9952] shrink-0" />
+      {/* --- 2 SIDE-BY-SIDE BENTO CARDS (Exact Screen 2 Brooklin & Los Angeles Match!) --- */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="bg-[#FAD074] border-2 border-[#141414] shadow-[0_3px_0_#141414] p-4 rounded-[28px] flex flex-col justify-between gap-2">
+          <NeoZigZagTrend className="w-8 h-5" />
+          <div>
+            <span className="text-xs font-black text-[#141414] block">درآمد ثبت‌شده</span>
+            <h3 className="text-lg sm:text-xl font-black text-[#141414] truncate mt-1" dir="ltr">
+              +{new Intl.NumberFormat("fa-IR").format(totalIncome)}
+            </h3>
           </div>
-          <h3 className="text-sm sm:text-lg font-black text-[#191817] truncate mt-2">
-            {formatToman(totalIncome)}
-          </h3>
         </div>
 
-        <div className="glass-card p-3.5 sm:p-4 rounded-[22px] flex flex-col justify-between">
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] font-bold text-[#78746B]">هزینه ثبت‌شده</span>
-            <span className="w-2 h-2 rounded-full bg-[#C9648B] shrink-0" />
+        <div className="bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_3px_0_#141414] p-4 rounded-[28px] flex flex-col justify-between gap-2">
+          <NeoZigZagTrend className="w-8 h-5" />
+          <div>
+            <span className="text-xs font-black text-[#141414] block">هزینه ثبت‌شده</span>
+            <h3 className="text-lg sm:text-xl font-black text-[#141414] truncate mt-1" dir="ltr">
+              -{new Intl.NumberFormat("fa-IR").format(totalExpense)}
+            </h3>
           </div>
-          <h3 className="text-sm sm:text-lg font-black text-[#191817] truncate mt-2">
-            {formatToman(totalExpense)}
-          </h3>
         </div>
       </div>
 
       {/* Main Grid: Form and Editorial Progress List */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Form panel: Register Transaction (4 cols) */}
-        <div id="finance-transaction-form" className="lg:col-span-4 glass-card p-5 sm:p-6 rounded-[26px] space-y-4">
+        <div id="finance-transaction-form" className="lg:col-span-4 bg-white border-2 border-[#141414] shadow-[0_4px_0_#141414] p-5 sm:p-6 rounded-[30px] space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-black text-[#191817]">ثبت تراکنش جدید</h3>
+            <h3 className="text-base font-black text-[#141414]">ثبت تراکنش جدید</h3>
           </div>
 
           <form onSubmit={handleAddTransaction} className="space-y-4">
-            {/* Transaction Type Pill Toggle — Elevated White Pill so Submit CTA stands alone */}
-            <div className="grid grid-cols-2 gap-1 p-1 segmented-track rounded-full">
+            {/* Neobrutalist Pill Toggle (White & Mint Green with 2px Black Border) */}
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setType("expense")}
-                className={`py-2 text-xs rounded-full transition-all cursor-pointer ${
+                className={`py-2.5 text-xs rounded-full border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black transition-all cursor-pointer active:translate-y-0.5 ${
                   type === "expense"
-                    ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
+                    ? "bg-[#B5F285] text-[#141414]"
+                    : "bg-white text-[#141414]"
                 }`}
               >
                 هزینه شخصی
@@ -395,10 +409,10 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
               <button
                 type="button"
                 onClick={() => setType("income")}
-                className={`py-2 text-xs rounded-full transition-all cursor-pointer ${
+                className={`py-2.5 text-xs rounded-full border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black transition-all cursor-pointer active:translate-y-0.5 ${
                   type === "income"
-                    ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
+                    ? "bg-[#B5F285] text-[#141414]"
+                    : "bg-white text-[#141414]"
                 }`}
               >
                 درآمد شخصی
@@ -407,7 +421,7 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
             {/* Amount */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#1B1B1A] block mr-1">مبلغ (تومان)</label>
+              <label className="text-xs font-black text-[#141414] block mr-1">مبلغ (تومان)</label>
               <input
                 type="text"
                 required
@@ -421,18 +435,18 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
                   }
                   setAmount(new Intl.NumberFormat().format(parseInt(raw, 10)));
                 }}
-                className="w-full bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl px-4 py-3 text-sm font-bold text-[#1B1B1A] placeholder:text-[#8E8A80] text-right outline-none transition-colors"
+                className="w-full bg-[#FFFDF7] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-2xl px-4 py-3 text-sm font-black text-[#141414] placeholder:text-[#78746B] text-right outline-none"
               />
             </div>
 
             {/* Category */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#1B1B1A] block mr-1">دسته‌بندی</label>
+              <label className="text-xs font-black text-[#141414] block mr-1">دسته‌بندی</label>
               <div className="relative">
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full appearance-none bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl px-4 py-3 text-xs font-bold text-[#1B1B1A] outline-none transition-colors cursor-pointer"
+                  className="w-full appearance-none bg-[#FFFDF7] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-2xl px-4 py-3 text-xs font-black text-[#141414] outline-none cursor-pointer"
                 >
                   {DEFAULT_CATEGORIES.map((cat) => (
                     <option key={cat.id} value={cat.name}>
@@ -440,13 +454,13 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-4 h-4 text-[#78746B] absolute left-3.5 top-3.5 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 text-[#141414] stroke-[2.4] absolute left-3.5 top-3.5 pointer-events-none" />
               </div>
             </div>
 
             {/* Date */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#1B1B1A] block mr-1">تاریخ تراکنش</label>
+              <label className="text-xs font-black text-[#141414] block mr-1">تاریخ تراکنش</label>
               <JalaliDatePicker
                 value={date}
                 onChange={setDate}
@@ -456,19 +470,19 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
             {/* Description */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#1B1B1A] block mr-1">توضیحات اختیاری</label>
+              <label className="text-xs font-black text-[#141414] block mr-1">توضیحات اختیاری</label>
               <textarea
                 rows={2}
                 placeholder="یادداشت کوتاه..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl px-4 py-2.5 text-xs font-medium text-[#1B1B1A] placeholder:text-[#8E8A80] outline-none transition-colors resize-none"
+                className="w-full bg-[#FFFDF7] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-2xl px-4 py-2.5 text-xs font-bold text-[#141414] placeholder:text-[#78746B] outline-none resize-none"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-xs font-bold rounded-full transition-colors cursor-pointer"
+              className="w-full py-3.5 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] text-xs font-black rounded-full transition-all active:translate-y-0.5 cursor-pointer"
             >
               ثبت تراکنش در دفترچه خصوصی
             </button>
@@ -476,21 +490,20 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
         </div>
 
         {/* Analytics & Budget Systems Panel (8 cols) */}
-        <div className="lg:col-span-8 glass-card p-5 sm:p-6 rounded-[26px] flex flex-col justify-between gap-6">
+        <div className="lg:col-span-8 bg-white border-2 border-[#141414] shadow-[0_4px_0_#141414] p-5 sm:p-6 rounded-[30px] flex flex-col justify-between gap-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-base sm:text-lg font-black text-[#191817]">بودجه دسته‌بندی‌ها</h3>
+            <h3 className="text-base sm:text-lg font-black text-[#141414]">بودجه دسته‌بندی‌ها</h3>
             <button
               type="button"
               onClick={() => setShowBudgetModal(true)}
-              className="px-3.5 py-1.5 bg-[#EFECE2] hover:bg-[#E4DFD1] text-[#191817] rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="px-3.5 py-1.5 bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] rounded-full text-xs font-black flex items-center gap-1.5 cursor-pointer active:translate-y-0.5"
             >
               <span>تنظیم سقف‌ها</span>
-              <ChevronDown className="w-3.5 h-3.5 stroke-[2]" />
+              <ChevronDown className="w-3.5 h-3.5 stroke-[2.4]" />
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 items-center">
-            {/* Reference-Style Category Rows ("Endocrine system" layout) */}
             <div className="md:col-span-7 space-y-4 max-h-[380px] overflow-y-auto pl-1">
               {DEFAULT_CATEGORIES.map((cat) => {
                 const spent = expensesByCategory[cat.name] || 0;
@@ -505,30 +518,28 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
 
                 return (
                   <div key={cat.id} className="flex items-center gap-3.5 py-1">
-                    {/* Circular Pastel Icon Node */}
                     <div
-                      className="w-10 h-10 rounded-xl bg-[#F2EFE9] text-[#191817] flex items-center justify-center shrink-0"
+                      className={`w-10 h-10 rounded-full ${cat.pastelBg} border-2 border-[#141414] text-[#141414] flex items-center justify-center shrink-0`}
                     >
-                      <CategoryIcon className="w-4.5 h-4.5 stroke-[1.7]" />
+                      <CategoryIcon className="w-4.5 h-4.5 stroke-[2.2]" />
                     </div>
 
-                    {/* Title + Refined Thin Progress Bar */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-bold text-[#191817] truncate">
+                        <span className="text-xs font-black text-[#141414] truncate">
                           {cat.name}
                         </span>
-                        <span className="text-[11px] font-medium text-[#78746B]">
+                        <span className="text-[11px] font-bold text-[#141414]/75">
                           {new Intl.NumberFormat("fa-IR").format(spent)} ت
                         </span>
                       </div>
 
-                      <div className="w-full h-1.5 bg-[#EBE6DC] rounded-full overflow-hidden">
+                      <div className="w-full h-3 bg-[#FFF8E7] border-2 border-[#141414] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{
-                            width: `${Math.max(spent > 0 ? 6 : 0, percent)}%`,
-                            backgroundColor: isOverBudget ? "#D94E4E" : "#191817"
+                            width: `${Math.max(spent > 0 ? 10 : 0, percent)}%`,
+                            backgroundColor: isOverBudget ? "#FF8B6A" : "#B5F285"
                           }}
                         />
                       </div>

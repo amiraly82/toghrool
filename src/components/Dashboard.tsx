@@ -22,6 +22,7 @@ import WhiteFlagModal from "./WhiteFlagModal";
 import WhiteFlagReceivedModal from "./WhiteFlagReceivedModal";
 import AnniversaryModal, { calculateDaysBetween } from "./AnniversaryModal";
 import PartnerHubSheet from "./PartnerHubSheet";
+import { NeoWishSticker, NeoCoolHeartMascot, NeoSparkle } from "./NeoBrutalStickers";
 import { getTehranDateString } from "../utils/dailyQuestions";
 import {
   triggerDeviceNotification,
@@ -194,11 +195,11 @@ const DEFAULT_CATEGORIES = [
   { id: "movie", label: "فیلم‌هایی که ببینیم", iconName: "Film", color: "text-[#1B1B1A]", bg: "bg-[#F9C6B8]", border: "border-[#EAAC9C]", barHex: "#F9C6B8", icon: Film }
 ];
 
-// Helper to render editorial user avatars with crisp contrast ring
-const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", sizeClasses = "w-9 h-9") => {
+// Helper to render Neobrutalist user avatars with crisp 2px solid #141414 border & lip shadow
+const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", sizeClasses = "w-10 h-10") => {
   if (!profile) {
     return (
-      <div className={`${sizeClasses} bg-[#EFECE2] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] ring-1 ring-[#D8D1C0] text-xs text-[#1B1B1A] shadow-2xs`}>
+      <div className={`${sizeClasses} bg-[#A594F9] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]`}>
         {fallbackLetter}
       </div>
     );
@@ -209,7 +210,7 @@ const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", si
       <img
         src={profile.photoURL}
         alt={profile.displayName}
-        className={`${sizeClasses} rounded-full object-cover border-2 border-[#FAF6EC] ring-1 ring-[#D8D1C0] shadow-2xs`}
+        className={`${sizeClasses} rounded-full object-cover border-2 border-[#141414] shadow-[0_2px_0_#141414] bg-[#A594F9]`}
         referrerPolicy="no-referrer"
         onError={(e) => {
           (e.target as any).src = "https://api.dicebear.com/7.x/adventurer/svg?seed=" + profile.uid;
@@ -218,14 +219,14 @@ const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", si
     );
   } else if (profile.photoURL && isEmoji) {
     return (
-      <div className={`${sizeClasses} bg-[#FFFDF8] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] ring-1 ring-[#D8D1C0] text-lg shadow-2xs`}>
+      <div className={`${sizeClasses} bg-[#A594F9] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] text-lg`}>
         {profile.photoURL}
       </div>
     );
   } else {
     const initial = profile.displayName ? profile.displayName.charAt(0) : "💕";
     return (
-      <div className={`${sizeClasses} bg-[#F6C3E5] text-[#1B1B1A] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] ring-1 ring-[#E5ADD2] font-black text-sm shadow-2xs`}>
+      <div className={`${sizeClasses} bg-[#FBC2F3] text-[#141414] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black text-sm`}>
         {initial}
       </div>
     );
@@ -2033,12 +2034,23 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     ? calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate)
     : null;
 
+  // Dynamic Neobrutalist Canvas Color Worlds matching the 3 Reference Screens:
+  // Screen 1 (Home / Hall / Calendar) -> Warm Apricot (#FAD074)
+  // Screen 2 (Health / Finance)       -> Fresh Lime-Pistachio (#D5F379)
+  // Screen 3 (Memories / Custom Tabs) -> Bubblegum Pink (#FBC2F3)
+  const canvasBgClass =
+    activeTab === "period" || activeTab === "finance"
+      ? "bg-[#D5F379]"
+      : activeTab === "memories" || activeTab.startsWith("tab-")
+      ? "bg-[#FBC2F3]"
+      : "bg-[#FAD074]";
+
   return (
-    <div className="min-h-screen pb-28 bg-[#FAF6EC] text-[#1B1B1A] relative" dir="rtl">
-      {/* Calm Header — RTL Couple Identity on the right, Overflow Menu on the left */}
-      <header className="sticky top-0 bg-[#FAF6EC]/95 backdrop-blur-sm border-b border-[#E8E2D4] z-30" dir="rtl">
-        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
+    <div className={`min-h-screen pb-28 ${canvasBgClass} text-[#141414] relative transition-colors duration-300`} dir="rtl">
+      {/* Neobrutalist Top Header — Bold Display Title + Circular Bordered Avatar & Action Buttons */}
+      <header className="sticky top-0 z-30 pt-2 pb-1.5 backdrop-blur-sm bg-black/[0.01]" dir="rtl">
+        <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             {/* Couple avatars: mine opens profile, partner's opens Partner Hub */}
             <div className="flex items-center shrink-0">
               <button
@@ -2047,7 +2059,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 className="relative z-10 rounded-full cursor-pointer transition-transform active:scale-95"
                 aria-label="پروفایل من"
               >
-                {renderAvatar(userProfile, "❤️", "w-10 h-10")}
+                {renderAvatar(userProfile, "❤️", "w-11 h-11")}
               </button>
               {userProfile.partnerUid ? (
                 <button
@@ -2056,10 +2068,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   className="relative z-0 -mr-2.5 rounded-full cursor-pointer transition-transform active:scale-95"
                   aria-label="فضای پارتنر"
                 >
-                  {renderAvatar(partnerProfile, "💖", "w-10 h-10")}
+                  {renderAvatar(partnerProfile, "💖", "w-11 h-11")}
                   <span
-                    className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-[#FAF6EC] ${
-                      isPartnerOnline ? "bg-[#A7B86C]" : "bg-[#C8C3B6]"
+                    className={`absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#141414] ${
+                      isPartnerOnline ? "bg-[#B5F285]" : "bg-white"
                     }`}
                   />
                 </button>
@@ -2067,10 +2079,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={onOpenPairingModal}
-                  className="-mr-2.5 w-10 h-10 rounded-full border-2 border-dashed border-[#B8B2A3] bg-[#FFFDF8] text-[#78746B] flex items-center justify-center cursor-pointer hover:border-[#1B1B1A] hover:text-[#1B1B1A] transition-colors"
+                  className="-mr-2.5 w-11 h-11 rounded-full border-2 border-[#141414] shadow-[0_2px_0_#141414] bg-white text-[#141414] flex items-center justify-center cursor-pointer hover:bg-[#B5F285] transition-colors"
                   aria-label="اتصال پارتنر"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
                 </button>
               )}
             </div>
@@ -2080,32 +2092,32 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               onClick={() => (userProfile.partnerUid ? setShowPartnerHub(true) : onOpenPairingModal?.())}
               className="min-w-0 text-right cursor-pointer"
             >
-              <h1 className="text-sm sm:text-base font-black text-[#1B1B1A] leading-tight truncate">
+              <h1 className="text-lg sm:text-2xl font-black text-[#141414] leading-tight truncate tracking-tight">
                 {userProfile.partnerUid
                   ? `${userProfile.displayName} و ${partnerProfile?.displayName || "پارتنر"}`
                   : userProfile.displayName}
               </h1>
-              <p className="text-[11px] text-[#78746B] font-semibold mt-0.5 truncate flex items-center gap-1">
+              <p className="text-xs text-[#141414]/80 font-extrabold mt-0.5 truncate flex items-center gap-1">
                 {!userProfile.partnerUid ? (
-                  <span className="text-[#D81B60]">+ اتصال به پارتنر</span>
+                  <span className="underline decoration-2">+ اتصال به پارتنر</span>
                 ) : userProfile.coupleInfo?.relationshipStartDate ? (
-                  <span>{toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز با هم</span>
+                  <span>{toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز با هم ✦</span>
                 ) : (
-                  <span>{isPartnerOnline ? "پارتنر آنلاین است" : "آفلاین"}</span>
+                  <span>{isPartnerOnline ? "پارتنر آنلاین است ✦" : "فضای مشترک دونفره"}</span>
                 )}
               </p>
             </button>
           </div>
 
-          {/* Left Controls: Solo Pair Pill (if unpaired) + Single Overflow Menu */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Left Controls: Solo Pair Pill (if unpaired) + Circular Neobrutalist Menu Button */}
+          <div className="flex items-center gap-2 shrink-0">
             {!userProfile.partnerUid && !userProfile.coupleId && (
               <button
                 type="button"
                 onClick={onOpenPairingModal}
-                className="px-3 py-1.5 rounded-full bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                className="px-3.5 py-2 rounded-full bg-[#242424] text-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all"
               >
-                <Key className="w-3 h-3 text-[#F6C3E5]" />
+                <Key className="w-3.5 h-3.5 text-[#F5F97A]" />
                 <span>اتصال پارتنر</span>
               </button>
             )}
@@ -2113,12 +2125,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               <button
                 type="button"
                 onClick={() => setShowHeaderMenu((v) => !v)}
-                className="relative w-9 h-9 rounded-full bg-[#EFECE2]/80 hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+                className="relative w-11 h-11 rounded-full bg-[#FBC2F3] hover:bg-[#f7aee9] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] flex items-center justify-center transition-all cursor-pointer active:translate-y-0.5"
                 aria-label="منو"
               >
-                <MoreHorizontal className="w-5 h-5 stroke-[1.8]" />
+                <MoreHorizontal className="w-5 h-5 stroke-[2.4]" />
                 {!notificationsEnabled && (
-                  <span className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-[#EC407A] ring-2 ring-[#FAF6EC]" />
+                  <span className="absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full bg-[#FF8B6A] border-2 border-[#141414]" />
                 )}
               </button>
 
@@ -2131,7 +2143,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.97 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute left-0 top-12 w-60 bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl shadow-xl z-50 overflow-hidden text-right"
+                    className="absolute left-0 top-13 w-60 bg-white border-2 border-[#141414] rounded-[24px] shadow-[0_4px_0_#141414] z-50 overflow-hidden text-right"
                     dir="rtl"
                   >
                     <button
@@ -2140,9 +2152,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         setShowHeaderMenu(false);
                         setShowProfileModal(true);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6EC] text-sm font-bold text-[#1B1B1A] cursor-pointer transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAD074]/40 text-sm font-black text-[#141414] cursor-pointer transition-colors"
                     >
-                      <User className="w-4 h-4 text-[#78746B]" />
+                      <User className="w-4 h-4 text-[#141414] stroke-[2.2]" />
                       <span>پروفایل و تنظیمات</span>
                     </button>
                     <button
@@ -2151,15 +2163,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         setShowHeaderMenu(false);
                         requestNotificationPermission();
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6EC] text-sm font-bold text-[#1B1B1A] cursor-pointer transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAD074]/40 text-sm font-black text-[#141414] cursor-pointer transition-colors"
                     >
                       {notificationsEnabled ? (
-                        <Bell className="w-4 h-4 text-[#A7B86C]" />
+                        <Bell className="w-4 h-4 text-[#141414] stroke-[2.2]" />
                       ) : (
-                        <BellOff className="w-4 h-4 text-[#EC407A]" />
+                        <BellOff className="w-4 h-4 text-[#FF8B6A] stroke-[2.2]" />
                       )}
                       <span className="flex-1">اعلان‌ها</span>
-                      <span className={`text-[11px] font-bold ${notificationsEnabled ? "text-[#78746B]" : "text-[#EC407A]"}`}>
+                      <span className="text-[11px] font-black px-2 py-0.5 rounded-full border border-[#141414] bg-[#B5F285]">
                         {notificationsEnabled ? "فعال" : "فعال‌سازی"}
                       </span>
                     </button>
@@ -2170,22 +2182,22 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                           setShowHeaderMenu(false);
                           window.dispatchEvent(new CustomEvent("open-pwa-install"));
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6EC] text-sm font-bold text-[#1B1B1A] cursor-pointer transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAD074]/40 text-sm font-black text-[#141414] cursor-pointer transition-colors"
                       >
-                        <Smartphone className="w-4 h-4 text-[#78746B]" />
+                        <Smartphone className="w-4 h-4 text-[#141414] stroke-[2.2]" />
                         <span>نصب اپ روی گوشی</span>
                       </button>
                     )}
-                    <div className="border-t border-[#EFECE2]" />
+                    <div className="border-t-2 border-[#141414]" />
                     <button
                       type="button"
                       onClick={() => {
                         setShowHeaderMenu(false);
                         handleLogout();
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FAF6EC] text-sm font-bold text-[#78746B] hover:text-[#1B1B1A] cursor-pointer transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#FF8B6A]/40 text-sm font-black text-[#141414] cursor-pointer transition-colors"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-4 h-4 stroke-[2.2]" />
                       <span>خروج از حساب</span>
                     </button>
                   </motion.div>
@@ -2197,7 +2209,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         </div>
       </header>
 
-      {/* Real-time Poke Notification Alert Toaster (Soft Pastel Assistant Style) */}
+      {/* Real-time Poke Notification Alert Toaster */}
       <AnimatePresence>
         {pokes.length > 0 && (
           <div className="fixed top-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50" dir="rtl">
@@ -2209,32 +2221,22 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   initial={{ opacity: 0, y: -16, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.94 }}
-                  className={`rounded-[26px] p-4 mb-3 border shadow-lg flex items-start gap-3 relative overflow-hidden ${
-                    isLovePing
-                      ? 'bg-gradient-to-r from-[#F6C3E5] to-[#F9C6B8] border-[#E5ADD2] text-[#1B1B1A]'
-                      : 'bg-[#F6C3E5] text-[#1B1B1A] border-[#E5ADD2]'
-                  }`}
+                  className="rounded-[28px] p-4 mb-3 bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_4px_0_#141414] text-[#141414] flex items-start gap-3 relative overflow-hidden"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="w-24 h-24 absolute -bottom-6 -left-3 text-[#E5ADD2]/60 fill-current -rotate-12 pointer-events-none select-none"
-                  >
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
-                  <div className="w-10 h-10 rounded-full bg-[#FFFDF8] flex items-center justify-center shrink-0 relative z-10 shadow-sm">
+                  <div className="w-11 h-11 rounded-full bg-white border-2 border-[#141414] flex items-center justify-center shrink-0 relative z-10 shadow-[0_2px_0_#141414]">
                     {isLovePing ? (
-                      <Heart className="w-5 h-5 text-[#D94E4E] fill-current animate-pulse" />
+                      <Heart className="w-5 h-5 text-[#FF4D6D] fill-current animate-pulse" />
                     ) : (
-                      <MessageCircleHeart className="w-5 h-5 text-[#1B1B1A] stroke-[1.7]" />
+                      <MessageCircleHeart className="w-5 h-5 text-[#141414] stroke-[2.2]" />
                     )}
                   </div>
                   <div className="flex-1 relative z-10">
-                    <h4 className="text-[11px] font-bold text-[#1B1B1A]/70">
+                    <h4 className="text-[11px] font-extrabold text-[#141414]/75">
                       {isLovePing ? "تپش قلب و یادآوری آنی پارتنر" : "یادآوری عاشقانه از پارتنر"}
                     </h4>
                     <p className="text-sm font-black mt-0.5 leading-snug">{poke.message}</p>
                     {!isLovePing && (
-                      <p className="text-[11px] text-[#1B1B1A]/75 mt-1 font-medium">مربوط به: {poke.itemTitle}</p>
+                      <p className="text-[11px] text-[#141414]/80 mt-1 font-bold">مربوط به: {poke.itemTitle}</p>
                     )}
                     {isLovePing && (
                       <div className="flex items-center gap-2 mt-2.5">
@@ -2244,14 +2246,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             handleDismissAlert(poke.id);
                             handleSendLovePing("منم همین الان داشتم بهت فکر می‌کردم عزیزدلم! 💕");
                           }}
-                          className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] rounded-full text-[11px] font-black cursor-pointer transition-colors shadow-sm"
+                          className="px-3.5 py-1.5 bg-[#242424] text-white border-2 border-[#141414] rounded-full text-[11px] font-black cursor-pointer transition-colors shadow-[0_2px_0_#141414]"
                         >
                           منم به یادتم! 🥰
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDismissAlert(poke.id)}
-                          className="px-3 py-1 bg-white/60 hover:bg-white text-[#1B1B1A] rounded-full text-[11px] font-bold cursor-pointer transition-colors"
+                          className="px-3.5 py-1.5 bg-white text-[#141414] border-2 border-[#141414] rounded-full text-[11px] font-black cursor-pointer transition-colors"
                         >
                           بستن
                         </button>
@@ -2261,7 +2263,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   {!isLovePing && (
                     <button
                       onClick={() => handleDismissAlert(poke.id)}
-                      className="px-3.5 py-1.5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] rounded-full text-[11px] font-bold cursor-pointer shrink-0 relative z-10 transition-colors"
+                      className="px-3.5 py-1.5 bg-[#242424] text-white border-2 border-[#141414] rounded-full text-[11px] font-black cursor-pointer shrink-0 relative z-10 transition-colors"
                     >
                       فهمیدم
                     </button>
@@ -2273,52 +2275,29 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         )}
       </AnimatePresence>
 
-      <main className="max-w-5xl mx-auto px-4 mt-3.5 sm:mt-6">
-        {/* --- LEVEL 1 FOCAL HERO STAGE (HOME TAB): UNIFIED COUPLE PULSE + DAILY SPARK --- */}
+      <main className="max-w-5xl mx-auto px-4 mt-2 sm:mt-4">
+        {/* --- LEVEL 1 NEOBRUTALIST COUPLE HERO CARD (HOME TAB): LAVENDER STAGE + MOOD PILLS + DAILY QUESTION --- */}
         {activeTab === "wishlist" && (
-          <div className="hero-ink-surface rounded-[28px] p-4 sm:p-5 mb-4 text-[#FAF6EC]" dir="rtl">
-            {/* Subtle Hero Eyebrow */}
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <span className="text-[11px] font-bold text-[#FAF6EC]/65">
-                نبض امروز رابطه‌مون
-              </span>
-              {userProfile.partnerUid && (
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#FAF6EC]/75 bg-white/[0.07] px-2.5 py-0.5 rounded-full">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      isPartnerOnline ? "bg-[#B8D89A]" : "bg-white/35"
-                    }`}
-                  />
-                  <span>
-                    {userProfile.coupleInfo?.relationshipStartDate
-                      ? `${toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز کنار هم`
-                      : isPartnerOnline
-                      ? "پارتنر آنلاین"
-                      : "فضای مشترک"}
-                  </span>
-                </span>
-              )}
-            </div>
-
-            {/* Two Harmonious Translucent Glass Mood Tiles */}
-            <div className="grid grid-cols-2 gap-2">
+          <div className="bg-[#A594F9] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[30px] p-4 sm:p-5 mb-4 text-[#141414]" dir="rtl">
+            {/* Two Neobrutalist Mood Pills (White & Mint) */}
+            <div className="grid grid-cols-2 gap-2.5">
               {/* My Mood */}
               <button
                 type="button"
                 onClick={() => setShowEmotionalStatusSheet(true)}
-                className="bg-white/[0.06] hover:bg-white/[0.11] border border-white/[0.09] rounded-2xl p-2.5 px-3 flex items-center gap-2.5 text-right transition-all cursor-pointer min-w-0"
+                className="bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[20px] p-2.5 px-3 flex items-center gap-2.5 text-right transition-transform active:translate-y-0.5 cursor-pointer min-w-0"
               >
-                <span className="w-9 h-9 rounded-xl bg-white/[0.08] flex items-center justify-center text-base shrink-0">
+                <span className="w-9 h-9 rounded-full bg-[#F5F97A] border-2 border-[#141414] flex items-center justify-center text-base shrink-0">
                   {getNeedStatusOption(myNeedStatus).emoji}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-[10px] font-medium text-[#FAF6EC]/60 truncate">حال دل من</span>
-                    <span className="text-[10px] font-bold text-[#FAF6EC]/80 shrink-0">
+                    <span className="text-[10px] font-extrabold text-[#141414]/70 truncate">حال دل من</span>
+                    <span className="text-[10px] font-black text-[#141414] bg-[#B5F285] px-1.5 py-0.2 rounded-full border border-[#141414] shrink-0">
                       {toPersianDigits(myBatteryLevel)}٪
                     </span>
                   </div>
-                  <p className="text-xs font-black text-[#FAF6EC] truncate mt-0.5">
+                  <p className="text-xs font-black text-[#141414] truncate mt-0.5">
                     {getNeedStatusOption(myNeedStatus).shortLabel || getNeedStatusOption(myNeedStatus).label}
                   </p>
                 </div>
@@ -2329,26 +2308,26 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={() => setShowPartnerHub(true)}
-                  className="bg-white/[0.06] hover:bg-white/[0.11] border border-white/[0.09] rounded-2xl p-2.5 px-3 flex items-center gap-2.5 text-right transition-all cursor-pointer min-w-0"
+                  className="bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[20px] p-2.5 px-3 flex items-center gap-2.5 text-right transition-transform active:translate-y-0.5 cursor-pointer min-w-0"
                 >
-                  <span className="w-9 h-9 rounded-xl bg-[#F6C3E5]/15 flex items-center justify-center text-base shrink-0">
+                  <span className="w-9 h-9 rounded-full bg-white border-2 border-[#141414] flex items-center justify-center text-base shrink-0">
                     {getNeedStatusOption(partnerProfile?.needStatus || "calm").emoji}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-medium text-[#FAF6EC]/60 truncate">
+                      <span className="text-[10px] font-extrabold text-[#141414]/75 truncate">
                         {partnerProfile?.displayName || "پارتنر"}
                       </span>
-                      <span className="text-[10px] font-bold text-[#FAF6EC]/80 shrink-0">
+                      <span className="text-[10px] font-black text-[#141414] bg-white px-1.5 py-0.2 rounded-full border border-[#141414] shrink-0">
                         {toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪
                       </span>
                     </div>
-                    <p className="text-xs font-black text-[#FAF6EC] truncate mt-0.5 flex items-center justify-between gap-1">
+                    <p className="text-xs font-black text-[#141414] truncate mt-0.5 flex items-center justify-between gap-1">
                       <span className="truncate">
                         {getNeedStatusOption(partnerProfile?.needStatus || "calm").shortLabel ||
                           getNeedStatusOption(partnerProfile?.needStatus || "calm").label}
                       </span>
-                      <ChevronLeft className="w-3 h-3 text-[#FAF6EC]/45 shrink-0" />
+                      <ChevronLeft className="w-3.5 h-3.5 text-[#141414] stroke-[2.4] shrink-0" />
                     </p>
                   </div>
                 </button>
@@ -2356,12 +2335,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={onOpenPairingModal}
-                  className="bg-[#F6C3E5]/12 hover:bg-[#F6C3E5]/20 border border-dashed border-[#F6C3E5]/40 rounded-2xl p-2.5 px-3 flex items-center justify-center gap-2 text-center transition-all cursor-pointer min-w-0"
+                  className="bg-[#B5F285] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[20px] p-2.5 px-3 flex items-center justify-center gap-2 text-center transition-transform active:translate-y-0.5 cursor-pointer min-w-0"
                 >
-                  <Plus className="w-4 h-4 text-[#F6C3E5] shrink-0" />
+                  <Plus className="w-4 h-4 text-[#141414] stroke-[2.5] shrink-0" />
                   <div className="text-right min-w-0">
-                    <span className="block text-xs font-black text-[#FAF6EC] truncate">دعوت از پارتنر</span>
-                    <span className="block text-[10px] text-[#FAF6EC]/60 truncate">فعال‌سازی فضای مشترک</span>
+                    <span className="block text-xs font-black text-[#141414] truncate">دعوت از پارتنر</span>
+                    <span className="block text-[10px] font-bold text-[#141414]/75 truncate">فعال‌سازی فضای مشترک</span>
                   </div>
                 </button>
               )}
@@ -2402,19 +2381,19 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         )}
 
-        {/* Desktop Navigation Bar (Elevated White Segmented Pill — Zero Competing Solid Black Tabs) */}
+        {/* Desktop Navigation Bar (Neobrutalist Pill Bar) */}
         <div className="hidden md:block w-full mb-7" dir="rtl">
           <div className="flex items-center justify-center w-full">
-            <div className="inline-flex flex-wrap segmented-track p-1.5 rounded-full gap-1">
+            <div className="inline-flex flex-wrap segmented-track p-1.5 rounded-full gap-1.5">
               <button
                 onClick={() => setActiveTab("wishlist")}
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "wishlist" || activeTab === "hall"
                     ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
+                    : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
-                <Heart className="w-4 h-4 stroke-[1.8]" />
+                <Heart className="w-4 h-4 stroke-[2.2]" />
                 <span>آرزوها و افتخارات</span>
               </button>
 
@@ -2423,10 +2402,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "calendar"
                     ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
+                    : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
-                <CalendarIcon className="w-4 h-4 stroke-[1.8]" />
+                <CalendarIcon className="w-4 h-4 stroke-[2.2]" />
                 <span>تقویم مشترک</span>
               </button>
 
@@ -2435,10 +2414,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "period"
                     ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
+                    : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
-                <Droplet className="w-4 h-4 stroke-[1.8]" />
+                <Droplet className="w-4 h-4 stroke-[2.2]" />
                 <span>تقویم سلامت</span>
               </button>
 
@@ -2447,10 +2426,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "memories" || activeTab.startsWith("tab-")
                     ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
+                    : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
-                <Camera className="w-4 h-4 stroke-[1.8]" />
+                <Camera className="w-4 h-4 stroke-[2.2]" />
                 <span>خاطرات و یادداشت‌ها</span>
               </button>
 
@@ -2459,73 +2438,71 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "finance"
                     ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
+                    : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
-                <Wallet className="w-4 h-4 stroke-[1.8]" />
+                <Wallet className="w-4 h-4 stroke-[2.2]" />
                 <span>مدیریت مالی</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Quiet Level-2 Segmented Sub-Switch (Elevated White Pill on Soft Stone Track) */}
+        {/* Neobrutalist Pill Sub-Switch (Screen 1 & Screen 3 style: Mint Green active pill + White inactive pills with 2px black border) */}
         {(activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar") && (
-          <div className="flex items-center justify-center mb-3.5" dir="rtl">
-            <div className="w-full max-w-md grid grid-cols-3 md:inline-flex md:w-auto segmented-track p-1 rounded-full gap-1">
-              <button
-                type="button"
-                onClick={() => setActiveTab("wishlist")}
-                className={`px-2.5 sm:px-5 py-2 rounded-full text-[11px] sm:text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "wishlist"
-                    ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
-                }`}
-              >
-                <span>آرزوها</span>
-                <span className="text-[10px] text-[#8A8479]">({toPersianDigits(wishlistItems.length)})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("hall")}
-                className={`px-2.5 sm:px-5 py-2 rounded-full text-[11px] sm:text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "hall"
-                    ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
-                }`}
-              >
-                <span>افتخارات</span>
-                <span className="text-[10px] text-[#8A8479]">({toPersianDigits(hallOfFameItems.length)})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("calendar")}
-                className={`md:hidden px-2.5 py-2 rounded-full text-[11px] transition-all cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${
-                  activeTab === "calendar"
-                    ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
-                }`}
-              >
-                <span>تقویم مشترک</span>
-              </button>
-            </div>
+          <div className="flex items-center gap-2 mb-3.5 overflow-x-auto no-scrollbar pb-0.5" dir="rtl">
+            <button
+              type="button"
+              onClick={() => setActiveTab("wishlist")}
+              className={`px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                activeTab === "wishlist"
+                  ? "bg-[#B5F285] text-[#141414] font-black"
+                  : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
+              }`}
+            >
+              <span>آرزوها</span>
+              <span className="text-[11px] font-black">({toPersianDigits(wishlistItems.length)})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("hall")}
+              className={`px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                activeTab === "hall"
+                  ? "bg-[#B5F285] text-[#141414] font-black"
+                  : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
+              }`}
+            >
+              <span>افتخارات</span>
+              <span className="text-[11px] font-black">({toPersianDigits(hallOfFameItems.length)})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("calendar")}
+              className={`md:hidden px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                activeTab === "calendar"
+                  ? "bg-[#B5F285] text-[#141414] font-black"
+                  : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
+              }`}
+            >
+              <span>تقویم مشترک</span>
+            </button>
           </div>
         )}
 
-        {/* Sub-Navigation Bar inside Memories & Sticky Notes Pillar */}
+        {/* Sub-Navigation Bar inside Memories & Sticky Notes Pillar (Screen 3 Pill Tabs: White & Mint) */}
         {(activeTab === "memories" || activeTab.startsWith("tab-")) && (
-          <div className="flex items-center justify-between gap-2 mb-4 overflow-x-auto no-scrollbar" dir="rtl">
-            <div className="inline-flex items-center segmented-track p-1 rounded-full gap-1 shrink-0">
+          <div className="flex items-center justify-between gap-2 mb-4 overflow-x-auto no-scrollbar pb-0.5" dir="rtl">
+            <div className="inline-flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab("memories")}
-                className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === "memories"
-                    ? "segmented-pill-active font-black"
-                    : "font-bold text-[#78746B] hover:text-[#191817]"
+                    ? "bg-[#B5F285] text-[#141414] font-black"
+                    : "bg-white text-[#141414] font-bold"
                 }`}
               >
-                <Camera className="w-3.5 h-3.5 stroke-[1.8]" />
+                <Camera className="w-3.5 h-3.5 stroke-[2.2]" />
                 <span>خاطرات ({toPersianDigits(memories.length)})</span>
               </button>
 
@@ -2534,10 +2511,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <button
                     type="button"
                     onClick={() => setActiveTab(`tab-${tab.id}`)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    className={`px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                       activeTab === `tab-${tab.id}`
-                        ? "segmented-pill-active font-black"
-                        : "font-bold text-[#78746B] hover:text-[#191817]"
+                        ? "bg-[#B5F285] text-[#141414] font-black"
+                        : "bg-white text-[#141414] font-bold"
                     }`}
                   >
                     <span>{tab.icon || "📌"}</span>
@@ -2546,10 +2523,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <button
                     type="button"
                     onClick={(e) => handleDeleteTab(tab.id, e)}
-                    className="-top-1 -left-1 absolute bg-[#191817] hover:bg-[#D94E4E] text-[#FAF6EC] rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/tab:opacity-100 transition-opacity border border-[#FAF6EC] cursor-pointer z-10"
+                    className="-top-1 -left-1 absolute bg-[#FF8B6A] text-[#141414] rounded-full p-0.5 border-2 border-[#141414] cursor-pointer z-10"
                     title="حذف برد یادداشت"
                   >
-                    <X className="w-2.5 h-2.5" />
+                    <X className="w-2.5 h-2.5 stroke-[2.5]" />
                   </button>
                 </div>
               ))}
@@ -2557,10 +2534,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               <button
                 type="button"
                 onClick={() => setShowAddTabModal(true)}
-                className="px-3 py-1.5 rounded-full text-xs font-bold text-[#78746B] hover:text-[#191817] transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                className="px-3.5 py-2 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414] hover:bg-[#F5F97A] transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
                 title="ساخت برد یادداشت چسبان جدید"
               >
-                <Plus className="w-3.5 h-3.5 stroke-[2]" />
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>برد جدید</span>
               </button>
             </div>
@@ -2570,51 +2547,48 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={() => setShowMemoriesSearch((v) => !v)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer border ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer border-2 border-[#141414] shadow-[0_2px_0_#141414] ${
                     showMemoriesSearch || searchQuery
-                      ? "bg-[#FFFDF9] text-[#191817] border-[#191817] shadow-2xs"
-                      : "bg-[#FFFDF9] text-[#78746B] border-[#E2DCCE] hover:text-[#191817]"
+                      ? "bg-[#F5F97A] text-[#141414]"
+                      : "bg-white text-[#141414] hover:bg-[#F5F97A]"
                   }`}
                   aria-label="جستجو در خاطرات"
                 >
-                  <Search className="w-4 h-4 stroke-[1.8]" />
+                  <Search className="w-4 h-4 stroke-[2.2]" />
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* --- TAB 1: WISHLIST --- */}
+        {/* --- TAB 1: WISHLIST (EXACT SCREEN 1 NEOBRUTALIST CARDS + STICKERS) --- */}
         {activeTab === "wishlist" && (
           <div dir="rtl" className="space-y-4">
-            {/* Quiet Monochrome Discovery Rail (Zero Solid-Black Filter Pills or Rainbow Icon Dots!) */}
+            {/* Screen 1 Filter Row: Circular Yellow Filter Button + White/Mint Bordered Pills */}
             <div className="space-y-2.5">
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                {/* Filter & Search Toggle Pill */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                {/* Circular Yellow Filter Button (Exact Screen 1 top-left circle button!) */}
                 <button
                   type="button"
                   onClick={() => setShowFilterDrawer((v) => !v)}
-                  className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap border ${
+                  className={`w-10 h-10 rounded-full border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center cursor-pointer shrink-0 transition-transform active:translate-y-0.5 ${
                     showFilterDrawer || searchQuery || budgetFilter !== "all"
-                      ? "bg-[#FFFDF9] text-[#191817] border-[#191817] font-black shadow-2xs"
-                      : "bg-transparent text-[#78746B] border-[#DFD9CA] hover:border-[#B8B2A3] font-bold"
+                      ? "bg-[#FF8B6A] text-[#141414]"
+                      : "bg-[#F5F97A] text-[#141414]"
                   }`}
                   aria-label="جستجو و فیلتر"
+                  title="فیلتر و جستجو"
                 >
-                  <Search className="w-3.5 h-3.5 stroke-[1.9]" />
-                  <span>فیلتر</span>
-                  {(searchQuery || budgetFilter !== "all") && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9648B]" />
-                  )}
+                  <Search className="w-4 h-4 stroke-[2.4]" />
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setCategoryFilter("all")}
-                  className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer shrink-0 whitespace-nowrap border ${
+                  className={`px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                     categoryFilter === "all"
-                      ? "bg-[#FFFDF9] text-[#191817] border-[#191817] font-black shadow-2xs"
-                      : "bg-transparent text-[#78746B] border-[#DFD9CA] hover:border-[#B8B2A3] font-semibold"
+                      ? "bg-[#242424] text-white font-black"
+                      : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
                   }`}
                 >
                   همه ({toPersianDigits(items.filter((i) => !i.isCompleted).length)})
@@ -2630,20 +2604,20 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       <button
                         type="button"
                         onClick={() => setCategoryFilter(cat.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap border ${
+                        className={`px-3.5 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                           isSelected
-                            ? "bg-[#FFFDF9] text-[#191817] border-[#191817] font-black shadow-2xs"
-                            : "bg-transparent text-[#78746B] border-[#DFD9CA] hover:border-[#B8B2A3] font-semibold"
+                            ? "bg-[#242424] text-white font-black"
+                            : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
                         }`}
                       >
                         {typeof cat.iconName === "string" && !PRESET_ICONS[cat.iconName] ? (
-                          <span className="text-[11px] opacity-80">{cat.iconName}</span>
+                          <span className="text-xs">{cat.iconName}</span>
                         ) : (
-                          <Icon className={`w-3.5 h-3.5 stroke-[1.8] ${isSelected ? "text-[#191817]" : "text-[#8A8479]"}`} />
+                          <Icon className="w-3.5 h-3.5 stroke-[2.2]" />
                         )}
                         <span>{cat.label}</span>
                         {catCount > 0 && (
-                          <span className="text-[10px] text-[#8A8479]">
+                          <span className="text-[10px] opacity-85">
                             ({toPersianDigits(catCount)})
                           </span>
                         )}
@@ -2652,10 +2626,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         <button
                           type="button"
                           onClick={(e) => handleDeleteCategory(cat.id, e)}
-                          className="absolute -top-1 -left-1 bg-[#191817] hover:bg-[#D94E4E] text-[#FAF6EC] rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/cat:opacity-100 transition-opacity border border-[#FAF6EC] cursor-pointer z-10"
+                          className="absolute -top-1 -left-1 bg-[#FF8B6A] text-[#141414] rounded-full p-0.5 border-2 border-[#141414] cursor-pointer z-10"
                           title="حذف دسته‌بندی"
                         >
-                          <X className="w-2.5 h-2.5" />
+                          <X className="w-2.5 h-2.5 stroke-[2.5]" />
                         </button>
                       )}
                     </div>
@@ -2666,14 +2640,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={() => setShowAddShelfModal(true)}
-                  className="px-3 py-1.5 rounded-full border border-dashed border-[#C8C3B6] hover:border-[#191817] text-[#78746B] hover:text-[#191817] text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                  className="px-3.5 py-2 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] hover:bg-[#F5F97A] text-[#141414] text-xs font-black flex items-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>دسته جدید</span>
                 </button>
               </div>
 
-              {/* Expandable Search & Budget Drawer (Clean Monochrome Chips) */}
+              {/* Expandable Search & Budget Drawer */}
               <AnimatePresence>
                 {(showFilterDrawer || searchQuery || budgetFilter !== "all") && (
                   <motion.div
@@ -2682,7 +2656,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     exit={{ opacity: 0, height: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="glass-card rounded-2xl p-3 space-y-2.5">
+                    <div className="bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[24px] p-3.5 space-y-2.5">
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1 min-w-0">
                           <input
@@ -2690,16 +2664,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             placeholder="جستجو در بین آرزوها..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-8 pr-9 py-2 bg-[#EFECE2]/80 focus:bg-[#FAF6EC] border border-transparent focus:border-[#191817]/30 rounded-full text-xs font-semibold text-[#191817] placeholder-[#8E8A80] focus:outline-none text-right"
+                            className="w-full pl-8 pr-9 py-2 bg-[#FFFDF9] border-2 border-[#141414] rounded-full text-xs font-bold text-[#141414] placeholder-[#141414]/50 focus:outline-none text-right"
                           />
-                          <Search className="w-3.5 h-3.5 text-[#8E8A80] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none" />
+                          <Search className="w-3.5 h-3.5 text-[#141414] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none stroke-[2.2]" />
                           {searchQuery && (
                             <button
                               type="button"
                               onClick={() => setSearchQuery("")}
-                              className="absolute top-1/2 left-2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#78746B] hover:text-[#191817] rounded-full cursor-pointer"
+                              className="absolute top-1/2 left-2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#141414] rounded-full cursor-pointer"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-3.5 h-3.5 stroke-[2.4]" />
                             </button>
                           )}
                         </div>
@@ -2707,15 +2681,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         <button
                           type="button"
                           onClick={() => setShowDateRoulette(true)}
-                          className="px-3 py-2 bg-[#EFECE2] hover:bg-[#E4DFD1] text-[#191817] text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                          className="px-3.5 py-2 bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] text-xs font-black rounded-full flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
                         >
-                          <Sparkles className="w-3.5 h-3.5 text-[#C9648B]" />
+                          <Sparkles className="w-3.5 h-3.5 text-[#141414] stroke-[2.2]" />
                           <span>پیشنهاد شانسی</span>
                         </button>
                       </div>
 
                       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                        <span className="text-[11px] font-bold text-[#78746B] ml-1 shrink-0">بودجه:</span>
+                        <span className="text-[11px] font-black text-[#141414] ml-1 shrink-0">بودجه:</span>
                         {[
                           { id: "all", label: "همه" },
                           { id: "economy", label: "اقتصادی" },
@@ -2725,11 +2699,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                           <button
                             key={b.id}
                             type="button"
-                            onClick={() => setBudgetFilter(b.id)}
-                            className={`px-3 py-1 rounded-full text-[11px] transition-all cursor-pointer shrink-0 whitespace-nowrap border ${
+                            onClick={() => setBudgetFilter(b.id as any)}
+                            className={`px-3 py-1 rounded-full text-[11px] border-2 border-[#141414] transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                               budgetFilter === b.id
-                                ? "bg-[#FFFDF9] text-[#191817] border-[#191817] font-black"
-                                : "bg-transparent text-[#78746B] border-[#E2DCCE] hover:border-[#B8B2A3] font-semibold"
+                                ? "bg-[#B5F285] text-[#141414] font-black"
+                                : "bg-white text-[#141414] font-bold"
                             }`}
                           >
                             {b.label}
@@ -2743,32 +2717,30 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             </div>
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-[#78746B] gap-3">
-                <div className="w-12 h-12 rounded-full bg-[#F6DC6B] flex items-center justify-center text-[#1B1B1A]">
-                  <RefreshCw className="w-5 h-5 animate-spin stroke-[1.8]" />
+              <div className="flex flex-col items-center justify-center py-20 text-[#141414] gap-3">
+                <div className="w-12 h-12 rounded-full bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] flex items-center justify-center text-[#141414]">
+                  <RefreshCw className="w-5 h-5 animate-spin stroke-[2.2]" />
                 </div>
-                <p className="text-sm font-bold">در حال بارگذاری لیست آرزوها...</p>
+                <p className="text-sm font-black">در حال بارگذاری لیست آرزوها...</p>
               </div>
             ) : wishlistItems.length === 0 ? (
-              <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[30px] p-12 sm:p-16 text-center">
-                <div className="w-16 h-16 bg-[#F6DC6B] rounded-full flex items-center justify-center text-[#1B1B1A] mx-auto mb-4">
-                  <Compass className="w-7 h-7 stroke-[1.7]" />
-                </div>
-                <h3 className="text-lg font-black text-[#1B1B1A]">اینجا هنوز آرزویی ثبت نشده</h3>
-                <p className="text-[#78746B] text-sm mt-2 max-w-sm mx-auto leading-relaxed">
+              <div className="bg-white border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[32px] p-10 sm:p-14 text-center">
+                <NeoCoolHeartMascot className="w-36 h-36 mx-auto mb-3" />
+                <h3 className="text-lg font-black text-[#141414]">اینجا هنوز آرزویی ثبت نشده</h3>
+                <p className="text-[#141414]/75 text-sm font-bold mt-2 max-w-sm mx-auto leading-relaxed">
                   اولین آرزوی خودتون رو اضافه کنید؛ سفر، خرید، فیلم، کتاب یا جاهایی که دوست دارید با هم تجربه کنید.
                 </p>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="mt-6 inline-flex items-center py-3 px-6 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-sm font-bold rounded-full gap-2 transition-colors cursor-pointer"
+                  className="mt-6 inline-flex items-center py-3 px-6 bg-[#242424] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] text-sm font-black rounded-full gap-2 transition-all cursor-pointer"
                 >
-                  <Plus className="w-4 h-4 stroke-[2]" />
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>افزودن اولین آرزو</span>
                 </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {wishlistItems.map((item) => {
+                {wishlistItems.map((item, idx) => {
                   const catConfig = allCategories.find((c) => c.id === item.category) || allCategories[0];
                   const CatIcon = catConfig.icon;
                   const budgetText =
@@ -2781,180 +2753,164 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       : "";
                   const isMenuOpen = openWishMenuId === item.id;
 
+                  // Exact Screen 1 Color-Blocked Card Palette:
+                  // Card 1 / trip / place -> Mint Green (#B5F285)
+                  // Card 2 / buy          -> Coral Orange (#FF8B6A)
+                  // Card 3 / movie / book -> Candy Pink (#FBC2F3) or Sky Blue (#7FD1F7)
+                  const cardPalette = ["bg-[#B5F285]", "bg-[#FF8B6A]", "bg-[#FBC2F3]", "bg-[#7FD1F7]"];
+                  const cardBgClass =
+                    item.category === "trip" || item.category === "place"
+                      ? idx % 2 === 0
+                        ? "bg-[#B5F285]"
+                        : "bg-[#7FD1F7]"
+                      : item.category === "buy"
+                      ? "bg-[#FF8B6A]"
+                      : cardPalette[idx % cardPalette.length];
+
                   return (
                     <motion.div
                       key={item.id}
                       layout
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="glass-card glass-card-hover rounded-[26px] p-4 sm:p-5 flex flex-col justify-between relative"
+                      className={`${cardBgClass} border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[30px] p-5 flex flex-col justify-between relative text-[#141414] overflow-hidden`}
                     >
-                      <div>
-                        {/* Quiet Level-3 Metadata Row + Discreet Overflow Menu (Zero Rainbow Stickers or 6-Button Clutter) */}
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-8 h-8 rounded-xl bg-[#F2EEE4] text-[#191817] flex items-center justify-center shrink-0">
-                              {typeof catConfig.iconName === "string" && !PRESET_ICONS[catConfig.iconName] ? (
-                                <span className="text-sm">{catConfig.iconName}</span>
-                              ) : (
-                                <CatIcon className="w-4 h-4 stroke-[1.8]" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#78746B] truncate">
-                                <span>{catConfig.label}</span>
-                                {budgetText && (
-                                  <>
-                                    <span className="text-[#CFC9BA]">·</span>
-                                    <span className="font-semibold text-[#8A8479]">{budgetText}</span>
-                                  </>
-                                )}
-                                <span className="text-[#CFC9BA]">·</span>
-                                <span className="font-medium text-[#9A9488]">{item.createdByName}</span>
+                      {/* Top Pill Metadata + Circular Action Buttons */}
+                      <div className="flex items-center justify-between gap-2 mb-2 relative z-10">
+                        <div className="inline-flex items-center gap-1.5 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-3 py-1 text-[11px] font-black text-[#141414] truncate">
+                          {typeof catConfig.iconName === "string" && !PRESET_ICONS[catConfig.iconName] ? (
+                            <span>{catConfig.iconName}</span>
+                          ) : (
+                            <CatIcon className="w-3.5 h-3.5 stroke-[2.2]" />
+                          )}
+                          <span>{catConfig.label}</span>
+                          {budgetText && (
+                            <>
+                              <span>•</span>
+                              <span>{budgetText}</span>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0 relative">
+                          <button
+                            type="button"
+                            onClick={() => handleSendPoke(item)}
+                            className="w-9 h-9 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] hover:bg-[#F5F97A] flex items-center justify-center transition-transform cursor-pointer active:scale-95"
+                            title="یادآوری عاشقانه به پارتنر"
+                            aria-label="یادآوری عاشقانه"
+                          >
+                            <Heart className="w-4 h-4 stroke-[2.2]" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setOpenWishMenuId((prev) => (prev === item.id ? null : item.id))}
+                            className="w-9 h-9 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] hover:bg-[#F5F97A] flex items-center justify-center transition-transform cursor-pointer"
+                            aria-label="گزینه‌های کارت"
+                          >
+                            <MoreHorizontal className="w-4 h-4 stroke-[2.4]" />
+                          </button>
+
+                          {isMenuOpen && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-20"
+                                onClick={() => setOpenWishMenuId(null)}
+                              />
+                              <div className="absolute left-0 top-10 z-30 w-40 bg-white border-2 border-[#141414] rounded-[20px] shadow-[0_4px_0_#141414] p-1 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenWishMenuId(null);
+                                    handleOpenEditModal(item);
+                                  }}
+                                  className="w-full px-3 py-2 rounded-xl text-xs font-black text-[#141414] hover:bg-[#F5F97A] flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                                  <span>ویرایش آرزو</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenWishMenuId(null);
+                                    handleDeleteItem(item.id);
+                                  }}
+                                  className="w-full px-3 py-2 rounded-xl text-xs font-black text-[#141414] hover:bg-[#FF8B6A] flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                                  <span>حذف آرزو</span>
+                                </button>
                               </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Screen 1 Main Split Layout: Bold Title + Big Numeric Progress on Right | Retro Cartoon Sticker on Left */}
+                      <div className="flex items-center justify-between gap-3 my-1 relative z-10">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug tracking-tight">
+                            {item.title}
+                          </h3>
+                          {item.description && (
+                            <p className="text-[#141414]/80 text-xs sm:text-sm font-bold mt-1 line-clamp-2 leading-relaxed">
+                              {item.description}
+                            </p>
+                          )}
+
+                          {/* Big Bold Numeric Callout (Exact Screen 1 "$ 155,345" placement!) */}
+                          <div className="mt-3">
+                            <div className="text-2xl sm:text-3xl font-black text-[#141414] tracking-tight leading-none">
+                              {toPersianDigits(item.progress)}٪
                             </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0 relative">
-                            <button
-                              type="button"
-                              onClick={() => handleSendPoke(item)}
-                              className="w-8 h-8 rounded-full text-[#8A8479] hover:text-[#C9648B] hover:bg-[#FAF0F5] flex items-center justify-center transition-colors cursor-pointer active:scale-90"
-                              title="یادآوری عاشقانه به پارتنر"
-                              aria-label="یادآوری عاشقانه"
-                            >
-                              <Heart className="w-4 h-4 stroke-[1.8]" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setOpenWishMenuId((prev) => (prev === item.id ? null : item.id))}
-                              className="w-8 h-8 rounded-full text-[#8A8479] hover:text-[#191817] hover:bg-[#EFECE2] flex items-center justify-center transition-colors cursor-pointer"
-                              aria-label="گزینه‌های کارت"
-                            >
-                              <MoreHorizontal className="w-4 h-4 stroke-[1.9]" />
-                            </button>
-
-                            {isMenuOpen && (
-                              <>
-                                <div
-                                  className="fixed inset-0 z-20"
-                                  onClick={() => setOpenWishMenuId(null)}
-                                />
-                                <div className="absolute left-0 top-9 z-30 w-36 bg-[#FFFDF9] border border-[#E2DCCE] rounded-2xl shadow-xl p-1 text-right">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenWishMenuId(null);
-                                      handleOpenEditModal(item);
-                                    }}
-                                    className="w-full px-3 py-2 rounded-xl text-xs font-bold text-[#191817] hover:bg-[#FAF6EC] flex items-center gap-2 cursor-pointer"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5 text-[#78746B]" />
-                                    <span>ویرایش آرزو</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenWishMenuId(null);
-                                      handleDeleteItem(item.id);
-                                    }}
-                                    className="w-full px-3 py-2 rounded-xl text-xs font-bold text-[#D94E4E] hover:bg-[#FFF2F2] flex items-center gap-2 cursor-pointer"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    <span>حذف آرزو</span>
-                                  </button>
-                                </div>
-                              </>
-                            )}
+                            <p className="text-[11px] font-extrabold text-[#141414]/75 mt-1">
+                              ثبت توسط {item.createdByName}
+                              {item.date ? ` • ${toPersianDigits(formatPersianDate(item.date))}` : ""}
+                            </p>
                           </div>
                         </div>
 
-                        {/* Level-1 Card Typography: Bold, Confident Title */}
-                        <h3 className="text-[17px] sm:text-lg font-black text-[#191817] leading-snug tracking-tight">
-                          {item.title}
-                        </h3>
-                        {item.description && (
-                          <p className="text-[#6E6A61] text-xs sm:text-sm mt-1 line-clamp-2 leading-relaxed">
-                            {item.description}
-                          </p>
-                        )}
-
-                        {/* Link Preview integration */}
-                        {item.link && (
-                          <div className="mt-3.5">
-                            {item.linkPreview ? (
-                              <a
-                                href={item.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group block bg-[#FAF6EC] hover:bg-[#EFECE2] rounded-2xl border border-[#EAE4D7] p-2.5 transition-colors text-right"
-                              >
-                                <div className="flex gap-3 items-center">
-                                  {item.linkPreview.image && (
-                                    <img
-                                      src={item.linkPreview.image}
-                                      alt="link preview"
-                                      className="w-12 h-12 object-cover rounded-xl shrink-0 border border-[#EAE4D7]"
-                                      referrerPolicy="no-referrer"
-                                    />
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="text-xs font-bold text-[#191817] truncate flex items-center gap-1">
-                                      <span>{item.linkPreview.title || "مشاهده لینک"}</span>
-                                      <ExternalLink className="w-3 h-3 text-[#78746B] shrink-0" />
-                                    </h4>
-                                    <p className="text-[10px] text-[#78746B] line-clamp-1 mt-0.5 leading-normal">
-                                      {item.linkPreview.description}
-                                    </p>
-                                  </div>
-                                </div>
-                              </a>
-                            ) : (
-                              <a
-                                href={item.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#191817] bg-[#F2EEE4] hover:bg-[#E5E0D2] px-3 py-1.5 rounded-full transition-colors"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5 stroke-[1.7]" />
-                                <span>باز کردن لینک همراه</span>
-                              </a>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Calm Tonal Target Date */}
-                        {item.date && (
-                          <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-[#5C5850] font-bold bg-[#F3EFE6] px-2.5 py-1 rounded-full">
-                            <CalendarIcon className="w-3 h-3 stroke-[1.8]" />
-                            <span>{toPersianDigits(formatPersianDate(item.date))}</span>
-                          </div>
-                        )}
+                        {/* Retro Rubber-Hose Cartoon Character Sticker (Screen 1) */}
+                        <NeoWishSticker
+                          category={item.category}
+                          className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 -ml-1 select-none pointer-events-none"
+                        />
                       </div>
 
-                      {/* Sleek Minimal Progress Footer (Single Ink Progress Bar + Quiet Tonal Controls) */}
-                      <div className="mt-4 pt-3.5 border-t border-[#EFECE2]/90">
-                        <div className="w-full bg-[#ECE7DC] h-1.5 rounded-full overflow-hidden mb-3">
+                      {/* Link Preview integration */}
+                      {item.link && (
+                        <div className="mt-2 relative z-10">
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-black text-[#141414] bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] px-3 py-1.5 rounded-full transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 stroke-[2.2]" />
+                            <span>{item.linkPreview?.title || "مشاهده لینک همراه"}</span>
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Framed Neobrutalist Progress Bar + Crisp Pill Controls */}
+                      <div className="mt-3.5 pt-3 border-t-2 border-[#141414]/20 relative z-10">
+                        <div className="w-full bg-white border-2 border-[#141414] h-3 rounded-full overflow-hidden mb-3 p-0.5">
                           <div
-                            className="h-full rounded-full transition-all duration-300 bg-[#191817]"
+                            className="h-full rounded-full transition-all duration-300 bg-[#141414]"
                             style={{
-                              width: `${Math.max(item.progress, item.progress > 0 ? 6 : 0)}%`
+                              width: `${Math.max(item.progress, item.progress > 0 ? 8 : 0)}%`
                             }}
                           />
                         </div>
 
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-bold text-[#78746B] ml-1">
-                              {toPersianDigits(item.progress)}٪
-                            </span>
-
                             {item.progress > 0 && (
                               <button
                                 type="button"
                                 onClick={() => handleUpdateProgress(item.id, item.progress, -25)}
-                                className="w-7 h-7 bg-[#F2EEE4] hover:bg-[#E5E0D2] rounded-full text-xs font-bold text-[#5C5850] flex items-center justify-center cursor-pointer transition-colors"
+                                className="w-8 h-8 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full text-xs font-black text-[#141414] flex items-center justify-center cursor-pointer active:translate-y-0.5"
                                 title="کاهش پیشرفت"
                               >
                                 −
@@ -2965,9 +2921,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                               <button
                                 type="button"
                                 onClick={() => handleUpdateProgress(item.id, item.progress, 25)}
-                                className="px-2.5 py-1 bg-[#F2EEE4] hover:bg-[#E5E0D2] text-[#191817] rounded-full text-[11px] font-bold cursor-pointer transition-colors"
+                                className="px-3.5 py-1.5 bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] rounded-full text-xs font-black cursor-pointer active:translate-y-0.5"
                               >
-                                +۲۵٪
+                                +۲۵٪ پیشرفت
                               </button>
                             )}
                           </div>
@@ -2975,13 +2931,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                           <button
                             type="button"
                             onClick={() => handleUpdateProgress(item.id, item.progress, 100 - item.progress)}
-                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                              item.progress >= 75
-                                ? "bg-[#191817] text-[#FAF6EC] shadow-xs"
-                                : "bg-transparent hover:bg-[#191817] text-[#191817] hover:text-[#FAF6EC] border border-[#D8D1C0] hover:border-[#191817]"
-                            }`}
+                            className="px-4 py-1.5 rounded-full text-xs font-black bg-[#242424] text-white border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center gap-1.5 transition-all cursor-pointer active:translate-y-0.5"
                           >
-                            <CheckCircle className="w-3.5 h-3.5 stroke-[1.8]" />
+                            <CheckCircle className="w-3.5 h-3.5 stroke-[2.2]" />
                             <span>انجام شد</span>
                           </button>
                         </div>
@@ -2997,40 +2949,41 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* --- TAB 2: HALL OF FAME (HERO TROPHY STAGE + CALM CARDS) --- */}
         {activeTab === "hall" && (
           <div dir="rtl" className="space-y-5">
-            {/* Level-1 Hero Stage for Hall of Fame */}
-            <div className="hero-ink-surface rounded-[28px] p-5 sm:p-6 text-[#FAF6EC] space-y-3.5">
-              <div className="flex items-end justify-between gap-3">
+            {/* Level-1 Neobrutalist Hero Stage for Hall of Fame */}
+            <div className="bg-[#A594F9] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[30px] p-5 sm:p-6 text-[#141414] space-y-3.5 relative overflow-hidden">
+              <div className="flex items-center justify-between gap-3 relative z-10">
                 <div>
-                  <span className="text-[11px] font-bold text-[#F6C3E5] flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-black bg-[#F5F97A] border-2 border-[#141414] rounded-full px-3 py-0.5 text-[#141414]">
+                    <Sparkles className="w-3.5 h-3.5 stroke-[2.2]" />
                     <span>تالار افتخارات دونفره</span>
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-2 text-[#141414]">
                     {toPersianDigits(items.filter((i) => i.isCompleted).length)} رویای برآورده‌شده
                   </h2>
-                  <p className="text-[11px] text-[#FAF6EC]/60 font-medium mt-1">
+                  <p className="text-xs text-[#141414]/80 font-extrabold mt-1">
                     آرزوهایی که با هم از لیست خط زدیم و به خاطره تبدیل کردیم
                   </p>
                 </div>
+                <NeoCoolHeartMascot className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 -ml-2" />
               </div>
 
               {items.some((i) => i.isCompleted) && (
-                <div className="relative pt-1">
+                <div className="relative pt-1 z-10">
                   <input
                     type="text"
                     placeholder="جستجو در بین افتخارات..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-9 py-2 bg-white/[0.08] focus:bg-white/[0.14] border border-white/10 rounded-full text-xs font-semibold text-[#FAF6EC] placeholder-[#FAF6EC]/45 focus:outline-none text-right"
+                    className="w-full pl-8 pr-9 py-2.5 bg-white border-2 border-[#141414] rounded-full text-xs font-bold text-[#141414] placeholder-[#141414]/55 focus:outline-none text-right"
                   />
-                  <Search className="w-3.5 h-3.5 text-[#FAF6EC]/55 absolute top-1/2 right-3 -translate-y-1/2 mt-0.5 pointer-events-none" />
+                  <Search className="w-3.5 h-3.5 text-[#141414] absolute top-1/2 right-3.5 -translate-y-1/2 mt-0.5 pointer-events-none stroke-[2.2]" />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="absolute top-1/2 left-2.5 -translate-y-1/2 mt-0.5 text-[#FAF6EC]/65 hover:text-white cursor-pointer"
+                      className="absolute top-1/2 left-2.5 -translate-y-1/2 mt-0.5 text-[#141414] cursor-pointer"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3.5 h-3.5 stroke-[2.4]" />
                     </button>
                   )}
                 </div>
@@ -3038,12 +2991,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             </div>
 
             {hallOfFameItems.length === 0 ? (
-              <div className="glass-card rounded-[28px] p-10 sm:p-14 text-center">
-                <div className="w-12 h-12 bg-[#F2EEE4] rounded-2xl flex items-center justify-center text-[#191817] mx-auto mb-3.5">
-                  <Sparkles className="w-5 h-5 stroke-[1.7]" />
+              <div className="bg-white border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[30px] p-10 sm:p-14 text-center">
+                <div className="w-14 h-14 bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full flex items-center justify-center text-[#141414] mx-auto mb-3.5">
+                  <Sparkles className="w-6 h-6 stroke-[2.2]" />
                 </div>
-                <h3 className="text-base sm:text-lg font-black text-[#191817]">هنوز موردی ثبت نشده</h3>
-                <p className="text-[#78746B] text-xs sm:text-sm mt-1.5 max-w-xs mx-auto leading-relaxed">
+                <h3 className="text-base sm:text-lg font-black text-[#141414]">هنوز موردی ثبت نشده</h3>
+                <p className="text-[#141414]/75 text-xs sm:text-sm font-bold mt-1.5 max-w-xs mx-auto leading-relaxed">
                   هر زمان یکی از آرزوهای لیست مشترک را تکمیل کنید، به عنوان خاطره ماندگار اینجا ثبت می‌شود.
                 </p>
               </div>
@@ -3056,12 +3009,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
                   return (
                     <div key={cat.id} className="space-y-3.5">
-                      <div className="flex items-center justify-between border-b border-[#E8E2D4] pb-2.5">
+                      <div className="flex items-center justify-between border-b-2 border-[#141414] pb-2.5">
                         <div className="flex items-center gap-2">
-                          <Icon className="w-4 h-4 stroke-[1.8] text-[#78746B]" />
-                          <h3 className="text-sm sm:text-base font-black text-[#191817]">{cat.label}</h3>
+                          <Icon className="w-4 h-4 stroke-[2.2] text-[#141414]" />
+                          <h3 className="text-sm sm:text-base font-black text-[#141414]">{cat.label}</h3>
                         </div>
-                        <span className="text-[11px] text-[#78746B] font-bold">
+                        <span className="text-[11px] text-[#141414] font-black bg-white border-2 border-[#141414] px-2.5 py-0.5 rounded-full">
                           {toPersianDigits(catItems.length)} مورد
                         </span>
                       </div>
@@ -3072,31 +3025,31 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             key={item.id}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="glass-card rounded-[24px] p-4 sm:p-5 relative flex flex-col justify-between"
+                            className="bg-[#B5F285] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[26px] p-4 sm:p-5 relative flex flex-col justify-between text-[#141414]"
                           >
                             <div>
                               <div className="flex items-center justify-between gap-2 mb-2.5">
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#F2EEE4] text-[#5C5850] font-bold text-[10px]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-white border-2 border-[#141414] text-[#141414] font-black text-[10px]">
                                   ✓ برآورده‌شده
                                 </span>
                                 <button
                                   onClick={() => handleDeleteItem(item.id)}
-                                  className="w-7 h-7 rounded-full text-[#A6A297] hover:text-[#D94E4E] hover:bg-[#FFF2F2] flex items-center justify-center transition-colors cursor-pointer"
+                                  className="w-8 h-8 rounded-full bg-white border-2 border-[#141414] text-[#141414] hover:bg-[#FF8B6A] flex items-center justify-center transition-colors cursor-pointer"
                                   title="حذف از تالار افتخارات"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5 stroke-[1.7]" />
+                                  <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
                                 </button>
                               </div>
 
-                              <h4 className="text-base font-black text-[#191817] leading-snug">{item.title}</h4>
+                              <h4 className="text-base font-black text-[#141414] leading-snug">{item.title}</h4>
                               {item.description && (
-                                <p className="text-xs text-[#78746B] mt-1 line-clamp-3 leading-relaxed">
+                                <p className="text-xs text-[#141414]/80 font-bold mt-1 line-clamp-3 leading-relaxed">
                                   {item.description}
                                 </p>
                               )}
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-[#EFECE2] flex items-center justify-between text-[11px] text-[#8A8479] font-semibold">
+                            <div className="mt-4 pt-3 border-t-2 border-[#141414]/20 flex items-center justify-between text-[11px] text-[#141414] font-extrabold">
                               <span>ثبت با {item.createdByName}</span>
                               <span>
                                 {item.completedAt?.seconds
@@ -3115,43 +3068,43 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         )}
 
-        {/* --- TAB 3: CALENDAR --- */}
+        {/* --- TAB 3: CALENDAR (NEOBRUTALIST CALENDAR STAGE) --- */}
         {activeTab === "calendar" && (
           <div className="max-w-lg mx-auto" dir="rtl">
-            <div className="glass-card rounded-[28px] p-4 sm:p-7 border border-[#E8E2D4] mb-5 space-y-4 sm:space-y-6">
+            <div className="bg-white border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[32px] p-4 sm:p-7 mb-5 space-y-4 sm:space-y-6">
               {/* Top Toggle for Cycle Overlay */}
-              <div className="flex items-center justify-between pb-3 border-b border-[#EFECE2]">
-                <h3 className="text-xs sm:text-base font-black text-[#191817] flex items-center gap-2">
-                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#F2EFE9] flex items-center justify-center text-[#191817]">
-                    <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
+              <div className="flex items-center justify-between pb-3 border-b-2 border-[#141414]/15">
+                <h3 className="text-xs sm:text-base font-black text-[#141414] flex items-center gap-2">
+                  <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#F5F97A] border-2 border-[#141414] flex items-center justify-center text-[#141414]">
+                    <CalendarIcon className="w-4 h-4 stroke-[2.2]" />
                   </span>
                   <span>تقویم مشترک زوجین</span>
                 </h3>
                 <button
                   onClick={() => setShowCycleOnCalendar((prev) => !prev)}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1.5 border ${
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-black transition-colors cursor-pointer flex items-center gap-1.5 border-2 border-[#141414] shadow-[0_2px_0_#141414] ${
                     showCycleOnCalendar
-                      ? "bg-[#FFFDF9] border-[#191817]/20 text-[#191817] shadow-2xs"
-                      : "bg-[#F2EFE9] border-transparent text-[#78746B] hover:text-[#191817]"
+                      ? "bg-[#FBC2F3] text-[#141414]"
+                      : "bg-white text-[#141414]"
                   }`}
                 >
-                  <span className={`w-2 h-2 rounded-full ${showCycleOnCalendar ? "bg-[#E187B8]" : "bg-[#B5B0A4]"}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full border border-[#141414] ${showCycleOnCalendar ? "bg-[#FF8B6A]" : "bg-[#D4D4D4]"}`} />
                   <span>چرخه سلامت: {showCycleOnCalendar ? "نمایان" : "مخفی"}</span>
                 </button>
               </div>
 
-              {/* Calendar Header: < Month Year > with Dashed Circular Nav Buttons */}
+              {/* Calendar Header: < Month Year > with Circular Neobrutalist Nav Buttons */}
               <div className="flex items-center justify-between px-1">
                 <button
                   onClick={prevMonth}
-                  className="w-10 h-10 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] hover:bg-[#EFECE2] flex items-center justify-center text-[#1B1B1A] transition-colors cursor-pointer"
+                  className="w-10 h-10 rounded-full border-2 border-[#141414] shadow-[0_2px_0_#141414] bg-[#FF8B6A] hover:bg-[#ff7954] flex items-center justify-center text-[#141414] transition-colors cursor-pointer"
                   title="ماه قبل"
                 >
-                  <ChevronRight className="w-5 h-5 stroke-[1.8]" />
+                  <ChevronRight className="w-5 h-5 stroke-[2.4]" />
                 </button>
 
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg sm:text-xl font-black text-[#1B1B1A]">
+                  <h3 className="text-lg sm:text-xl font-black text-[#141414]">
                     {JALALI_MONTHS[currentJalaliMonth - 1]} {toPersianDigits(currentJalaliYear)}
                   </h3>
                   {(currentJalaliYear !== actualTodayJy || currentJalaliMonth !== actualTodayJm) && (
@@ -3164,10 +3117,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         setCurrentJalaliYear(actualTodayJy);
                         setCurrentJalaliMonth(actualTodayJm);
                       }}
-                      className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm shrink-0 whitespace-nowrap"
+                      className="px-3 py-1 bg-[#242424] text-white border-2 border-[#141414] rounded-full text-xs font-black cursor-pointer transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap"
                       title="بازگشت به تاریخ امروز"
                     >
-                      <CalendarIcon className="w-3.5 h-3.5 stroke-[2]" />
+                      <CalendarIcon className="w-3.5 h-3.5 stroke-[2.2]" />
                       <span>برو به امروز</span>
                     </motion.button>
                   )}
@@ -3175,15 +3128,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
                 <button
                   onClick={nextMonth}
-                  className="w-10 h-10 rounded-full border border-dashed border-[#A6A297] hover:border-[#1B1B1A] hover:bg-[#EFECE2] flex items-center justify-center text-[#1B1B1A] transition-colors cursor-pointer"
+                  className="w-10 h-10 rounded-full border-2 border-[#141414] shadow-[0_2px_0_#141414] bg-[#B5F285] hover:bg-[#a2ea6a] flex items-center justify-center text-[#141414] transition-colors cursor-pointer"
                   title="ماه بعد"
                 >
-                  <ChevronLeft className="w-5 h-5 stroke-[1.8]" />
+                  <ChevronLeft className="w-5 h-5 stroke-[2.4]" />
                 </button>
               </div>
 
               {/* Weekday Labels */}
-              <div className="grid grid-cols-7 gap-2.5 sm:gap-3 text-center text-xs sm:text-sm font-semibold text-[#78746B]">
+              <div className="grid grid-cols-7 gap-2 text-center text-xs font-black text-[#141414]">
                 <div>شنبه</div>
                 <div>یک</div>
                 <div>دو</div>
@@ -3193,8 +3146,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <div>جمعه</div>
               </div>
 
-              {/* Squircle Day Tiles with Warm Soft Pastel Palette */}
-              <div className="grid grid-cols-7 gap-2.5 sm:gap-3">
+              {/* Squircle Day Tiles with Neobrutalist Borders */}
+              <div className="grid grid-cols-7 gap-2">
                 {calendarDays.map((day, idx) => {
                   if (day === null) {
                     return <div key={`empty-${idx}`} className="aspect-square" />;
@@ -3211,53 +3164,51 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
                   const phaseInfo = showCycleOnCalendar ? getMenstrualPhaseForDate(targetDate) : null;
 
-                  let tileColorClass = "bg-[#F4F0E6] text-[#191817] hover:bg-[#EAE4D7]";
+                  let tileColorClass = "bg-[#FFFDF9] text-[#141414] border-2 border-[#141414]/25 hover:border-[#141414]";
                   let phaseLabel = "";
 
                   if (phaseInfo && !isToday) {
                     if (phaseInfo.phase === "period" || phaseInfo.phase === "due" || phaseInfo.phase === "delayed") {
-                      tileColorClass = "bg-[#F6C3E5]/45 text-[#191817]";
+                      tileColorClass = "bg-[#FF8B6A] text-[#141414] border-2 border-[#141414]";
                       phaseLabel = "دوره پریود";
                     } else if (phaseInfo.phase === "pms") {
-                      tileColorClass = "bg-[#B8CEF4]/40 text-[#191817]";
+                      tileColorClass = "bg-[#7FD1F7] text-[#141414] border-2 border-[#141414]";
                       phaseLabel = "دوره PMS";
                     } else if (phaseInfo.phase === "ovulation") {
-                      tileColorClass = "bg-[#A7B86C]/45 text-[#191817]";
+                      tileColorClass = "bg-[#B5F285] text-[#141414] border-2 border-[#141414]";
                       phaseLabel = "روز تخمک‌گذاری";
                     } else if (phaseInfo.phase === "fertile") {
-                      tileColorClass = "bg-[#DCE6B5]/45 text-[#191817]";
+                      tileColorClass = "bg-[#D5F379] text-[#141414] border-2 border-[#141414]";
                       phaseLabel = "دوره باروری";
                     }
                   }
 
                   if (isToday) {
-                    tileColorClass = "bg-[#191817] text-[#FAF6EC] shadow-sm";
+                    tileColorClass = "bg-[#242424] text-white border-2 border-[#141414] shadow-[0_2px_0_#141414]";
                   }
 
                   return (
                     <div
                       key={`day-${day}`}
-                      className={`aspect-square rounded-[15px] sm:rounded-[18px] flex flex-col items-center justify-center transition-colors relative select-none cursor-pointer ${tileColorClass} ${
-                        hasItems && !isToday ? "ring-1.5 ring-[#191817]" : ""
-                      }`}
+                      className={`aspect-square rounded-[14px] sm:rounded-[16px] flex flex-col items-center justify-center transition-colors relative select-none cursor-pointer ${tileColorClass}`}
                       title={`${phaseLabel ? `[${phaseLabel}] ` : ""}${hasItems ? `(${dayItems.length} برنامه: ${dayItems.map((i) => i.title).join("، ")})` : ""}`}
                     >
-                      <span className="text-sm sm:text-base font-bold leading-none">
+                      <span className="text-sm sm:text-base font-black leading-none">
                         {toPersianDigits(day)}
                       </span>
 
                       {isToday && (
-                        <span className="text-[9px] sm:text-[10px] font-bold leading-none mt-1 text-[#F6C3E5]">
+                        <span className="text-[9px] font-black leading-none mt-1 text-[#F5F97A]">
                           امروز
                         </span>
                       )}
 
                       {hasItems && !isToday && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#191817] mt-1" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#141414] mt-1" />
                       )}
 
                       {hasItems && isToday && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#F6C3E5] absolute top-1.5 left-1.5" title="دارای برنامه مشترک" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#F5F97A] absolute top-1.5 left-1.5" title="دارای برنامه مشترک" />
                       )}
                     </div>
                   );
@@ -3266,41 +3217,41 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
               {/* Bottom 4-Dot Legend */}
               {showCycleOnCalendar && (
-                <div className="pt-4 border-t border-[#EFECE2] flex flex-wrap items-center justify-center gap-4 sm:gap-5 text-xs sm:text-sm font-bold text-[#1B1B1A]">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#F6C3E5] inline-block" />
+                <div className="pt-4 border-t-2 border-[#141414]/15 flex flex-wrap items-center justify-center gap-3 text-xs font-black text-[#141414]">
+                  <span className="flex items-center gap-1.5 bg-[#FF8B6A]/35 px-2.5 py-1 rounded-full border border-[#141414]">
+                    <span className="w-3 h-3 rounded-full bg-[#FF8B6A] border border-[#141414] inline-block" />
                     <span>دوره پریود</span>
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#B8CEF4] inline-block" />
+                  <span className="flex items-center gap-1.5 bg-[#7FD1F7]/35 px-2.5 py-1 rounded-full border border-[#141414]">
+                    <span className="w-3 h-3 rounded-full bg-[#7FD1F7] border border-[#141414] inline-block" />
                     <span>دوره PMS</span>
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#DCE6B5] inline-block" />
+                  <span className="flex items-center gap-1.5 bg-[#D5F379]/45 px-2.5 py-1 rounded-full border border-[#141414]">
+                    <span className="w-3 h-3 rounded-full bg-[#D5F379] border border-[#141414] inline-block" />
                     <span>دوره باروری</span>
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#A7B86C] inline-block" />
-                    <span>روز تخمک گذاری</span>
+                  <span className="flex items-center gap-1.5 bg-[#B5F285]/45 px-2.5 py-1 rounded-full border border-[#141414]">
+                    <span className="w-3 h-3 rounded-full bg-[#B5F285] border border-[#141414] inline-block" />
+                    <span>روز تخمک‌گذاری</span>
                   </span>
                 </div>
               )}
             </div>
 
             {/* List of items scheduled for current month */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
-                <h4 className="text-base font-black text-[#191817]">برنامه‌ها و سفرهای این ماه</h4>
+                <h4 className="text-base font-black text-[#141414]">برنامه‌ها و سفرهای این ماه</h4>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="px-3.5 py-1.5 rounded-full bg-[#FFFDF9] border border-[#191817] hover:bg-[#191817] text-[#191817] hover:text-[#FAF6EC] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-full bg-[#242424] text-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5 stroke-[2]" />
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>برنامه جدید</span>
                 </button>
               </div>
               {itemsInCurrentJalaliMonth.length === 0 ? (
-                <div className="text-center py-9 px-4 text-[#78746B] glass-card rounded-[26px] border border-[#E8E2D4] text-xs font-semibold">
+                <div className="text-center py-8 px-4 text-[#141414] bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[26px] text-xs font-bold">
                   هیچ برنامه یا سفری برای این ماه تنظیم نشده است. از دکمه «برنامه جدید» آرزویی با تاریخ ثبت کنید.
                 </div>
               ) : (
@@ -3311,20 +3262,20 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     return (
                       <div
                         key={item.id}
-                        className="glass-card border border-[#E8E2D4] rounded-[24px] p-4 flex items-center justify-between gap-4"
+                        className="bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[24px] p-4 flex items-center justify-between gap-4"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#F2EFE9] text-[#191817] flex items-center justify-center shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-[#B5F285] border-2 border-[#141414] text-[#141414] flex items-center justify-center shrink-0">
                             {typeof catConfig.iconName === "string" && !PRESET_ICONS[catConfig.iconName] ? (
                               <span className="text-sm">{catConfig.iconName}</span>
                             ) : (
-                              <CatIcon className="w-4.5 h-4.5 stroke-[1.7]" />
+                              <CatIcon className="w-4.5 h-4.5 stroke-[2.2]" />
                             )}
                           </div>
                           <div>
-                            <h5 className="text-sm font-black text-[#191817]">{item.title}</h5>
-                            <span className="text-xs text-[#78746B] font-bold flex items-center gap-1 mt-0.5">
-                              <CalendarIcon className="w-3.5 h-3.5 stroke-[1.7]" />
+                            <h5 className="text-sm font-black text-[#141414]">{item.title}</h5>
+                            <span className="text-xs text-[#141414]/75 font-bold flex items-center gap-1 mt-0.5">
+                              <CalendarIcon className="w-3.5 h-3.5 stroke-[2]" />
                               <span>{toPersianDigits(formatPersianDate(item.date))}</span>
                             </span>
                           </div>
@@ -3335,7 +3286,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             setActiveTab("wishlist");
                             setCategoryFilter(item.category);
                           }}
-                          className="px-3.5 py-1.5 bg-[#F2EFE9] hover:bg-[#191817] text-[#191817] hover:text-[#FAF6EC] rounded-full text-xs font-bold transition-colors cursor-pointer shrink-0"
+                          className="px-3.5 py-1.5 bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] rounded-full text-xs font-black transition-colors cursor-pointer shrink-0"
                         >
                           مشاهده
                         </button>
@@ -3348,7 +3299,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         )}
 
-        {/* --- TAB 4: PERIOD TRACKER (TOGHROOL CYCLE ENGINE & EDITORIAL UI) --- */}
+        {/* --- TAB 4: PERIOD TRACKER (TOGHROOL CYCLE ENGINE & NEOBRUTALIST UI) --- */}
         {activeTab === "period" && (
           <div className="max-w-5xl mx-auto" dir="rtl">
             <ImpoPeriodTracker
@@ -3365,10 +3316,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         )}
 
-        {/* --- TAB 5: MEMORIES --- */}
+        {/* --- TAB 5: MEMORIES (EXACT SCREEN 3 BUBBLEGUM PINK WORLD + MASCOT + DARK PILL CTA) --- */}
         {activeTab === "memories" && (
           <div className="space-y-4" dir="rtl">
-            {/* Expandable Search Drawer (Only when search button in sub-nav is active) */}
+            {/* Expandable Search Drawer */}
             <AnimatePresence>
               {(showMemoriesSearch || searchQuery) && (
                 <motion.div
@@ -3383,16 +3334,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       placeholder="جستجو در عنوان یا متن خاطرات..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-10 py-2.5 bg-[#FFFDF8] border border-[#E8E2D4] focus:border-[#1B1B1A]/40 rounded-full text-xs font-semibold text-[#1B1B1A] placeholder-[#8E8A80] focus:outline-none text-right"
+                      className="w-full pl-9 pr-10 py-2.5 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full text-xs font-bold text-[#141414] placeholder-[#141414]/55 focus:outline-none text-right"
                     />
-                    <Search className="w-3.5 h-3.5 text-[#8E8A80] absolute top-1/2 right-3.5 -translate-y-1/2 pointer-events-none" />
+                    <Search className="w-3.5 h-3.5 text-[#141414] absolute top-1/2 right-3.5 -translate-y-1/2 pointer-events-none stroke-[2.2]" />
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={() => setSearchQuery("")}
-                        className="absolute top-1/2 left-2.5 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] rounded-full cursor-pointer"
+                        className="absolute top-1/2 left-2.5 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-[#141414] rounded-full cursor-pointer"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5 stroke-[2.4]" />
                       </button>
                     )}
                   </div>
@@ -3400,17 +3351,29 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               )}
             </AnimatePresence>
 
-            {/* Level-1 Hero Focal Stage for Shared Memories (Replaces loud pink strip) */}
-            <div className="hero-ink-surface px-5 py-4 sm:py-5 rounded-[26px] flex items-center justify-between gap-3 text-[#FAF6EC]">
-              <div className="min-w-0">
-                <span className="text-[10px] font-bold text-[#F6C3E5] block">آلبوم دونفره ما</span>
-                <h2 className="text-lg sm:text-xl font-black tracking-tight truncate mt-0.5">
-                  {toPersianDigits(memories.length)} خاطره ماندگار
-                </h2>
-                <p className="text-[11px] text-[#FAF6EC]/60 font-medium truncate mt-0.5">
-                  لحظه‌ها، عکس‌ها و کپسول‌های زمان مشترک
-                </p>
+            {/* Screen 3 Hero Stage: Retro Cartoon Mascot + Sparkles + Full-Width #242424 "Add more" Pill CTA */}
+            <div className="bg-[#FAD074] border-2 border-[#141414] shadow-[0_4px_0_#141414] p-5 rounded-[32px] relative overflow-hidden text-[#141414]">
+              <NeoSparkle className="w-5 h-5 absolute top-3 left-28 pointer-events-none" />
+              <NeoSparkle className="w-4 h-4 absolute bottom-16 right-6 pointer-events-none" />
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-black text-[#141414] bg-white border-2 border-[#141414] px-3 py-0.5 rounded-full">
+                    <span>آلبوم دونفره ما ✦</span>
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight truncate mt-2 text-[#141414]">
+                    {toPersianDigits(memories.length)} خاطره ماندگار
+                  </h2>
+                  <p className="text-xs text-[#141414]/80 font-extrabold mt-1 leading-relaxed">
+                    لحظه‌ها، عکس‌ها و کپسول‌های زمان مشترک امیرعلی و نرگس
+                  </p>
+                </div>
+
+                {/* Screen 3 Retro Cool Heart Mascot */}
+                <NeoCoolHeartMascot className="w-28 h-28 sm:w-32 sm:h-32 shrink-0 -ml-2" />
               </div>
+
+              {/* Exact Screen 3 Full-Width Dark Pill CTA ("Add more" -> "ثبت خاطره جدید") */}
               <button
                 onClick={() => {
                   setMemoryFormDate("");
@@ -3419,10 +3382,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   setMemoryFormImageUrl("");
                   setShowAddMemoryModal(true);
                 }}
-                className="px-4 py-2 rounded-full text-xs font-black text-[#191817] bg-[#FAF6EC] hover:bg-white transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs"
+                className="mt-3 w-full py-3.5 rounded-full text-sm font-black text-white bg-[#242424] hover:bg-[#141414] border-2 border-[#141414] shadow-[0_3px_0_#141414] transition-all cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5"
               >
-                <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
-                <span>ثبت خاطره</span>
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>ثبت خاطره جدید</span>
               </button>
             </div>
 
@@ -3439,13 +3402,13 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-[#FFFDF8] border border-dashed border-[#C8C3B6] rounded-[30px] p-12 text-center"
+                    className="bg-white border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[30px] p-10 text-center"
                   >
-                    <div className="w-16 h-16 bg-[#F6C3E5] rounded-full flex items-center justify-center text-[#1B1B1A] mx-auto mb-4">
-                      <HeartHandshake className="w-7 h-7 stroke-[1.7]" />
+                    <div className="w-16 h-16 bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full flex items-center justify-center text-[#141414] mx-auto mb-4">
+                      <HeartHandshake className="w-7 h-7 stroke-[2.2]" />
                     </div>
-                    <h3 className="text-base font-black text-[#1B1B1A]">هنوز خاطره‌ای ثبت نشده است</h3>
-                    <p className="text-[#78746B] text-xs sm:text-sm mt-1.5 leading-relaxed max-w-md mx-auto">
+                    <h3 className="text-base font-black text-[#141414]">هنوز خاطره‌ای ثبت نشده است</h3>
+                    <p className="text-[#141414]/75 text-xs sm:text-sm font-bold mt-1.5 leading-relaxed max-w-md mx-auto">
                       {searchQuery
                         ? "هیچ خاطره‌ای با عبارت جستجو شده پیدا نشد."
                         : "اولین خاطره مشترک خودتان را ثبت کنید تا آلبوم خاطراتتان شکل بگیرد."}
@@ -3483,18 +3446,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                           }
                           setSelectedMemory(memory);
                         }}
-                        className={`group glass-card border rounded-[26px] overflow-hidden transition-all flex flex-col text-right relative cursor-pointer ${
-                          isLocked ? "border-[#DDD6C6]" : "border-[#E8E2D4] hover:border-[#191817]/30"
-                        }`}
+                        className="group bg-white border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[28px] overflow-hidden transition-all flex flex-col text-right relative cursor-pointer"
                       >
                         {/* Optional Memory Image Cover or Locked Capsule Banner */}
                         {isLocked ? (
-                          <div className="relative h-32 bg-[#F5F1E8] border-b border-[#E8E2D4] flex flex-col items-center justify-center text-center p-4 overflow-hidden">
-                            <div className="w-9 h-9 rounded-xl bg-[#E8E2D5] text-[#191817] flex items-center justify-center mb-1.5">
-                              <Lock className="w-4 h-4 stroke-[1.9]" />
+                          <div className="relative h-32 bg-[#A594F9] border-b-2 border-[#141414] flex flex-col items-center justify-center text-center p-4 overflow-hidden">
+                            <div className="w-10 h-10 rounded-full bg-white border-2 border-[#141414] text-[#141414] flex items-center justify-center mb-1.5">
+                              <Lock className="w-4 h-4 stroke-[2.2]" />
                             </div>
-                            <span className="text-xs font-black text-[#191817]">کپسول زمان مهروموم‌شده</span>
-                            <span className="text-[10px] text-[#78746B] mt-0.5 font-medium">
+                            <span className="text-xs font-black text-[#141414]">کپسول زمان مهروموم‌شده</span>
+                            <span className="text-[10px] text-[#141414]/80 mt-0.5 font-extrabold">
                               بازگشایی در {memory.unlockDate ? formatIsoToJalaliLabel(memory.unlockDate) : "موعد مقرر"}
                             </span>
                           </div>
@@ -5804,69 +5765,90 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         onOpenDateRoulette={() => setShowDateRoulette(true)}
       />
 
-      {/* --- FLOATING CHARCOAL BOTTOM DOCK WITH RAISED PASTEL PINK '+' ACTION BUTTON (EXACT REFERENCE STYLE) --- */}
+      {/* --- NEOBRUTALIST FLOATING DARK DOCK WITH EXPANDING WHITE ACTIVE PILL (EXACT SCREENS 1 & 2 OF REFERENCE) --- */}
       <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 max-w-md mx-auto" dir="rtl">
-        <div className="bg-[#1B1B1A] rounded-[28px] h-[68px] px-3 flex items-center justify-between relative">
-          {/* Right 2 Navigation Pillars */}
-          <div className="flex-1 flex items-center justify-around pl-7">
-            <button
-              type="button"
-              onClick={() => setActiveTab("wishlist")}
-              className="py-1.5 px-2 flex flex-col items-center justify-center gap-1 cursor-pointer group"
-            >
-              <Heart
-                className={`w-[21px] h-[21px] stroke-[1.7] transition-colors ${
-                  activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar"
-                    ? "text-[#F6C3E5]"
-                    : "text-[#FAF6EC]/70 group-hover:text-[#FAF6EC]"
-                }`}
-              />
-              <span
-                className={`text-[10px] font-bold leading-none transition-colors ${
-                  activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar"
-                    ? "text-[#F6C3E5]"
-                    : "text-[#FAF6EC]/65"
-                }`}
+        <div className="bg-[#2B2B2B] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-full p-1.5 flex items-center justify-between gap-1.5">
+          {/* Tab 1: آرزوها */}
+          {(() => {
+            const isHomeActive = activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar";
+            return (
+              <button
+                type="button"
+                onClick={() => setActiveTab("wishlist")}
+                aria-label="آرزوها"
+                className={
+                  isHomeActive
+                    ? "bg-white text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0"
+                    : "w-11 h-11 rounded-full bg-[#4F4F4F] hover:bg-[#616161] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
+                }
               >
-                آرزوها
-              </span>
-              <span
-                className={`h-[2px] w-4 rounded-full transition-all ${
-                  activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar"
-                    ? "bg-[#F6C3E5]"
-                    : "bg-transparent"
-                }`}
-              />
-            </button>
+                <Heart className={`w-4 h-4 ${isHomeActive ? "fill-[#141414] text-[#141414] stroke-[2.2]" : "stroke-[2]"}`} />
+                <span className={isHomeActive ? "inline" : "sr-only"}>آرزوها</span>
+              </button>
+            );
+          })()}
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("period")}
-              className="py-1.5 px-2 flex flex-col items-center justify-center gap-1 cursor-pointer group"
-            >
-              <Droplet
-                className={`w-[21px] h-[21px] stroke-[1.7] transition-colors ${
-                  activeTab === "period"
-                    ? "text-[#F6C3E5]"
-                    : "text-[#FAF6EC]/70 group-hover:text-[#FAF6EC]"
-                }`}
-              />
-              <span
-                className={`text-[10px] font-bold leading-none transition-colors ${
-                  activeTab === "period" ? "text-[#F6C3E5]" : "text-[#FAF6EC]/65"
-                }`}
+          {/* Tab 2: سلامت */}
+          {(() => {
+            const isPeriodActive = activeTab === "period";
+            return (
+              <button
+                type="button"
+                onClick={() => setActiveTab("period")}
+                aria-label="سلامت"
+                className={
+                  isPeriodActive
+                    ? "bg-white text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0"
+                    : "w-11 h-11 rounded-full bg-[#4F4F4F] hover:bg-[#616161] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
+                }
               >
-                سلامت
-              </span>
-              <span
-                className={`h-[2px] w-4 rounded-full transition-all ${
-                  activeTab === "period" ? "bg-[#F6C3E5]" : "bg-transparent"
-                }`}
-              />
-            </button>
-          </div>
+                <Droplet className={`w-4 h-4 ${isPeriodActive ? "fill-[#141414] text-[#141414] stroke-[2.2]" : "stroke-[2]"}`} />
+                <span className={isPeriodActive ? "inline" : "sr-only"}>سلامت</span>
+              </button>
+            );
+          })()}
 
-          {/* Center Protruding Pastel Pink '+' Circle with Seamless #1B1B1A Ring Arch */}
+          {/* Tab 3: خاطرات */}
+          {(() => {
+            const isMemoriesActive = activeTab === "memories" || activeTab.startsWith("tab-");
+            return (
+              <button
+                type="button"
+                onClick={() => setActiveTab("memories")}
+                aria-label="خاطرات"
+                className={
+                  isMemoriesActive
+                    ? "bg-white text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0"
+                    : "w-11 h-11 rounded-full bg-[#4F4F4F] hover:bg-[#616161] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
+                }
+              >
+                <Camera className={`w-4 h-4 ${isMemoriesActive ? "text-[#141414] stroke-[2.4]" : "stroke-[2]"}`} />
+                <span className={isMemoriesActive ? "inline" : "sr-only"}>خاطرات</span>
+              </button>
+            );
+          })()}
+
+          {/* Tab 4: مالی */}
+          {(() => {
+            const isFinanceActive = activeTab === "finance";
+            return (
+              <button
+                type="button"
+                onClick={() => setActiveTab("finance")}
+                aria-label="مالی"
+                className={
+                  isFinanceActive
+                    ? "bg-white text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0"
+                    : "w-11 h-11 rounded-full bg-[#4F4F4F] hover:bg-[#616161] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
+                }
+              >
+                <Wallet className={`w-4 h-4 ${isFinanceActive ? "fill-[#141414] text-[#141414] stroke-[2.2]" : "stroke-[2]"}`} />
+                <span className={isFinanceActive ? "inline" : "sr-only"}>مالی</span>
+              </button>
+            );
+          })()}
+
+          {/* Circular Neobrutalist '+' Quick Action Button */}
           <button
             type="button"
             onClick={() => {
@@ -5891,70 +5873,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 setShowAddModal(true);
               }
             }}
-            className="absolute left-1/2 -translate-x-1/2 -top-4 w-[52px] h-[52px] rounded-full bg-[#F6C3E5] hover:bg-[#EEB2DA] active:scale-95 text-[#1B1B1A] ring-[7px] ring-[#1B1B1A] flex items-center justify-center transition-all cursor-pointer z-10"
+            className="w-11 h-11 rounded-full bg-[#FF8B6A] hover:bg-[#ff7954] active:translate-y-0.5 text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center transition-all cursor-pointer shrink-0"
             title="ثبت سریع"
+            aria-label="ثبت سریع"
           >
-            <Plus className="w-6 h-6 stroke-[1.8]" />
+            <Plus className="w-5 h-5 stroke-[2.6]" />
           </button>
-
-          {/* Left 2 Navigation Pillars */}
-          <div className="flex-1 flex items-center justify-around pr-7">
-            <button
-              type="button"
-              onClick={() => setActiveTab("memories")}
-              className="py-1.5 px-2 flex flex-col items-center justify-center gap-1 cursor-pointer group"
-            >
-              <Camera
-                className={`w-[21px] h-[21px] stroke-[1.7] transition-colors ${
-                  activeTab === "memories" || activeTab.startsWith("tab-")
-                    ? "text-[#F6C3E5]"
-                    : "text-[#FAF6EC]/70 group-hover:text-[#FAF6EC]"
-                }`}
-              />
-              <span
-                className={`text-[10px] font-bold leading-none transition-colors ${
-                  activeTab === "memories" || activeTab.startsWith("tab-")
-                    ? "text-[#F6C3E5]"
-                    : "text-[#FAF6EC]/65"
-                }`}
-              >
-                خاطرات
-              </span>
-              <span
-                className={`h-[2px] w-4 rounded-full transition-all ${
-                  activeTab === "memories" || activeTab.startsWith("tab-")
-                    ? "bg-[#F6C3E5]"
-                    : "bg-transparent"
-                }`}
-              />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("finance")}
-              className="py-1.5 px-2 flex flex-col items-center justify-center gap-1 cursor-pointer group"
-            >
-              <Wallet
-                className={`w-[21px] h-[21px] stroke-[1.7] transition-colors ${
-                  activeTab === "finance"
-                    ? "text-[#F6C3E5]"
-                    : "text-[#FAF6EC]/70 group-hover:text-[#FAF6EC]"
-                }`}
-              />
-              <span
-                className={`text-[10px] font-bold leading-none transition-colors ${
-                  activeTab === "finance" ? "text-[#F6C3E5]" : "text-[#FAF6EC]/65"
-                }`}
-              >
-                مالی
-              </span>
-              <span
-                className={`h-[2px] w-4 rounded-full transition-all ${
-                  activeTab === "finance" ? "bg-[#F6C3E5]" : "bg-transparent"
-                }`}
-              />
-            </button>
-          </div>
         </div>
       </div>
     </div>

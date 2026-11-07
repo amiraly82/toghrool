@@ -9,6 +9,7 @@ import {
 import { UserProfile } from "../types";
 import { fetchFromPhpApi, setAuthToken, clearAuthSession } from "../apiClient";
 import { toPersianDigits } from "../utils/jalali";
+import { NeoCoolHeartMascot, NeoSparkle } from "./NeoBrutalStickers";
 
 interface AuthAndPairingProps {
   userProfile: UserProfile | null;
@@ -382,35 +383,32 @@ export default function AuthAndPairing({
   };
 
   return (
-    <div className={`w-full flex items-center justify-center ${isPairingModal ? "p-0" : "min-h-screen p-4 bg-[#FAF6EC]"}`} dir="rtl">
-      <div className="w-full max-w-md bg-[#FFFDF8] border border-[#E8E2D4] rounded-[30px] p-5 sm:p-7 shadow-xl shadow-[#1B1B1A]/4 relative">
+    <div className={`w-full flex items-center justify-center ${isPairingModal ? "p-0" : "min-h-screen p-4 bg-[#FBC2F3]"}`} dir="rtl">
+      <div className="w-full max-w-md bg-[#FAD074] border-2 border-[#141414] rounded-[34px] p-5 sm:p-7 shadow-[0_6px_0_#141414] relative">
         {isPairingModal && onCloseModal && (
           <button
             type="button"
             onClick={onCloseModal}
-            className="absolute top-4 left-4 w-8 h-8 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
+            className="absolute top-4 left-4 w-9 h-9 rounded-full bg-[#FF8B6A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] cursor-pointer active:translate-y-0.5"
             title="بستن"
           >
-            <X className="w-4 h-4 stroke-[2]" />
+            <X className="w-4 h-4 stroke-[2.4]" />
           </button>
         )}
 
-        {/* Compact, Cohesive Brand Header for Mobile */}
-        <div className="flex flex-col items-center mb-5">
-          <div className="relative mb-2.5">
-            <div className="w-13 h-13 rounded-2xl bg-[#F6C3E5] flex items-center justify-center text-[#1B1B1A] shadow-2xs">
-              <Heart className="w-6 h-6 stroke-[1.8] animate-heart" />
-            </div>
-            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#F6DC6B] border-2 border-[#FFFDF8] flex items-center justify-center text-[10px] font-black text-[#1B1B1A]">
-              ✦
-            </span>
+        {/* Neobrutalist Mascot Brand Header (Screen 3 Style) */}
+        <div className="flex flex-col items-center mb-5 relative">
+          <NeoSparkle className="w-6 h-6 absolute top-1 right-6" fill="#FFFFFF" />
+          <NeoSparkle className="w-5 h-5 absolute top-8 left-8" fill="#F5F97A" />
+          <div className="mb-1">
+            <NeoCoolHeartMascot className="w-28 h-28" />
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-black text-[#1B1B1A] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#141414] tracking-tight">
             طغرل · فضای دونفره ما
           </h1>
-          <p className="text-[#78746B] text-xs mt-1 text-center leading-relaxed max-w-xs">
-            آرزوها، سلامت، خاطرات و برنامه‌ریزی مشترک در یک جای آرام
+          <p className="text-[#141414]/80 font-bold text-xs mt-1 text-center leading-relaxed max-w-xs">
+            آرزوها، سلامت، خاطرات و برنامه‌ریزی مشترک در یک جای باحال!
           </p>
         </div>
 
@@ -423,14 +421,14 @@ export default function AuthAndPairing({
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Pill Mode Switcher (Login vs Sign Up) — Elevated White Pill so Primary CTA stands alone */}
+              {/* Neobrutalist Pill Mode Switcher (White & Mint Green with 2px Black Border) */}
               {(authMode === 'login' || authMode === 'signup') && (
-                <div className="grid grid-cols-2 gap-1 p-1 segmented-track rounded-full mb-6">
+                <div className="grid grid-cols-2 gap-2.5 mb-5">
                   <button
                     type="button"
                     onClick={() => { setAuthMode('login'); setError(""); setInfoMessage(""); }}
-                    className={`py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      authMode === 'login' ? "segmented-pill-active font-black" : "text-[#78746B] hover:text-[#1B1B1A]"
+                    className={`py-2.5 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer active:translate-y-0.5 ${
+                      authMode === 'login' ? "bg-[#B5F285] text-[#141414]" : "bg-white text-[#141414]"
                     }`}
                   >
                     ورود به حساب
@@ -438,8 +436,8 @@ export default function AuthAndPairing({
                   <button
                     type="button"
                     onClick={() => { setAuthMode('signup'); setError(""); setInfoMessage(""); }}
-                    className={`py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      authMode === 'signup' ? "segmented-pill-active font-black" : "text-[#78746B] hover:text-[#1B1B1A]"
+                    className={`py-2.5 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer active:translate-y-0.5 ${
+                      authMode === 'signup' ? "bg-[#B5F285] text-[#141414]" : "bg-white text-[#141414]"
                     }`}
                   >
                     عضویت جدید
@@ -449,16 +447,16 @@ export default function AuthAndPairing({
 
               {/* Feedback Alerts */}
               {error && (
-                <div className="mb-4 p-3.5 bg-[#F6C3E5]/60 text-[#1B1B1A] rounded-2xl text-xs flex items-start gap-2.5 border border-[#E5ADD2]">
-                  <ShieldAlert className="w-4 h-4 text-[#D94E4E] shrink-0 mt-0.5 stroke-[1.8]" />
-                  <span className="font-medium leading-relaxed">{error}</span>
+                <div className="mb-4 p-3.5 bg-[#FF8B6A] text-[#141414] rounded-2xl text-xs flex items-start gap-2.5 border-2 border-[#141414] shadow-[0_2px_0_#141414]">
+                  <ShieldAlert className="w-4 h-4 text-[#141414] shrink-0 mt-0.5 stroke-[2.2]" />
+                  <span className="font-black leading-relaxed">{error}</span>
                 </div>
               )}
 
               {infoMessage && (
-                <div className="mb-4 p-3.5 bg-[#DCE6B5]/70 text-[#1B1B1A] rounded-2xl text-xs flex items-start gap-2.5 border border-[#C5D89D]">
-                  <CheckCircle2 className="w-4 h-4 text-[#5D7C2B] shrink-0 mt-0.5 stroke-[1.8]" />
-                  <span className="font-medium leading-relaxed">{infoMessage}</span>
+                <div className="mb-4 p-3.5 bg-[#B5F285] text-[#141414] rounded-2xl text-xs flex items-start gap-2.5 border-2 border-[#141414] shadow-[0_2px_0_#141414]">
+                  <CheckCircle2 className="w-4 h-4 text-[#141414] shrink-0 mt-0.5 stroke-[2.2]" />
+                  <span className="font-black leading-relaxed">{infoMessage}</span>
                 </div>
               )}
 
@@ -468,23 +466,23 @@ export default function AuthAndPairing({
               {authMode === 'login' && (
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#1B1B1A] block mr-1">ایمیل</label>
+                    <label className="text-xs font-black text-[#141414] block mr-1">ایمیل</label>
                     <div className="relative">
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="name@example.com"
-                        className="w-full pl-4 pr-10 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-sm text-[#1B1B1A] placeholder:text-[#8E8A80] text-left font-mono outline-none transition-colors"
+                        className="w-full pl-4 pr-10 py-3 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-2xl text-sm text-[#141414] placeholder:text-[#78746B] text-left font-mono font-bold outline-none transition-all"
                         dir="ltr"
                         required
                       />
-                      <Mail className="absolute right-3.5 top-3.5 w-4 h-4 text-[#78746B] stroke-[1.7]" />
+                      <Mail className="absolute right-3.5 top-3.5 w-4 h-4 text-[#141414] stroke-[2.2]" />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#1B1B1A] block mr-1">رمز عبور</label>
+                    <label className="text-xs font-black text-[#141414] block mr-1">رمز عبور</label>
                     <div className="relative">
                       <input
                         type="password"
@@ -492,11 +490,11 @@ export default function AuthAndPairing({
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full pl-4 pr-10 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl text-sm text-[#1B1B1A] placeholder:text-[#8E8A80] text-left font-mono outline-none transition-colors"
+                        className="w-full pl-4 pr-10 py-3 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-2xl text-sm text-[#141414] placeholder:text-[#78746B] text-left font-mono font-bold outline-none transition-all"
                         dir="ltr"
                         required
                       />
-                      <Key className="absolute right-3.5 top-3.5 w-4 h-4 text-[#78746B] stroke-[1.7]" />
+                      <Key className="absolute right-3.5 top-3.5 w-4 h-4 text-[#141414] stroke-[2.2]" />
                     </div>
                   </div>
 
@@ -510,9 +508,9 @@ export default function AuthAndPairing({
                         setInfoMessage("");
                         if (email) setOtpSentEmail(email.toLowerCase().trim());
                       }}
-                      className="text-xs font-bold text-[#78746B] hover:text-[#EC407A] transition-colors cursor-pointer flex items-center gap-1.5 py-1"
+                      className="text-xs font-black text-[#141414] hover:underline transition-colors cursor-pointer flex items-center gap-1.5 py-1"
                     >
-                      <Lock className="w-3.5 h-3.5 text-[#EC407A]" />
+                      <Lock className="w-3.5 h-3.5 text-[#141414] stroke-[2.2]" />
                       <span>رمز عبور خود را فراموش کرده‌اید؟ بازیابی رمز</span>
                     </button>
                   </div>
@@ -520,14 +518,14 @@ export default function AuthAndPairing({
                   <button
                     type="submit"
                     disabled={authLoading}
-                    className="w-full py-3.5 mt-2 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold rounded-full text-sm transition-colors active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-sm"
+                    className="w-full py-3.5 mt-2 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_4px_0_#141414] font-black rounded-full text-sm transition-all active:translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {authLoading ? (
-                      <div className="w-5 h-5 border-2 border-[#FAF6EC] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
                         <span>ورود به فضای مشترک</span>
-                        <Sparkles className="w-4 h-4 stroke-[1.7]" />
+                        <Sparkles className="w-4 h-4 text-[#F5F97A] stroke-[2.2]" />
                       </>
                     )}
                   </button>
@@ -955,47 +953,40 @@ export default function AuthAndPairing({
               transition={{ duration: 0.25 }}
               className="space-y-5"
             >
-              {/* Pastel Pink Assistant-Style Code Card */}
-              <div className="bg-[#F6C3E5] p-5 rounded-[26px] relative overflow-hidden text-right">
-                <svg
-                  viewBox="0 0 100 100"
-                  className="w-24 h-24 absolute -bottom-5 -left-3 text-[#E5ADD2] fill-current pointer-events-none rotate-[-12deg]"
-                >
-                  <path d="M50 88C50 88 12 63 12 36C12 21 24 12 36 12C44 12 50 18 50 23C50 18 56 12 64 12C76 12 88 21 88 36C88 63 50 88 50 88Z" />
-                </svg>
-
-                <span className="text-[11px] font-medium text-[#6B5364] block">
+              {/* Pastel Pink Neobrutalist Code Card */}
+              <div className="bg-[#A594F9] border-2 border-[#141414] shadow-[0_3px_0_#141414] p-5 rounded-[26px] relative overflow-hidden text-right">
+                <span className="text-xs font-black text-[#141414] block">
                   کد اختصاصی اتصال زوجین
                 </span>
                 <div className="flex items-center justify-between gap-2 mt-2.5 relative z-10">
-                  <span className="font-mono text-2xl font-bold tracking-widest text-[#1B1B1A] select-all bg-[#FFFDF8] px-4 py-2 rounded-2xl border border-[#1B1B1A]/10">
+                  <span className="font-mono text-2xl font-black tracking-widest text-[#141414] select-all bg-white px-4 py-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414]">
                     {userProfile.coupleCode}
                   </span>
                   <button
                     type="button"
                     onClick={copyCode}
-                    className="px-4 py-2.5 bg-[#1B1B1A] text-[#FAF6EC] rounded-full text-xs font-bold flex items-center gap-1.5 hover:bg-[#2F2E2C] transition-colors cursor-pointer"
+                    className="px-4 py-2.5 bg-[#B5F285] text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full text-xs font-black flex items-center gap-1.5 cursor-pointer active:translate-y-0.5"
                     title="کپی کد"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-[#A7B86C]" /> : <Copy className="w-3.5 h-3.5 stroke-[1.7]" />}
+                    {copied ? <Check className="w-3.5 h-3.5 stroke-[2.4]" /> : <Copy className="w-3.5 h-3.5 stroke-[2.2]" />}
                     <span>{copied ? "کپی شد" : "کپی کد"}</span>
                   </button>
                 </div>
-                <p className="text-[11px] text-[#4A3A45] mt-3 leading-relaxed relative z-10 font-medium">
+                <p className="text-[11px] text-[#141414] mt-3 leading-relaxed relative z-10 font-bold">
                   این کد را برای پارتنرتان بفرستید یا کد او را در کادر زیر وارد کنید تا فضای مشترک شما فعال شود.
                 </p>
               </div>
 
               <form onSubmit={handlePairingSubmit} className="space-y-4">
                 {error && (
-                  <div className="p-3.5 bg-[#F6C3E5]/60 text-[#1B1B1A] rounded-2xl text-xs flex items-start gap-2 border border-[#E5ADD2]">
-                    <ShieldAlert className="w-4 h-4 text-[#D94E4E] shrink-0 mt-0.5 stroke-[1.8]" />
-                    <span>{error}</span>
+                  <div className="p-3.5 bg-[#FF8B6A] text-[#141414] rounded-2xl text-xs flex items-start gap-2 border-2 border-[#141414]">
+                    <ShieldAlert className="w-4 h-4 text-[#141414] shrink-0 mt-0.5 stroke-[2.2]" />
+                    <span className="font-black">{error}</span>
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#1B1B1A] block mr-1">
+                  <label className="text-xs font-black text-[#141414] block mr-1">
                     کد زوج پارتنرتان را وارد کنید:
                   </label>
                   <input
@@ -1003,7 +994,7 @@ export default function AuthAndPairing({
                     value={partnerCode}
                     onChange={(e) => setPartnerCode(e.target.value)}
                     placeholder="LV92K4"
-                    className="w-full px-4 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl font-mono text-center text-lg font-bold tracking-widest uppercase text-[#1B1B1A] placeholder:text-[#A6A297] outline-none transition-colors"
+                    className="w-full px-4 py-3 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-2xl font-mono text-center text-lg font-black tracking-widest uppercase text-[#141414] placeholder:text-[#78746B] outline-none"
                     maxLength={8}
                     required
                   />
@@ -1012,14 +1003,14 @@ export default function AuthAndPairing({
                 <button
                   type="submit"
                   disabled={pairingLoading}
-                  className="w-full py-3.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold rounded-full text-sm transition-colors active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] font-black rounded-full text-sm transition-all active:translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {pairingLoading ? (
-                    <div className="w-5 h-5 border-2 border-[#FAF6EC] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
                       <span>اتصال به پارتنر</span>
-                      <Heart className="w-4 h-4 stroke-[1.8]" />
+                      <Heart className="w-4 h-4 text-[#FBC2F3] fill-current stroke-[2]" />
                     </>
                   )}
                 </button>
@@ -1028,10 +1019,10 @@ export default function AuthAndPairing({
                   <button
                     type="button"
                     onClick={onSkipPairing}
-                    className="w-full py-3 px-4 bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#1B1B1A] font-bold rounded-full text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                    className="w-full py-3 px-4 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] font-black rounded-full text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:translate-y-0.5"
                   >
                     <span>فعلاً بدون پارتنر ادامه می‌دهم (رد کردن)</span>
-                    <ChevronLeft className="w-4 h-4 stroke-[2]" />
+                    <ChevronLeft className="w-4 h-4 stroke-[2.4]" />
                   </button>
                 )}
               </form>

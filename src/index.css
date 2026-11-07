@@ -57,20 +57,17 @@
 }
 
 :root {
-  --bg-cream: #FAF6EC;
-  --bg-card: #FFFDF8;
-  --bg-sand: #EFECE2;
-  --bg-sand-hover: #E5E0D2;
-  --ink: #1B1B1A;
-  --ink-muted: #78746B;
-  --border-warm: #E8E2D4;
-  --pastel-pink: #F6C3E5;
-  --pastel-pink-deep: #E5ADD2;
-  --pastel-yellow: #F6DC6B;
-  --pastel-sage: #A7B86C;
-  --pastel-sage-soft: #DCE6B5;
-  --pastel-blue: #B8CEF4;
-  --pastel-coral: #D94E4E;
+  --neo-ink: #141414;
+  --neo-apricot: #FAD074;
+  --neo-lime: #D5F379;
+  --neo-pink: #FBC2F3;
+  --neo-mint: #B5F285;
+  --neo-coral: #FF8B6A;
+  --neo-lavender: #A594F9;
+  --neo-sky: #7FD1F7;
+  --neo-yellow: #F5F97A;
+  --neo-white: #FFFFFF;
+  --neo-charcoal: #262626;
 }
 
 @theme {
@@ -89,67 +86,120 @@ textarea {
 body {
   direction: rtl;
   text-align: right;
-  background-color: #FAF6EC;
-  color: #1B1B1A;
+  background-color: #FAD074;
+  color: #141414;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Warm Editorial Surfaces with Subtle Depth Hierarchy */
+/* ==========================================================================
+   NEOBRUTALISM DESIGN SYSTEM TOKENS & SURFACES
+   ========================================================================== */
+
+.neo-card {
+  border: 2px solid #141414;
+  box-shadow: 0 3px 0 #141414;
+}
+
+.neo-card-lg {
+  border: 2.2px solid #141414;
+  box-shadow: 0 4px 0 #141414;
+}
+
+.neo-pill {
+  border: 2px solid #141414;
+  box-shadow: 0 2px 0 #141414;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+}
+
+.neo-pill:active,
+.neo-circle-btn:active,
+.neo-cta-dark:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 #141414;
+}
+
+.neo-circle-btn {
+  border: 2px solid #141414;
+  box-shadow: 0 2px 0 #141414;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+}
+
+.neo-cta-dark {
+  background-color: #242424;
+  color: #FFFFFF;
+  border: 2px solid #141414;
+  box-shadow: 0 3px 0 #141414;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+}
+.neo-cta-dark:hover {
+  background-color: #141414;
+}
+
+.neo-dock {
+  background-color: #2B2B2B;
+  border: 2.2px solid #141414;
+  box-shadow: 0 4px 0 #141414;
+}
+
+/* Upgraded Legacy Classes -> Neobrutalist Equivalents */
 .glass-card {
-  background-color: #FFFDF9;
-  border: 1px solid #EAE4D7;
-  box-shadow: 0 4px 18px -6px rgba(27, 27, 26, 0.045);
+  background-color: #FFFFFF;
+  border: 2px solid #141414;
+  box-shadow: 0 3px 0 #141414;
 }
 
 .hero-ink-surface {
-  background: radial-gradient(120% 130% at 0% 0%, rgba(246, 195, 229, 0.16) 0%, rgba(25, 24, 23, 0) 55%), #191817;
-  color: #FAF6EC;
-  box-shadow: 0 16px 36px -12px rgba(25, 24, 23, 0.28);
+  background-color: #A594F9;
+  color: #141414;
+  border: 2.2px solid #141414;
+  box-shadow: 0 4px 0 #141414;
 }
 
 .segmented-track {
-  background-color: #ECE7DC;
-  border: 1px solid #E2DCCE;
+  background-color: rgba(255, 255, 255, 0.55);
+  border: 2px solid #141414;
 }
 
 .segmented-pill-active {
-  background-color: #FFFDF9;
-  color: #191817;
-  box-shadow: 0 2px 8px rgba(25, 24, 23, 0.08);
+  background-color: #B5F285;
+  color: #141414;
+  border: 2px solid #141414;
+  box-shadow: 0 2px 0 #141414;
 }
 
 .glass-card-hover {
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .glass-card-hover:hover {
-  background-color: #FFFFFF;
-  border-color: #D5CEBE;
   transform: translateY(-1px);
 }
 
-.glass-input {
-  background-color: #EFECE2;
-  border: 1px solid transparent;
-  color: #1B1B1A;
-  transition: all 0.2s ease-in-out;
+.glass-input,
+.neo-input {
+  background-color: #FFFFFF;
+  border: 2px solid #141414 !important;
+  color: #141414;
+  transition: all 0.15s ease-in-out;
 }
-.glass-input::placeholder {
-  color: #8E8A80;
+.glass-input::placeholder,
+.neo-input::placeholder {
+  color: #6E6A63;
 }
-.glass-input:focus {
-  background-color: #FFFDF8;
-  border-color: #1B1B1A;
+.glass-input:focus,
+.neo-input:focus {
+  background-color: #FFFDF7;
+  border-color: #141414 !important;
   outline: none;
-  box-shadow: none;
+  box-shadow: 0 3px 0 #141414;
 }
 
 .glass-nav-active {
-  background-color: #1B1B1A;
-  color: #FAF6EC;
-  border: 1px solid #1B1B1A;
-  box-shadow: none;
+  background-color: #B5F285;
+  color: #141414;
+  border: 2px solid #141414;
+  box-shadow: 0 2px 0 #141414;
 }
 
 html {
@@ -161,26 +211,18 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Warm Minimalist Scrollbar (Desktop only — keep mobile modals clean) */
 @media (min-width: 768px) {
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #FAF6EC;
+    background: #FFFDF7;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #D8D3C5;
+    background: #141414;
     border-radius: 9999px;
-    transition: background-color 0.2s ease;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #B8B2A3;
-  }
-  ::-webkit-scrollbar-corner {
-    background: transparent;
   }
 }
 
@@ -192,7 +234,6 @@ html {
   }
 }
 
-/* Gentle heartbeat animation */
 @keyframes heartPulse {
   0% { transform: scale(1); }
   14% { transform: scale(1.08); }
@@ -205,16 +246,16 @@ html {
   animation: heartPulse 1.6s infinite ease-in-out;
 }
 
-/* Warm Butter-Yellow Pastel Accent for Hall of Fame */
 .gold-gradient {
-  background-color: #F6DC6B;
-  color: #1B1B1A;
+  background-color: #F5F97A;
+  color: #141414;
+  border: 2px solid #141414;
 }
 
 .fame-card {
-  background-color: #FFFDF8;
-  border: 1.5px solid #F6DC6B;
-  box-shadow: none;
+  background-color: #FFFFFF;
+  border: 2px solid #141414;
+  box-shadow: 0 3px 0 #141414;
 }
 
 .no-scrollbar::-webkit-scrollbar {

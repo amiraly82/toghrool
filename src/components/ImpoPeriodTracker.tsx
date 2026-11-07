@@ -1108,66 +1108,65 @@ export default function ImpoPeriodTracker({
         </div>
       )}
 
-      {/* Minimalist Single-Row Top Bar: Elevated White Segmented Pills (Zero Competing Black Buttons) */}
+      {/* Single-Row Top Bar: Neobrutalist Pill Rail */}
       <div className="flex items-center justify-between gap-1.5">
-        {/* Sub-Tabs Pill Bar */}
-        <div className="flex items-center gap-1 segmented-track p-1 rounded-full overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
           <button
             onClick={() => setActiveSubTab("dashboard")}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap ${
+            className={`px-3 sm:px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
               activeSubTab === "dashboard"
-                ? "segmented-pill-active font-black"
-                : "font-bold text-[#78746B] hover:text-[#191817]"
+                ? "bg-[#F5F97A] text-[#141414]"
+                : "bg-white text-[#141414]"
             }`}
           >
-            <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+            <Activity className="w-3.5 h-3.5 stroke-[2.2]" />
             <span>چرخه</span>
           </button>
 
           <button
             onClick={() => setActiveSubTab("predictions")}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap ${
+            className={`px-3 sm:px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
               activeSubTab === "predictions"
-                ? "segmented-pill-active font-black"
-                : "font-bold text-[#78746B] hover:text-[#191817]"
+                ? "bg-[#F5F97A] text-[#141414]"
+                : "bg-white text-[#141414]"
             }`}
           >
-            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+            <Sparkles className="w-3.5 h-3.5 stroke-[2.2]" />
             <span>پیش‌بینی</span>
           </button>
 
           <button
             onClick={() => setActiveSubTab("history")}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap ${
+            className={`px-3 sm:px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
               activeSubTab === "history"
-                ? "segmented-pill-active font-black"
-                : "font-bold text-[#78746B] hover:text-[#191817]"
+                ? "bg-[#F5F97A] text-[#141414]"
+                : "bg-white text-[#141414]"
             }`}
           >
-            <BarChart3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+            <BarChart3 className="w-3.5 h-3.5 stroke-[2.2]" />
             <span>تاریخچه ({toPersianDigits(logs.length)})</span>
           </button>
         </div>
 
-        {/* Circular vs Calendar Toggle (Inline on same row!) */}
+        {/* Circular vs Calendar Toggle */}
         {activeSubTab === "dashboard" && (
-          <div className="flex items-center segmented-track p-1 rounded-full text-[11px] sm:text-xs shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 pb-0.5">
             <button
               onClick={() => setViewMode("circular")}
-              className={`px-2.5 sm:px-3.5 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
                 viewMode === "circular"
-                  ? "segmented-pill-active font-black"
-                  : "font-bold text-[#78746B] hover:text-[#191817]"
+                  ? "bg-[#FBC2F3] text-[#141414]"
+                  : "bg-white text-[#141414]"
               }`}
             >
               حلقه
             </button>
             <button
               onClick={() => setViewMode("calendar")}
-              className={`px-2.5 sm:px-3.5 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
                 viewMode === "calendar"
-                  ? "segmented-pill-active font-black"
-                  : "font-bold text-[#78746B] hover:text-[#191817]"
+                  ? "bg-[#FBC2F3] text-[#141414]"
+                  : "bg-white text-[#141414]"
               }`}
             >
               تقویم
@@ -1178,15 +1177,15 @@ export default function ImpoPeriodTracker({
 
       {/* Non-blocking Quick Setup Prompt if female user hasn't configured cycle yet */}
       {!hasConfigured && partnerRole !== "male" && (
-        <div className="bg-[#FFF0F7] border border-[#F8BBD0] rounded-2xl p-3 px-4 flex items-center justify-between gap-3">
+        <div className="bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[24px] p-3.5 px-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-black text-[#1B1B1A] truncate">شخصی‌سازی دقیق چرخه سلامت</p>
-            <p className="text-[11px] text-[#78746B] truncate mt-0.5">تاریخ آخرین پریود و طول دوره را در ۳۰ ثانیه تنظیم کنید</p>
+            <p className="text-xs font-black text-[#141414] truncate">شخصی‌سازی دقیق چرخه سلامت</p>
+            <p className="text-[11px] text-[#141414]/80 font-bold truncate mt-0.5">تاریخ آخرین پریود و طول دوره را در ۳۰ ثانیه تنظیم کنید</p>
           </div>
           <button
             type="button"
             onClick={() => setShowQuickSetupModal(true)}
-            className="px-3.5 py-1.5 bg-[#1B1B1A] text-[#FAF6EC] rounded-full text-xs font-bold shrink-0 cursor-pointer"
+            className="px-3.5 py-2 bg-[#242424] text-white border-2 border-[#141414] rounded-full text-xs font-black shrink-0 cursor-pointer"
           >
             تنظیم سریع
           </button>
@@ -1194,24 +1193,40 @@ export default function ImpoPeriodTracker({
       )}
 
       {/* ================================================================= */}
-      {/* SUB-TAB 1: MAIN CYCLE DASHBOARD (EXACT EDITORIAL WELLNESS LAYOUT) */}
+      {/* SUB-TAB 1: MAIN CYCLE DASHBOARD (NEOBRUTALIST WELLNESS STAGE)     */}
       {/* ================================================================= */}
       {activeSubTab === "dashboard" && (
-        <div className="space-y-6">
-          {/* HERO VISUAL: Segmented Pastel Capsule Ring OR Squircle Monthly Calendar */}
-          <div className="flex flex-col items-center">
+        <div className="space-y-5">
+          {/* HERO VISUAL: Encased in Neobrutalist Lavender Stage Card */}
+          <div className="bg-[#A594F9] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[34px] p-4 sm:p-6 flex flex-col items-center">
             {viewMode === "circular" ? (
               <div className="flex flex-col items-center w-full">
-                <div className="relative w-[276px] h-[276px] sm:w-[330px] sm:h-[330px] flex items-center justify-center select-none">
+                <div className="relative w-[272px] h-[272px] sm:w-[320px] sm:h-[320px] flex items-center justify-center select-none">
                   <svg className="w-full h-full" viewBox="0 0 320 320">
-                    {/* Background Track Circle (Sand #EFECE2) */}
+                    {/* Crisp White Center Stage with 2.5px Black Ink Casing */}
                     <circle
                       cx={ringCx}
                       cy={ringCy}
                       r={ringR}
-                      fill="none"
-                      stroke="#EFECE2"
+                      fill="#FFFFFF"
+                      stroke="#141414"
+                      strokeWidth={ringStrokeWidth + 5}
+                    />
+                    <circle
+                      cx={ringCx}
+                      cy={ringCy}
+                      r={ringR}
+                      fill="#FFFFFF"
+                      stroke="#FFF8E7"
                       strokeWidth={ringStrokeWidth}
+                    />
+                    <circle
+                      cx={ringCx}
+                      cy={ringCy}
+                      r={ringR - ringStrokeWidth / 2 - 2}
+                      fill="#FFFFFF"
+                      stroke="#141414"
+                      strokeWidth="2.5"
                     />
 
                     {/* 1. Pastel Pink Capsule: Period Phase (Days 1 to periodLength) */}
@@ -1380,48 +1395,48 @@ export default function ImpoPeriodTracker({
                   <div className="absolute flex flex-col items-center justify-center text-center px-5 pt-2 z-10 select-none max-w-[200px]">
                     {/* Active Phase Pill Badge */}
                     <div
-                      className="mb-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1 shadow-none whitespace-nowrap"
-                      style={{ backgroundColor: currentPhaseMeta.color, color: "#1B1B1A" }}
+                      className="mb-1 px-2.5 py-0.5 rounded-full text-[11px] font-black inline-flex items-center gap-1 border-2 border-[#141414] whitespace-nowrap"
+                      style={{ backgroundColor: currentPhaseMeta.color, color: "#141414" }}
                     >
-                      <currentPhaseMeta.icon className="w-3 h-3 stroke-[2] shrink-0" />
+                      <currentPhaseMeta.icon className="w-3 h-3 stroke-[2.2] shrink-0" />
                       <span>{currentPhaseMeta.title}</span>
                     </div>
 
                     {cycleStatus.diffDays >= 90 ? (
                       <>
-                        <span className="text-lg font-bold text-[#1B1B1A]">مشورت با پزشک</span>
-                        <span className="text-[11px] text-[#78746B] mt-1">بیش از ۹۰ روز توقف چرخه</span>
+                        <span className="text-lg font-black text-[#141414]">مشورت با پزشک</span>
+                        <span className="text-[11px] text-[#141414]/80 font-bold mt-1">بیش از ۹۰ روز توقف چرخه</span>
                       </>
                     ) : cycleStatus.diffDays >= 45 ? (
                       <>
-                        <span className="text-[46px] sm:text-[52px] font-bold leading-none text-[#1B1B1A]">
+                        <span className="text-[46px] sm:text-[52px] font-black leading-none text-[#141414]">
                           {toPersianDigits(cycleStatus.diffDays)}
                         </span>
-                        <span className="text-[11px] text-[#78746B] mt-1.5">روز از شروع دوره قبلی</span>
+                        <span className="text-[11px] text-[#141414]/80 font-bold mt-1.5">روز از شروع دوره قبلی</span>
                       </>
                     ) : cycleStatus.isDelayed ? (
                       <>
-                        <span className="text-[50px] sm:text-[64px] font-bold leading-none text-[#D94E4E]">
+                        <span className="text-[50px] sm:text-[64px] font-black leading-none text-[#FF6B6B]">
                           {toPersianDigits(cycleStatus.delayedDays)}
                         </span>
                         <button
                           type="button"
                           onClick={() => setShowSettingsModal(true)}
-                          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
+                          className="mt-1 inline-flex items-center gap-1 text-xs font-black text-[#141414] cursor-pointer"
                         >
                           <span>{partnerRole === "male" ? "روز تاخیر پارتنر" : "روز تاخیر قاعدگی"}</span>
-                          <Info className="w-3.5 h-3.5 stroke-[1.6]" />
+                          <Info className="w-3.5 h-3.5 stroke-[2]" />
                         </button>
                       </>
                     ) : (
                       <>
-                        <span className="text-[52px] sm:text-[68px] font-bold leading-none tracking-tight text-[#1B1B1A]">
+                        <span className="text-[52px] sm:text-[68px] font-black leading-none tracking-tight text-[#141414]">
                           {toPersianDigits(cycleStatus.currentCycleDay)}
                         </span>
                         <button
                           type="button"
                           onClick={() => setShowSettingsModal(true)}
-                          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
+                          className="mt-1 inline-flex items-center gap-1 text-xs font-black text-[#141414] cursor-pointer"
                           title="مشاهده و ویرایش تنظیمات چرخه"
                         >
                           <span>
@@ -1429,13 +1444,13 @@ export default function ImpoPeriodTracker({
                               ? `روز چرخه پارتنر از ${toPersianDigits(safeCycleLength)}`
                               : `روز چرخه از ${toPersianDigits(safeCycleLength)} روز`}
                           </span>
-                          <Info className="w-3.5 h-3.5 stroke-[1.6]" />
+                          <Info className="w-3.5 h-3.5 stroke-[2]" />
                         </button>
                       </>
                     )}
 
                     {(effectiveIsOwner || sharing.sharePhase) && (
-                      <span className="mt-2 px-3 py-1 rounded-full bg-[#EFECE2] text-[#1B1B1A] text-[11px] font-bold">
+                      <span className="mt-2 px-3 py-1 rounded-full bg-[#F5F97A] border-2 border-[#141414] text-[#141414] text-[11px] font-black">
                         {cycleStatus.phase === "due"
                           ? "موعد مورد انتظار امروز"
                           : cycleStatus.daysUntilNextPeriod > 0
@@ -1446,109 +1461,104 @@ export default function ImpoPeriodTracker({
                   </div>
                 </div>
 
-                {/* 5-PHASE VISUAL TIMELINE LEGEND (Compact Horizontal Rail on Mobile, 5-Col Grid on Desktop) */}
+                {/* 5-PHASE VISUAL TIMELINE LEGEND (Neobrutalist Pills) */}
                 <div className="w-full max-w-xl mt-3 flex sm:grid sm:grid-cols-5 gap-2 overflow-x-auto no-scrollbar pb-1 px-0.5">
-                  {/* 1. پریود */}
                   <button
                     type="button"
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "period" ? null : "period"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 sm:p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "period" || cycleStatus.phase === "due"
-                        ? "bg-[#F6C3E5]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
-                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                        ? "bg-[#FBC2F3]"
+                        : "bg-white"
                     }`}
                   >
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A] whitespace-nowrap">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#F6C3E5] border border-[#1B1B1A]/20 shrink-0" />
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#FBC2F3] border border-[#141414] shrink-0" />
                       <span>پریود</span>
                     </div>
-                    <div className="text-[10px] text-[#78746B] mt-0.5 font-medium whitespace-nowrap">
+                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
                       روز ۱ تا {toPersianDigits(safePeriodLength)}
                     </div>
                   </button>
 
-                  {/* 2. فولیکولار */}
                   <button
                     type="button"
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "follicular" ? null : "follicular"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 sm:p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "follicular"
-                        ? "bg-[#F6DC6B]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
-                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                        ? "bg-[#F5F97A]"
+                        : "bg-white"
                     }`}
                   >
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A] whitespace-nowrap">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#F6DC6B] border border-[#1B1B1A]/20 shrink-0" />
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#F5F97A] border border-[#141414] shrink-0" />
                       <span>فولیکولار</span>
                     </div>
-                    <div className="text-[10px] text-[#78746B] mt-0.5 font-medium whitespace-nowrap">
+                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
                       روز {toPersianDigits(safePeriodLength + 1)} تا {toPersianDigits(Math.max(safePeriodLength + 1, safeFertileStart - 1))}
                     </div>
                   </button>
 
-                  {/* 3. باروری و تخمک‌گذاری */}
                   <button
                     type="button"
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "fertile" ? null : "fertile"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 sm:p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "fertile" || cycleStatus.phase === "ovulation"
-                        ? "bg-[#A7B86C]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
-                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                        ? "bg-[#B5F285]"
+                        : "bg-white"
                     }`}
                   >
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A] whitespace-nowrap">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#A7B86C] border border-[#1B1B1A]/20 shrink-0" />
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#B5F285] border border-[#141414] shrink-0" />
                       <span>باروری</span>
                     </div>
-                    <div className="text-[10px] text-[#78746B] mt-0.5 font-medium whitespace-nowrap">
+                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
                       روز {toPersianDigits(safeFertileStart)} تا {toPersianDigits(safeFertileEnd)}
                     </div>
                   </button>
 
-                  {/* 4. روزهای عادی */}
                   <button
                     type="button"
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "normal" ? null : "normal"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 sm:p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "luteal"
-                        ? "bg-[#D8D1C0]/60 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
-                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                        ? "bg-[#FAD074]"
+                        : "bg-white"
                     }`}
                   >
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A] whitespace-nowrap">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#D8D1C0] border border-[#1B1B1A]/20 shrink-0" />
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#FAD074] border border-[#141414] shrink-0" />
                       <span>روزهای عادی</span>
                     </div>
-                    <div className="text-[10px] text-[#78746B] mt-0.5 font-medium whitespace-nowrap">
+                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
                       روز {toPersianDigits(safeFertileEnd + 1)} تا {toPersianDigits(Math.max(safeFertileEnd + 1, safePmsStart - 1))}
                     </div>
                   </button>
 
-                  {/* 5. دوره PMS */}
                   <button
                     type="button"
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "pms" ? null : "pms"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 sm:p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "pms"
-                        ? "bg-[#B8CEF4]/45 border-[#1B1B1A] ring-1 ring-[#1B1B1A]"
-                        : "bg-[#FFFDF8] border-[#E8E2D4] hover:bg-[#FAF6EC]"
+                        ? "bg-[#7FD1F7]"
+                        : "bg-white"
                     }`}
                   >
-                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#1B1B1A] whitespace-nowrap">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#B8CEF4] border border-[#1B1B1A]/20 shrink-0" />
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#7FD1F7] border border-[#141414] shrink-0" />
                       <span>دوره PMS</span>
                     </div>
-                    <div className="text-[10px] text-[#78746B] mt-0.5 font-medium whitespace-nowrap">
+                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
                       روز {toPersianDigits(safePmsStart)} تا {toPersianDigits(safeCycleLength)}
                     </div>
                   </button>
@@ -1766,38 +1776,38 @@ export default function ImpoPeriodTracker({
               </div>
             )}
 
-            {/* CLEAR 1-PRIMARY / 1-SECONDARY HIERARCHY ACTION BAR */}
-            <div className="mt-4 w-full max-w-md mx-auto space-y-2">
+            {/* NEOBRUTALIST 1-PRIMARY / 1-SECONDARY HIERARCHY ACTION BAR */}
+            <div className="mt-4 w-full max-w-md mx-auto space-y-2.5">
               {partnerRole === "male" ? (
                 <>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={() => setShowCareModal(true)}
-                      className="py-3 px-4 bg-[#191817] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                      className="py-3 px-4 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5"
                     >
-                      <Heart className="w-3.5 h-3.5 text-[#F6C3E5] fill-current" />
+                      <Heart className="w-3.5 h-3.5 text-[#FBC2F3] fill-current" />
                       <span>ارسال محبت ویژه</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handlePartnerPoke("عزیزم همیشه کنارت هستم و به فکرتم 💕")}
-                      className="py-3 px-4 bg-[#FFFDF9] hover:bg-[#EFECE2] border border-[#DFD9CA] text-[#191817] rounded-full text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                      className="py-3 px-4 bg-[#FBC2F3] hover:bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] text-[#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5"
                     >
-                      <Send className="w-3.5 h-3.5 stroke-[1.9]" />
+                      <Send className="w-3.5 h-3.5 stroke-[2.2]" />
                       <span>تلنگر سریع عشق</span>
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-center gap-2 pt-0.5">
+                  <div className="flex items-center justify-center gap-2 pt-1">
                     {sharing.allowPartnerLogging && (
                       <button
                         type="button"
                         onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-                        className="px-3 py-1.5 rounded-full text-[#78746B] hover:text-[#191817] hover:bg-[#EFECE2] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                        className="px-3 py-1.5 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
                       >
-                        <HeartPulse className="w-3.5 h-3.5 stroke-[1.8]" />
+                        <HeartPulse className="w-3.5 h-3.5 stroke-[2]" />
                         <span>ثبت برای پارتنر</span>
                       </button>
                     )}
@@ -1805,46 +1815,44 @@ export default function ImpoPeriodTracker({
                     <button
                       type="button"
                       onClick={() => setShowSettingsModal(true)}
-                      className="px-3 py-1.5 rounded-full text-[#78746B] hover:text-[#191817] hover:bg-[#EFECE2] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      className="px-3 py-1.5 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
                     >
-                      <Settings className="w-3.5 h-3.5 stroke-[1.8]" />
+                      <Settings className="w-3.5 h-3.5 stroke-[2]" />
                       <span>تنظیمات چرخه</span>
                     </button>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={handleQuickGotPeriodToday}
-                      className="py-3 px-4 bg-[#191817] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                      className="py-3 px-4 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5"
                     >
-                      <Droplet className="w-3.5 h-3.5 text-[#F6C3E5] fill-current" />
+                      <Droplet className="w-3.5 h-3.5 text-[#FBC2F3] fill-current" />
                       <span>امروز پریود شدم</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-                      className="py-3 px-4 bg-[#FFFDF9] hover:bg-[#EFECE2] border border-[#DFD9CA] text-[#191817] rounded-full text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                      className="py-3 px-4 bg-[#FBC2F3] hover:bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] text-[#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5"
                     >
-                      <HeartPulse className="w-3.5 h-3.5 stroke-[1.9]" />
+                      <HeartPulse className="w-3.5 h-3.5 stroke-[2.2]" />
                       <span>ثبت حال و علائم</span>
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-center gap-1 pt-0.5">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
                     <button
                       type="button"
                       onClick={() => setShowSharingModal(true)}
-                      className="px-3 py-1.5 rounded-full text-[#78746B] hover:text-[#191817] hover:bg-[#EFECE2] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
                     >
-                      <FileText className="w-3 h-3 stroke-[1.8]" />
+                      <FileText className="w-3 h-3 stroke-[2]" />
                       <span>حریم خصوصی</span>
                     </button>
-
-                    <span className="text-[#D5CEBC]">·</span>
 
                     <button
                       type="button"
@@ -1852,20 +1860,18 @@ export default function ImpoPeriodTracker({
                         setCustomCareMessage("");
                         setShowCareModal(true);
                       }}
-                      className="px-3 py-1.5 rounded-full text-[#78746B] hover:text-[#191817] hover:bg-[#EFECE2] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
                     >
-                      <Send className="w-3 h-3 stroke-[1.8]" />
+                      <Send className="w-3 h-3 stroke-[2]" />
                       <span>پیام به پارتنر</span>
                     </button>
-
-                    <span className="text-[#D5CEBC]">·</span>
 
                     <button
                       type="button"
                       onClick={() => setShowSettingsModal(true)}
-                      className="px-3 py-1.5 rounded-full text-[#78746B] hover:text-[#191817] hover:bg-[#EFECE2] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
                     >
-                      <Settings className="w-3 h-3 stroke-[1.8]" />
+                      <Settings className="w-3 h-3 stroke-[2]" />
                       <span>تنظیمات چرخه</span>
                     </button>
                   </div>
@@ -1874,19 +1880,21 @@ export default function ImpoPeriodTracker({
             </div>
           </div>
 
-          {/* CALM EDITORIAL INSIGHT CARD (Replaces giant bright-pink block competing with Dial Hero) */}
-          <div className="glass-card rounded-[24px] p-4 sm:p-5 relative overflow-hidden">
+          {/* NEOBRUTALIST APRICOT INSIGHT CARD */}
+          <div className="bg-[#FAD074] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[28px] p-4 sm:p-5 relative overflow-hidden">
             <div className="relative z-10 space-y-2 max-w-2xl">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-black text-[#8A8479] flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#C9648B]" />
+                <span className="text-xs font-black text-[#141414] flex items-center gap-1.5">
+                  <span className="w-6 h-6 rounded-full bg-white border-2 border-[#141414] flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-[#141414] stroke-[2.2]" />
+                  </span>
                   <span>راهنمای امروز طغرل</span>
                 </span>
                 {partnerRole === "male" ? (
                   <button
                     type="button"
                     onClick={() => setShowCareModal(true)}
-                    className="text-[11px] font-black text-[#191817] hover:underline flex items-center gap-0.5 cursor-pointer"
+                    className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[11px] font-black text-[#141414] flex items-center gap-0.5 cursor-pointer"
                   >
                     <span>پیام همدلی</span>
                     <ChevronLeft className="w-3.5 h-3.5" />
@@ -1895,7 +1903,7 @@ export default function ImpoPeriodTracker({
                   <button
                     type="button"
                     onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-                    className="text-[11px] font-black text-[#191817] hover:underline flex items-center gap-0.5 cursor-pointer"
+                    className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[11px] font-black text-[#141414] flex items-center gap-0.5 cursor-pointer"
                   >
                     <span>ثبت احوالات</span>
                     <ChevronLeft className="w-3.5 h-3.5" />
@@ -1904,16 +1912,16 @@ export default function ImpoPeriodTracker({
               </div>
 
               {cycleStatus.diffDays >= 90 ? (
-                <p className="text-xs sm:text-sm font-semibold text-[#191817] leading-relaxed">
-                  بیش از <span className="font-black text-[#D94E4E]">۳ ماه</span> از آخرین قاعدگی گذشته است؛ لطفاً در صورت رد بارداری با متخصص زنان مشورت کنید.
+                <p className="text-xs sm:text-sm font-black text-[#141414] leading-relaxed">
+                  بیش از <span className="underline">۳ ماه</span> از آخرین قاعدگی گذشته است؛ لطفاً در صورت رد بارداری با متخصص زنان مشورت کنید.
                 </p>
               ) : partnerRole === "male" ? (
-                <p className="text-xs sm:text-sm font-semibold text-[#4A4741] leading-relaxed">
+                <p className="text-xs sm:text-sm font-bold text-[#141414] leading-relaxed">
                   {userProfile.displayName} عزیز،{" "}
                   {sharing.sharePhase ? (
                     <>
                       پارتنرتان امروز در{" "}
-                      <span className="font-black text-[#191817]">{cycleStatus.phaseTitle}</span> است.{" "}
+                      <span className="font-black underline">{cycleStatus.phaseTitle}</span> است.{" "}
                       {cycleStatus.partnerTip}
                     </>
                   ) : (
@@ -1921,9 +1929,9 @@ export default function ImpoPeriodTracker({
                   )}
                 </p>
               ) : (
-                <p className="text-xs sm:text-sm font-semibold text-[#4A4741] leading-relaxed">
+                <p className="text-xs sm:text-sm font-bold text-[#141414] leading-relaxed">
                   {userProfile.displayName} عزیز، امروز در{" "}
-                  <span className="font-black text-[#191817]">
+                  <span className="font-black underline">
                     روز {toPersianDigits(cycleStatus.currentCycleDay)} چرخه
                   </span>{" "}
                   ({cycleStatus.phaseTitle}) هستی. {cycleStatus.selfCareTip}
@@ -1932,16 +1940,15 @@ export default function ImpoPeriodTracker({
             </div>
           </div>
 
-          {/* EDITORIAL BIOMETRICS & CYCLE DETAILS ("Health systems" Style List + Care Cards) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left/Start: "Health systems" Progress List */}
-            <div className="lg:col-span-7 bg-[#FFFDF8] border border-[#E8E2D4] rounded-[28px] p-6 space-y-5">
+          {/* NEOBRUTALIST BIOMETRICS & CYCLE DETAILS */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div className="lg:col-span-7 bg-white border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[30px] p-5 sm:p-6 space-y-5">
               <div className="flex items-center justify-between">
-                <h3 className="text-base sm:text-lg font-bold text-[#191817]">شاخص‌های سلامت و بیوریتم</h3>
+                <h3 className="text-base sm:text-lg font-black text-[#141414]">شاخص‌های سلامت و بیوریتم</h3>
                 <button
                   type="button"
                   onClick={() => setShowSettingsModal(true)}
-                  className="px-3.5 py-1.5 bg-[#F2EFE9] hover:bg-[#E7E2D8] text-[#191817] rounded-full text-xs font-bold cursor-pointer transition-colors"
+                  className="px-3.5 py-1.5 bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] rounded-full text-xs font-black cursor-pointer"
                 >
                   تنظیمات
                 </button>
@@ -1953,28 +1960,28 @@ export default function ImpoPeriodTracker({
                   return (
                     <div key={m.id} className="flex items-center gap-3.5">
                       <div
-                        className="w-10 h-10 rounded-xl bg-[#F2EFE9] text-[#191817] flex items-center justify-center shrink-0"
+                        className={`w-11 h-11 rounded-full ${m.bgClass} border-2 border-[#141414] text-[#141414] flex items-center justify-center shrink-0`}
                       >
-                        <MetricIcon className="w-4.5 h-4.5 stroke-[1.7]" />
+                        <MetricIcon className="w-5 h-5 stroke-[2.2]" />
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs sm:text-sm font-bold text-[#191817] block mb-2">
+                        <span className="text-xs sm:text-sm font-black text-[#141414] block mb-1.5">
                           {m.label}
                         </span>
-                        <div className="w-full h-2 bg-[#EBE6DC] rounded-full overflow-hidden">
+                        <div className="w-full h-3.5 bg-[#FFF8E7] border-2 border-[#141414] rounded-full overflow-hidden">
                           <div
-                            className="h-full rounded-full transition-all duration-500 bg-[#191817]"
-                            style={{ width: `${Math.max(10, m.pct)}%`, opacity: m.pct >= 70 ? 0.9 : 0.6 }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${Math.max(12, m.pct)}%`, backgroundColor: m.color }}
                           />
                         </div>
                       </div>
 
                       <div className="text-left shrink-0 min-w-[64px]">
-                        <span className="text-base sm:text-lg font-bold text-[#191817]">
+                        <span className="text-base sm:text-lg font-black text-[#141414]">
                           {toPersianDigits(m.score)}
                         </span>
-                        <span className="text-[11px] text-[#78746B] mr-1 font-medium">از ۱۰</span>
+                        <span className="text-[11px] text-[#141414]/70 mr-1 font-bold">از ۱۰</span>
                       </div>
                     </div>
                   );
