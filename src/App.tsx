@@ -340,44 +340,44 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF6EC] text-[#1B1B1A] font-sans selection:bg-[#F6C3E5] selection:text-[#1B1B1A] overflow-x-hidden">
+    <div className="min-h-screen bg-[#FAD074] text-[#141414] font-sans selection:bg-[#FBC2F3] selection:text-[#141414] overflow-x-hidden">
       <AnimatePresence mode="wait">
         {loading ? (
-          /* Minimalist Pastel Loader */
+          /* Neobrutalist Pastel Loader */
           <motion.div
             key="loader"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-[#FAF6EC]"
+            className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-[#FAD074]"
           >
             <div className="relative">
-              <div className="w-20 h-20 bg-[#F6C3E5] rounded-full flex items-center justify-center text-[#1B1B1A]">
-                <Heart className="w-9 h-9 stroke-[1.6] animate-heart text-[#1B1B1A]" />
+              <div className="w-20 h-20 bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-full flex items-center justify-center text-[#141414]">
+                <Heart className="w-9 h-9 stroke-[2.2] animate-heart text-[#141414]" />
               </div>
-              <div className="absolute -top-1 -right-1 w-7 h-7 bg-[#F6DC6B] rounded-full border-2 border-[#FAF6EC] flex items-center justify-center text-[11px] font-bold text-[#1B1B1A]">
+              <div className="absolute -top-1 -right-1 w-7 h-7 bg-[#F5F97A] rounded-full border-2 border-[#141414] flex items-center justify-center text-[11px] font-black text-[#141414]">
                 ✦
               </div>
             </div>
-            <p className="mt-5 text-xs font-bold text-[#78746B] flex items-center gap-2">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#1B1B1A]" />
+            <p className="mt-5 text-xs font-black text-[#141414] flex items-center gap-2 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] px-4 py-1.5 rounded-full">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#141414] stroke-[2.3]" />
               در حال آماده‌سازی فضای طغرل...
             </p>
           </motion.div>
         ) : error ? (
-          /* Minimalist Error Page */
+          /* Neobrutalist Error Page */
           <motion.div
             key="error"
-            className="fixed inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#FAF6EC]"
+            className="fixed inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#FAD074]"
           >
-            <div className="w-16 h-16 bg-[#F6C3E5] rounded-full flex items-center justify-center text-[#1B1B1A] mb-4">
-              <Heart className="w-7 h-7 stroke-[1.6]" />
+            <div className="w-16 h-16 bg-[#FF8B6A] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full flex items-center justify-center text-[#141414] mb-4">
+              <Heart className="w-7 h-7 stroke-[2.2]" />
             </div>
-            <h3 className="text-lg font-bold text-[#1B1B1A]">خطایی رخ داد</h3>
-            <p className="text-[#78746B] text-sm mt-1.5 max-w-xs leading-relaxed">{error}</p>
+            <h3 className="text-lg font-black text-[#141414]">خطایی رخ داد</h3>
+            <p className="text-[#141414]/80 font-bold text-sm mt-1.5 max-w-xs leading-relaxed">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-6 py-3 px-7 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] font-bold rounded-full text-xs cursor-pointer transition-colors"
+              className="mt-6 py-3 px-7 bg-[#242424] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] font-black rounded-full text-xs cursor-pointer transition-colors"
             >
               تلاش دوباره
             </button>

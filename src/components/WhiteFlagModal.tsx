@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Heart, Coffee, Sparkles } from "lucide-react";
+import { X, Send } from "lucide-react";
 import { fetchFromPhpApi } from "../apiClient";
 import {
   triggerHardwareVibration,
@@ -80,7 +80,7 @@ export const WhiteFlagModal: React.FC<WhiteFlagModalProps> = ({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 bg-[#1B1B1A]/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 text-right"
+        className="fixed inset-0 bg-[#141414]/65 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 text-right"
         dir="rtl"
         onClick={onClose}
       >
@@ -90,30 +90,30 @@ export const WhiteFlagModal: React.FC<WhiteFlagModalProps> = ({
           exit={{ opacity: 0, y: 40, scale: 0.96 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#FFFDF8] border-t sm:border border-[#E8E2D4] rounded-t-[32px] sm:rounded-[36px] w-full max-w-md shadow-2xl overflow-hidden p-6"
+          className="bg-[#FAD074] border-t-2 sm:border-2 border-[#141414] rounded-t-[34px] sm:rounded-[34px] w-full max-w-md shadow-[0_6px_0_#141414] overflow-hidden p-6 max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-[#E8E2D4] mb-4">
+          <div className="flex items-center justify-between pb-3.5 border-b-2 border-[#141414]/20 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#FAF6EC] border border-[#E8E2D4] flex items-center justify-center text-xl shadow-xs">
+              <div className="w-11 h-11 rounded-full bg-[#7FD1F7] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-xl">
                 🕊️
               </div>
               <div>
-                <h3 className="text-sm sm:text-base font-black text-[#1B1B1A]">ارسال پرچم سفید 🏳️</h3>
-                <p className="text-[11px] text-[#78746B] font-medium">قدم اول برای آشتی و آرامش دونفره</p>
+                <h3 className="text-sm sm:text-base font-black text-[#141414]">ارسال پرچم سفید 🏳️</h3>
+                <p className="text-[11px] text-[#141414]/80 font-extrabold">قدم اول برای آشتی و آرامش دونفره</p>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-[#EFECE2] hover:bg-[#E2DDD0] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+              className="w-10 h-10 rounded-full bg-[#FF8B6A] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] flex items-center justify-center transition-transform active:translate-y-0.5 cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
 
           {/* Description */}
-          <p className="text-xs text-[#78746B] leading-relaxed mb-4">
+          <p className="text-xs text-[#141414]/85 font-bold leading-relaxed mb-4">
             گاهی برداشتن قدم اول بعد از دلخوری سخت‌ترین کاره. با ارسال پرچم سفید، بدون شکستن غرور به {partnerName} یادآوری می‌کنی که عشق‌تون مهم‌تر از هر دلخوریه.
           </p>
 
@@ -129,15 +129,15 @@ export const WhiteFlagModal: React.FC<WhiteFlagModalProps> = ({
                     setSelectedPreset(msg.text);
                     setIsCustom(false);
                   }}
-                  className={`w-full text-right p-3 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2.5 border ${
+                  className={`w-full text-right p-3 rounded-[20px] text-xs font-black transition-all cursor-pointer flex items-center gap-2.5 border-2 border-[#141414] ${
                     isSelected
-                      ? "bg-[#FAF6EC] border-[#1B1B1A] text-[#1B1B1A] shadow-xs"
-                      : "bg-[#FFFDF8] border-[#E8E2D4] text-[#78746B] hover:bg-[#FAF6EC]/60"
+                      ? "bg-[#B5F285] text-[#141414] shadow-[0_3px_0_#141414]"
+                      : "bg-white text-[#141414] hover:bg-[#F5F97A] shadow-[0_2px_0_#141414]"
                   }`}
                 >
                   <span className="text-base shrink-0">{msg.icon}</span>
                   <span className="flex-1 leading-snug">{msg.text}</span>
-                  {isSelected && <span className="w-2 h-2 rounded-full bg-[#10B981] shrink-0" />}
+                  {isSelected && <span className="w-3 h-3 rounded-full bg-[#141414] shrink-0" />}
                 </button>
               );
             })}
@@ -146,15 +146,15 @@ export const WhiteFlagModal: React.FC<WhiteFlagModalProps> = ({
             <button
               type="button"
               onClick={() => setIsCustom(true)}
-              className={`w-full text-right p-3 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2.5 border ${
+              className={`w-full text-right p-3 rounded-[20px] text-xs font-black transition-all cursor-pointer flex items-center gap-2.5 border-2 border-[#141414] ${
                 isCustom
-                  ? "bg-[#FAF6EC] border-[#1B1B1A] text-[#1B1B1A] shadow-xs"
-                  : "bg-[#FFFDF8] border-[#E8E2D4] text-[#78746B] hover:bg-[#FAF6EC]/60"
+                  ? "bg-[#B5F285] text-[#141414] shadow-[0_3px_0_#141414]"
+                  : "bg-white text-[#141414] hover:bg-[#F5F97A] shadow-[0_2px_0_#141414]"
               }`}
             >
               <span className="text-base shrink-0">✍️</span>
               <span className="flex-1">نوشتن متن دلخواه خودم...</span>
-              {isCustom && <span className="w-2 h-2 rounded-full bg-[#10B981] shrink-0" />}
+              {isCustom && <span className="w-3 h-3 rounded-full bg-[#141414] shrink-0" />}
             </button>
           </div>
 
@@ -166,7 +166,7 @@ export const WhiteFlagModal: React.FC<WhiteFlagModalProps> = ({
                 placeholder="پیام صلح‌آمیز و دلنشین خودت رو بنویس..."
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
-                className="w-full p-3 bg-[#FAF6EC] border border-[#E8E2D4] rounded-2xl text-xs font-semibold text-[#1B1B1A] focus:outline-none focus:border-[#1B1B1A] resize-none"
+                className="w-full p-3.5 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[20px] text-xs font-bold text-[#141414] focus:outline-none resize-none"
               />
             </div>
           )}
@@ -177,13 +177,13 @@ export const WhiteFlagModal: React.FC<WhiteFlagModalProps> = ({
               type="button"
               onClick={handleSend}
               disabled={sending || !finalMessage}
-              className="flex-1 py-3 bg-gradient-to-r from-[#1B1B1A] to-[#2F2E2C] hover:opacity-95 text-[#FAF6EC] rounded-2xl text-xs font-black transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              className="flex-1 py-3.5 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50"
             >
               {sending ? (
                 <span>در حال ارسال سیگنال صلح...</span>
               ) : (
                 <>
-                  <Send className="w-3.5 h-3.5 text-[#F6DC6B]" />
+                  <Send className="w-3.5 h-3.5 text-[#F5F97A] stroke-[2.2]" />
                   <span>ارسال پرچم سفید به {partnerName} 🕊️</span>
                 </>
               )}
@@ -192,7 +192,7 @@ export const WhiteFlagModal: React.FC<WhiteFlagModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-3 bg-[#FAF6EC] hover:bg-[#EFECE2] text-[#78746B] rounded-2xl text-xs font-bold transition-colors cursor-pointer"
+              className="px-4 py-3.5 bg-white hover:bg-[#F5F97A] text-[#141414] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black transition-colors cursor-pointer"
             >
               انصراف
             </button>
