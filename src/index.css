@@ -144,25 +144,35 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Warm Minimalist Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Warm Minimalist Scrollbar (Desktop only — keep mobile modals clean) */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #FAF6EC;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D8D3C5;
+    border-radius: 9999px;
+    transition: background-color 0.2s ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B8B2A3;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
-::-webkit-scrollbar-track {
-  background: #FAF6EC;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb {
-  background: #D8D3C5;
-  border-radius: 9999px;
-  transition: background-color 0.2s ease;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #B8B2A3;
-}
-::-webkit-scrollbar-corner {
-  background: transparent;
+
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    display: none;
+  }
 }
 
 /* Gentle heartbeat animation */

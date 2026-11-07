@@ -11,6 +11,7 @@ interface EmpathyCoPilotCardProps {
   partnerWishlistItems?: WishlistItem[];
   onOpenWishlistItem?: (item: WishlistItem) => void;
   onViewWishlist?: () => void;
+  onDismiss?: () => void;
 }
 
 export default function EmpathyCoPilotCard({
@@ -20,7 +21,8 @@ export default function EmpathyCoPilotCard({
   partnerName,
   partnerWishlistItems = [],
   onOpenWishlistItem,
-  onViewWishlist
+  onViewWishlist,
+  onDismiss
 }: EmpathyCoPilotCardProps) {
   // Find wishlist items that make great comfort gifts / dates (food, cafe, comfort items)
   const suggestedWish = partnerWishlistItems.find(
@@ -31,30 +33,42 @@ export default function EmpathyCoPilotCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-[#FFF0F7] via-[#FAF6EC] to-[#FAF6EC] border border-[#F8BBD0] rounded-[28px] p-5 sm:p-6 text-right relative overflow-hidden shadow-xs mb-6"
+      className="bg-gradient-to-br from-[#FFF0F7] via-[#FAF6EC] to-[#FAF6EC] border border-[#F8BBD0] rounded-[24px] p-4 sm:p-5 text-right relative overflow-hidden"
       dir="rtl"
     >
       {/* Decorative Moon Glow */}
       <div className="absolute -top-6 -left-6 w-24 h-24 bg-[#F6C3E5]/30 rounded-full blur-2xl pointer-events-none" />
 
-      <div className="relative z-10 space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-[#EC407A] text-white flex items-center justify-center shadow-xs">
+      <div className="relative z-10 space-y-2.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-[#EC407A] text-white flex items-center justify-center shrink-0">
               <Moon className="w-4 h-4 stroke-[2]" />
             </div>
-            <div>
-              <span className="text-[10px] font-bold text-[#EC407A] block">کوپایلوت همدلی طغرل</span>
-              <h3 className="text-sm sm:text-base font-black text-[#1B1B1A]">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-bold text-[#EC407A]">کوپایلوت همدلی طغرل</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EC407A]/15 text-[#D81B60] whitespace-nowrap">
+                  {phaseTitle}
+                </span>
+              </div>
+              <h3 className="text-sm font-black text-[#1B1B1A] mt-0.5 truncate">
                 هوای {partnerName} رو داشته باش! {isPMS ? "🌙" : "🌸"}
               </h3>
             </div>
           </div>
-          <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#EC407A]/15 text-[#D81B60]">
-            {phaseTitle}
-          </span>
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={onDismiss}
+              aria-label="بستن یادآور همدلی"
+              className="w-6 h-6 rounded-full bg-white/70 hover:bg-white text-[#78746B] hover:text-[#1B1B1A] flex items-center justify-center text-xs font-bold shrink-0 cursor-pointer transition-colors"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <p className="text-xs text-[#78746B] leading-relaxed font-medium">

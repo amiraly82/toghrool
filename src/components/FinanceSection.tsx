@@ -258,36 +258,28 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
-      {/* Pastel Pink Assistant-Style Privacy Card */}
-      <div className="bg-[#F6C3E5] rounded-[28px] p-5 sm:p-6 relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <svg
-          viewBox="0 0 100 100"
-          className="w-28 h-28 absolute -bottom-6 -left-3 text-[#E5ADD2] fill-current pointer-events-none rotate-[-14deg]"
-        >
-          <path d="M50 88C50 88 12 63 12 36C12 21 24 12 36 12C44 12 50 18 50 23C50 18 56 12 64 12C76 12 88 21 88 36C88 63 50 88 50 88Z" />
-        </svg>
-
-        <div className="text-right relative z-10 max-w-2xl">
-          <span className="text-[11px] font-medium text-[#6B5364] flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 stroke-[1.8]" />
-            دستیار مالی خصوصی طغرل
-          </span>
-          <h4 className="text-sm sm:text-base font-bold text-[#1B1B1A] mt-1 leading-relaxed">
-            فضای مالی شما <span className="text-[#D94E4E]">۱۰۰٪ محرمانه</span> و مجزا از پارتنر است
-          </h4>
-          <p className="text-xs text-[#4A3A45] leading-relaxed mt-1 font-medium">
-            شریک عاطفی شما به هیچ‌وجه به بودجه‌ها، هزینه‌ها و درآمدهای ثبت‌شده در این صفحه دسترسی ندارد.
+    <div className="space-y-4 sm:space-y-6" dir="rtl">
+      {/* Sleek Compact Privacy Strip (Replaces giant 175px mobile banner) */}
+      <div className="bg-[#F6C3E5]/80 border border-[#E5ADD2] rounded-2xl p-3.5 px-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-[#1B1B1A] shrink-0 stroke-[2]" />
+            <h4 className="text-xs sm:text-sm font-black text-[#1B1B1A] truncate">
+              فضای مالی <span className="text-[#D94E4E]">۱۰۰٪ محرمانه</span> شما
+            </h4>
+          </div>
+          <p className="text-[11px] text-[#4A3A45] mt-0.5 truncate font-medium">
+            کاملاً شخصی و بدون دسترسی پارتنر به هزینه‌ها و بودجه‌ها
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setShowBudgetModal(true)}
-          className="relative z-10 self-start sm:self-center px-5 py-2.5 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors shrink-0"
+          className="px-3.5 py-2 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
         >
-          <Settings className="w-3.5 h-3.5 stroke-[1.7]" />
-          <span>تنظیم بودجه ماهانه</span>
+          <Settings className="w-3.5 h-3.5 stroke-[1.8]" />
+          <span>بودجه ماهانه</span>
         </button>
       </div>
 
@@ -306,91 +298,92 @@ export default function FinanceSection({ userProfile }: FinanceSectionProps) {
         </div>
       )}
 
-      {/* Summary Bento Grid (4 Editorial Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary 2x2 Mobile Bento Grid (Saves ~380px vertical scroll on phones!) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Card 1: Balance */}
-        <div className="bg-[#FFFDF8] p-5 rounded-[26px] border border-[#E8E2D4] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#78746B]">موجودی خالص</span>
-            <div className="w-10 h-10 bg-[#A7B86C] rounded-full text-[#1B1B1A] flex items-center justify-center">
-              <Wallet className="w-4 h-4 stroke-[1.7]" />
+        <div className="bg-[#FFFDF8] p-3.5 sm:p-5 rounded-[22px] sm:rounded-[26px] border border-[#E8E2D4] flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-bold text-[#78746B]">موجودی خالص</span>
+            <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#A7B86C] rounded-full text-[#1B1B1A] flex items-center justify-center shrink-0">
+              <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className={`text-lg sm:text-xl font-bold ${netSavings >= 0 ? "text-[#1B1B1A]" : "text-[#D94E4E]"}`}>
+          <div className="mt-2.5 sm:mt-4">
+            <h3 className={`text-sm sm:text-lg font-black truncate ${netSavings >= 0 ? "text-[#1B1B1A]" : "text-[#D94E4E]"}`}>
               {formatToman(netSavings)}
             </h3>
-            <p className="text-[11px] text-[#78746B] mt-1 font-medium">
-              تفاضل درآمد و هزینه‌های شخصی
+            <p className="text-[10px] text-[#78746B] mt-0.5 font-medium truncate">
+              درآمد منهای هزینه
             </p>
           </div>
         </div>
 
         {/* Card 2: Income */}
-        <div className="bg-[#FFFDF8] p-5 rounded-[26px] border border-[#E8E2D4] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#78746B]">مجموع درآمدها</span>
-            <div className="w-10 h-10 bg-[#F6DC6B] rounded-full text-[#1B1B1A] flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 stroke-[1.7]" />
+        <div className="bg-[#FFFDF8] p-3.5 sm:p-5 rounded-[22px] sm:rounded-[26px] border border-[#E8E2D4] flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-bold text-[#78746B]">مجموع درآمد</span>
+            <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#F6DC6B] rounded-full text-[#1B1B1A] flex items-center justify-center shrink-0">
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className="text-lg sm:text-xl font-bold text-[#1B1B1A]">
+          <div className="mt-2.5 sm:mt-4">
+            <h3 className="text-sm sm:text-lg font-black text-[#1B1B1A] truncate">
               {formatToman(totalIncome)}
             </h3>
             {budget?.monthlyIncomeGoal ? (
-              <div className="mt-2 flex items-center gap-2.5">
-                <div className="flex-1 bg-[#EFECE2] h-2.5 rounded-full overflow-hidden">
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <div className="flex-1 bg-[#EFECE2] h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-[#F6DC6B] h-full rounded-full"
                     style={{ width: `${Math.min(100, (totalIncome / budget.monthlyIncomeGoal) * 100)}%` }}
                   />
                 </div>
-                <span className="text-[11px] font-bold text-[#1B1B1A] shrink-0">
+                <span className="text-[10px] font-bold text-[#1B1B1A] shrink-0">
                   {toPersianDigits(Math.round((totalIncome / budget.monthlyIncomeGoal) * 100))}٪
                 </span>
               </div>
             ) : (
-              <p className="text-[11px] text-[#78746B] mt-1 font-medium">هدف درآمدی تنظیم نشده</p>
+              <p className="text-[10px] text-[#78746B] mt-0.5 font-medium truncate">هدف تعیین نشده</p>
             )}
           </div>
         </div>
 
         {/* Card 3: Expenses */}
-        <div className="bg-[#FFFDF8] p-5 rounded-[26px] border border-[#E8E2D4] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#78746B]">مجموع هزینه‌ها</span>
-            <div className="w-10 h-10 bg-[#F6C3E5] rounded-full text-[#1B1B1A] flex items-center justify-center">
-              <TrendingDown className="w-4 h-4 stroke-[1.7]" />
+        <div className="bg-[#FFFDF8] p-3.5 sm:p-5 rounded-[22px] sm:rounded-[26px] border border-[#E8E2D4] flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-bold text-[#78746B]">مجموع هزینه</span>
+            <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#F6C3E5] rounded-full text-[#1B1B1A] flex items-center justify-center shrink-0">
+              <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className="text-lg sm:text-xl font-bold text-[#1B1B1A]">
+          <div className="mt-2.5 sm:mt-4">
+            <h3 className="text-sm sm:text-lg font-black text-[#1B1B1A] truncate">
               {formatToman(totalExpense)}
             </h3>
-            <p className="text-[11px] text-[#78746B] mt-1 font-medium">
-              خروجی‌های ثبت‌شده شخصی
+            <p className="text-[10px] text-[#78746B] mt-0.5 font-medium truncate">
+              مخارج ثبت‌شده
             </p>
           </div>
         </div>
 
         {/* Card 4: Total Budget */}
-        <div className="bg-[#FFFDF8] p-5 rounded-[26px] border border-[#E8E2D4] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#78746B]">سقف بودجه ماهانه</span>
-            <div className="w-10 h-10 bg-[#B8CEF4] rounded-full text-[#1B1B1A] flex items-center justify-center">
-              <PiggyBank className="w-4 h-4 stroke-[1.7]" />
+        <div className="bg-[#FFFDF8] p-3.5 sm:p-5 rounded-[22px] sm:rounded-[26px] border border-[#E8E2D4] flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-bold text-[#78746B]">سقف بودجه</span>
+            <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#B8CEF4] rounded-full text-[#1B1B1A] flex items-center justify-center shrink-0">
+              <PiggyBank className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
             </div>
           </div>
-          <div className="mt-4 flex flex-col justify-end">
-            <h3 className="text-lg sm:text-xl font-bold text-[#1B1B1A]">
+          <div className="mt-2.5 sm:mt-4 flex flex-col justify-end">
+            <h3 className="text-sm sm:text-lg font-black text-[#1B1B1A] truncate">
               {totalBudgetsDefined > 0 ? formatToman(totalBudgetsDefined) : "مشخص نشده"}
             </h3>
             <button
               onClick={() => setShowBudgetModal(true)}
-              className="text-[11px] text-[#78746B] hover:text-[#1B1B1A] font-bold text-right mt-1 flex items-center gap-1 cursor-pointer transition-colors"
+              className="text-[10px] text-[#78746B] hover:text-[#1B1B1A] font-bold text-right mt-0.5 flex items-center gap-1 cursor-pointer transition-colors truncate"
             >
-              <Settings className="w-3 h-3 stroke-[1.8]" /> ویرایش سقف دسته‌ها
+              <Settings className="w-2.5 h-2.5 stroke-[1.8] shrink-0" />
+              <span>ویرایش سقف‌ها</span>
             </button>
           </div>
         </div>

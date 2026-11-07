@@ -108,15 +108,15 @@ export default function PartnerHubSheet({
             exit={{ opacity: 0, y: 60 }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#FAF6EC] w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 text-right shadow-2xl"
+            className="bg-[#FAF6EC] w-full max-w-md max-h-[88vh] overflow-y-auto no-scrollbar rounded-t-[30px] sm:rounded-[30px] p-5 sm:p-6 text-right shadow-2xl"
           >
-            <div className="w-10 h-1 bg-[#D5CEBC] rounded-full mx-auto mb-4 sm:hidden" />
+            <div className="w-10 h-1 bg-[#D5CEBC] rounded-full mx-auto mb-3.5 sm:hidden" />
 
             {/* Partner identity */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  {renderAvatar(partnerProfile, "💖", "w-12 h-12")}
+                  {renderAvatar(partnerProfile, "💖", "w-11 h-11")}
                   <span
                     className={`absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#FAF6EC] ${
                       isPartnerOnline ? "bg-[#A7B86C]" : "bg-[#C8C3B6]"
@@ -125,7 +125,7 @@ export default function PartnerHubSheet({
                 </div>
                 <div>
                   <h3 className="text-base font-black text-[#1B1B1A]">{partnerName}</h3>
-                  <p className="text-xs text-[#78746B] font-medium mt-0.5">
+                  <p className="text-[11px] text-[#78746B] font-medium mt-0.5">
                     {isPartnerOnline ? "همین الان آنلاین است" : "آفلاین"}
                   </p>
                 </div>
@@ -133,7 +133,7 @@ export default function PartnerHubSheet({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-9 h-9 rounded-full hover:bg-[#EFECE2] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
                 aria-label="بستن"
               >
                 <X className="w-4 h-4" />
@@ -141,11 +141,13 @@ export default function PartnerHubSheet({
             </div>
 
             {/* Partner mood — read-only context */}
-            <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-4 mb-4 flex items-center gap-3">
-              <span className="text-2xl shrink-0">{need.emoji}</span>
+            <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3.5 mb-3.5 flex items-center gap-3">
+              <span className="w-10 h-10 rounded-xl bg-[#FAF6EC] border border-[#EFECE2] flex items-center justify-center text-xl shrink-0">
+                {need.emoji}
+              </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-[#1B1B1A] truncate">{need.label}</p>
-                <p className="text-xs text-[#78746B] mt-0.5 leading-relaxed line-clamp-2">{need.description}</p>
+                <p className="text-xs sm:text-sm font-black text-[#1B1B1A] truncate">{need.label}</p>
+                <p className="text-[11px] text-[#78746B] mt-0.5 leading-relaxed line-clamp-2">{need.description}</p>
               </div>
               <div
                 className="text-xs font-black px-2.5 py-1 rounded-full shrink-0"
@@ -159,10 +161,10 @@ export default function PartnerHubSheet({
             <button
               type="button"
               onClick={() => run(onSendLovePing)}
-              className="w-full py-3.5 mb-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-[0.99]"
+              className="w-full py-3 mb-3 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-[0.99]"
             >
               <Heart className="w-4 h-4 text-[#F6C3E5] fill-current" />
-              <span>الان به یادتم</span>
+              <span>ارسال تپش قلب «الان به یادتم»</span>
             </button>
 
             {/* Secondary actions as a calm list */}
@@ -172,14 +174,14 @@ export default function PartnerHubSheet({
                   key={a.key}
                   type="button"
                   onClick={a.onClick}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#FAF6EC] transition-colors cursor-pointer text-right"
+                  className="w-full flex items-center gap-3 px-3.5 py-3 hover:bg-[#FAF6EC] transition-colors cursor-pointer text-right"
                 >
-                  <span className="w-9 h-9 rounded-xl bg-[#EFECE2] flex items-center justify-center text-base shrink-0">
+                  <span className="w-8 h-8 rounded-xl bg-[#FAF6EC] border border-[#EFECE2] flex items-center justify-center text-base shrink-0">
                     {a.emoji}
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-sm font-bold text-[#1B1B1A]">{a.title}</span>
-                    <span className="block text-xs text-[#78746B] mt-0.5 truncate">{a.subtitle}</span>
+                    <span className="block text-xs sm:text-sm font-bold text-[#1B1B1A]">{a.title}</span>
+                    <span className="block text-[11px] text-[#78746B] mt-0.5 truncate">{a.subtitle}</span>
                   </span>
                   <ChevronLeft className="w-4 h-4 text-[#A6A297] shrink-0" />
                 </button>

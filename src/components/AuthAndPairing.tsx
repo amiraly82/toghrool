@@ -383,40 +383,34 @@ export default function AuthAndPairing({
 
   return (
     <div className={`w-full flex items-center justify-center ${isPairingModal ? "p-0" : "min-h-screen p-4 bg-[#FAF6EC]"}`} dir="rtl">
-      <div className="w-full max-w-md bg-[#FFFDF8] border border-[#E8E2D4] rounded-[32px] p-6 sm:p-8 shadow-xl shadow-[#1B1B1A]/4 relative">
+      <div className="w-full max-w-md bg-[#FFFDF8] border border-[#E8E2D4] rounded-[30px] p-5 sm:p-7 shadow-xl shadow-[#1B1B1A]/4 relative">
         {isPairingModal && onCloseModal && (
           <button
             type="button"
             onClick={onCloseModal}
-            className="absolute top-5 left-5 w-8 h-8 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
+            className="absolute top-4 left-4 w-8 h-8 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
             title="بستن"
           >
             <X className="w-4 h-4 stroke-[2]" />
           </button>
         )}
 
-        {/* Brand Header */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-12 h-12 rounded-full bg-[#F6DC6B] flex items-center justify-center text-[#1B1B1A]">
-              <Sparkles className="w-5 h-5 stroke-[1.7]" />
+        {/* Compact, Cohesive Brand Header for Mobile */}
+        <div className="flex flex-col items-center mb-5">
+          <div className="relative mb-2.5">
+            <div className="w-13 h-13 rounded-2xl bg-[#F6C3E5] flex items-center justify-center text-[#1B1B1A] shadow-2xs">
+              <Heart className="w-6 h-6 stroke-[1.8] animate-heart" />
             </div>
-            <div className="w-16 h-16 rounded-full bg-[#F6C3E5] flex items-center justify-center text-[#1B1B1A]">
-              <Heart className="w-7 h-7 stroke-[1.7] animate-heart" />
-            </div>
-            <div className="w-12 h-12 rounded-full bg-[#B8CEF4] flex items-center justify-center text-[#1B1B1A]">
-              <Key className="w-5 h-5 stroke-[1.7]" />
-            </div>
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#F6DC6B] border-2 border-[#FFFDF8] flex items-center justify-center text-[10px] font-black text-[#1B1B1A]">
+              ✦
+            </span>
           </div>
 
-          <span className="text-[11px] font-semibold text-[#78746B] tracking-wide">
-            اپلیکیشن دونفره طغرل
-          </span>
-          <h1 className="text-2xl sm:text-[26px] font-bold text-[#1B1B1A] mt-1 tracking-tight">
-            رؤیاهای مشترک ما
+          <h1 className="text-xl sm:text-2xl font-black text-[#1B1B1A] tracking-tight">
+            طغرل · فضای دونفره ما
           </h1>
-          <p className="text-[#78746B] text-xs mt-1.5 text-center leading-relaxed max-w-xs">
-            لیست آرزوها، خاطرات، سلامت و برنامه‌ریزی دونفره در فضایی آرام و اختصاصی
+          <p className="text-[#78746B] text-xs mt-1 text-center leading-relaxed max-w-xs">
+            آرزوها، سلامت، خاطرات و برنامه‌ریزی مشترک در یک جای آرام
           </p>
         </div>
 
@@ -1008,8 +1002,8 @@ export default function AuthAndPairing({
                     type="text"
                     value={partnerCode}
                     onChange={(e) => setPartnerCode(e.target.value)}
-                    placeholder="ABCD1234"
-                    className="w-full px-4 py-3.5 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl font-mono text-center text-lg font-bold tracking-widest uppercase text-[#1B1B1A] outline-none transition-colors"
+                    placeholder="LV92K4"
+                    className="w-full px-4 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-2xl font-mono text-center text-lg font-bold tracking-widest uppercase text-[#1B1B1A] placeholder:text-[#A6A297] outline-none transition-colors"
                     maxLength={8}
                     required
                   />

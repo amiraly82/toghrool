@@ -14,10 +14,10 @@ export const NEED_STATUS_OPTIONS: NeedStatusOption[] = [
     id: "calm",
     label: "حالم آروم و خوبه",
     shortLabel: "آرام و خوب",
-    emoji: "🤍",
+    emoji: "😌",
     color: "#1B1B1A",
-    bgColor: "#FAF6EC",
-    borderColor: "#E5E0D2",
+    bgColor: "#FFF5FA",
+    borderColor: "#F6C3E5",
     description: "اوضاع مرتبه و حس درونی پایداری دارم."
   },
   {

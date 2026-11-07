@@ -194,11 +194,11 @@ const DEFAULT_CATEGORIES = [
   { id: "movie", label: "فیلم‌هایی که ببینیم", iconName: "Film", color: "text-[#1B1B1A]", bg: "bg-[#F9C6B8]", border: "border-[#EAAC9C]", barHex: "#F9C6B8", icon: Film }
 ];
 
-// Helper to render editorial user avatars
+// Helper to render editorial user avatars with crisp contrast ring
 const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", sizeClasses = "w-9 h-9") => {
   if (!profile) {
     return (
-      <div className={`${sizeClasses} bg-[#EFECE2] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] text-xs text-[#1B1B1A]`}>
+      <div className={`${sizeClasses} bg-[#EFECE2] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] ring-1 ring-[#D8D1C0] text-xs text-[#1B1B1A] shadow-2xs`}>
         {fallbackLetter}
       </div>
     );
@@ -209,7 +209,7 @@ const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", si
       <img
         src={profile.photoURL}
         alt={profile.displayName}
-        className={`${sizeClasses} rounded-full object-cover border-2 border-[#FAF6EC]`}
+        className={`${sizeClasses} rounded-full object-cover border-2 border-[#FAF6EC] ring-1 ring-[#D8D1C0] shadow-2xs`}
         referrerPolicy="no-referrer"
         onError={(e) => {
           (e.target as any).src = "https://api.dicebear.com/7.x/adventurer/svg?seed=" + profile.uid;
@@ -218,14 +218,14 @@ const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", si
     );
   } else if (profile.photoURL && isEmoji) {
     return (
-      <div className={`${sizeClasses} bg-[#EFECE2] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] text-lg`}>
+      <div className={`${sizeClasses} bg-[#FFFDF8] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] ring-1 ring-[#D8D1C0] text-lg shadow-2xs`}>
         {profile.photoURL}
       </div>
     );
   } else {
     const initial = profile.displayName ? profile.displayName.charAt(0) : "💕";
     return (
-      <div className={`${sizeClasses} bg-[#F6C3E5] text-[#1B1B1A] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] font-black text-sm`}>
+      <div className={`${sizeClasses} bg-[#F6C3E5] text-[#1B1B1A] rounded-full flex items-center justify-center border-2 border-[#FAF6EC] ring-1 ring-[#E5ADD2] font-black text-sm shadow-2xs`}>
         {initial}
       </div>
     );
@@ -295,9 +295,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [showAnniversaryModal, setShowAnniversaryModal] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [showPartnerHub, setShowPartnerHub] = useState(false);
-  const [notificationBannerDismissed, setNotificationBannerDismissed] = useState<boolean>(() => {
+  const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+  const [showMemoriesSearch, setShowMemoriesSearch] = useState(false);
+  const [empathyDismissed, setEmpathyDismissed] = useState(() => {
     try {
-      return localStorage.getItem("toghrool_notif_banner_dismissed") === "true";
+      return sessionStorage.getItem("empathy_copilot_dismissed") === "1";
     } catch {
       return false;
     }
@@ -320,31 +322,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       localStorage.setItem("toghrool_notified_poke_ids", JSON.stringify(arr));
     } catch {}
   };
-
-  // Phase 2: Auto-open Daily Intimacy Routine Modal once a day if not answered yet
-  useEffect(() => {
-    if (!userProfile?.coupleId && !userProfile?.uid) return;
-    if (hasCheckedDailyAutoPopup.current) return;
-    hasCheckedDailyAutoPopup.current = true;
-
-    const todayStr = getTehranDateString();
-    const userKey = userProfile.uid || "me";
-    const seenKey = `toghrool_daily_q_modal_${userKey}_${todayStr}`;
-    const alreadySeenToday = localStorage.getItem(seenKey);
-
-    if (alreadySeenToday) return;
-
-    fetchFromPhpApi("getDailyQuestion", { date: todayStr })
-      .then((res) => {
-        if (res && res.status === "success" && !res.myAnswer) {
-          setShowDailyQuestionModal(true);
-          localStorage.setItem(seenKey, "true");
-        }
-      })
-      .catch((err) => {
-        console.warn("Failed checking daily question auto popup:", err);
-      });
-  }, [userProfile?.coupleId, userProfile?.uid]);
 
   // Dynamic state for custom settings
   const [partnerProfile, setPartnerProfile] = useState<UserProfile | null>(null);
@@ -2055,11 +2032,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     : null;
 
   return (
-    <div className="min-h-screen pb-32 bg-[#FAF6EC] text-[#1B1B1A] relative">
-      {/* Calm Header — identity on the right, ONE overflow menu on the left */}
-      <header className="sticky top-0 bg-[#FAF6EC]/95 backdrop-blur-sm border-b border-[#E8E2D4] z-30">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
+    <div className="min-h-screen pb-28 bg-[#FAF6EC] text-[#1B1B1A] relative" dir="rtl">
+      {/* Calm Header — RTL Couple Identity on the right, Overflow Menu on the left */}
+      <header className="sticky top-0 bg-[#FAF6EC]/95 backdrop-blur-sm border-b border-[#E8E2D4] z-30" dir="rtl">
+        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
             {/* Couple avatars: mine opens profile, partner's opens Partner Hub */}
             <div className="flex items-center shrink-0">
               <button
@@ -2074,7 +2051,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={() => setShowPartnerHub(true)}
-                  className="relative -mr-3 rounded-full cursor-pointer transition-transform active:scale-95"
+                  className="relative z-0 -mr-2.5 rounded-full cursor-pointer transition-transform active:scale-95"
                   aria-label="فضای پارتنر"
                 >
                   {renderAvatar(partnerProfile, "💖", "w-10 h-10")}
@@ -2088,7 +2065,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={onOpenPairingModal}
-                  className="-mr-3 w-10 h-10 rounded-full border-2 border-dashed border-[#C8C3B6] bg-[#FAF6EC] text-[#78746B] flex items-center justify-center cursor-pointer hover:border-[#1B1B1A] hover:text-[#1B1B1A] transition-colors"
+                  className="-mr-2.5 w-10 h-10 rounded-full border-2 border-dashed border-[#B8B2A3] bg-[#FFFDF8] text-[#78746B] flex items-center justify-center cursor-pointer hover:border-[#1B1B1A] hover:text-[#1B1B1A] transition-colors"
                   aria-label="اتصال پارتنر"
                 >
                   <Plus className="w-4 h-4" />
@@ -2106,31 +2083,42 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   ? `${userProfile.displayName} و ${partnerProfile?.displayName || "پارتنر"}`
                   : userProfile.displayName}
               </h1>
-              <p className="text-[11px] sm:text-xs text-[#78746B] font-medium mt-0.5 truncate">
-                {!userProfile.partnerUid
-                  ? "پارتنرت رو دعوت کن"
-                  : userProfile.coupleInfo?.relationshipStartDate
-                  ? `${toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز با هم`
-                  : isPartnerOnline
-                  ? "آنلاین"
-                  : "آفلاین"}
+              <p className="text-[11px] text-[#78746B] font-semibold mt-0.5 truncate flex items-center gap-1">
+                {!userProfile.partnerUid ? (
+                  <span className="text-[#D81B60]">+ اتصال به پارتنر</span>
+                ) : userProfile.coupleInfo?.relationshipStartDate ? (
+                  <span>{toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز با هم</span>
+                ) : (
+                  <span>{isPartnerOnline ? "پارتنر آنلاین است" : "آفلاین"}</span>
+                )}
               </p>
             </button>
           </div>
 
-          {/* Single overflow menu replaces calendar / install / bell / logout buttons */}
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowHeaderMenu((v) => !v)}
-              className="relative w-10 h-10 rounded-full hover:bg-[#EFECE2] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="منو"
-            >
-              <MoreHorizontal className="w-5 h-5 stroke-[1.8]" />
-              {!notificationsEnabled && (
-                <span className="absolute top-2 left-2 w-2 h-2 rounded-full bg-[#EC407A]" />
-              )}
-            </button>
+          {/* Left Controls: Solo Pair Pill (if unpaired) + Single Overflow Menu */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {!userProfile.partnerUid && !userProfile.coupleId && (
+              <button
+                type="button"
+                onClick={onOpenPairingModal}
+                className="px-3 py-1.5 rounded-full bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Key className="w-3 h-3 text-[#F6C3E5]" />
+                <span>اتصال پارتنر</span>
+              </button>
+            )}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowHeaderMenu((v) => !v)}
+                className="relative w-9 h-9 rounded-full bg-[#EFECE2]/80 hover:bg-[#E5E0D2] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="منو"
+              >
+                <MoreHorizontal className="w-5 h-5 stroke-[1.8]" />
+                {!notificationsEnabled && (
+                  <span className="absolute top-1.5 left-1.5 w-2 h-2 rounded-full bg-[#EC407A] ring-2 ring-[#FAF6EC]" />
+                )}
+              </button>
 
             <AnimatePresence>
               {showHeaderMenu && (
@@ -2202,6 +2190,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 </>
               )}
             </AnimatePresence>
+            </div>
           </div>
         </div>
       </header>
@@ -2282,82 +2271,106 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         )}
       </AnimatePresence>
 
-      <main className="max-w-5xl mx-auto px-4 mt-6">
-        {/* --- COUPLE INTIMACY & EMOTIONAL STATUS CAPSULE (STREAMLINED EDITORIAL) --- */}
-        <div className="w-full mb-5" dir="rtl">
-          <div className="flex items-center justify-between w-full max-w-xl mx-auto bg-[#EFECE2]/90 backdrop-blur-xs border border-[#E5E0D2] rounded-full p-1.5 px-2.5 shadow-2xs gap-2 transition-all">
-            {/* User Emotional Status Pill (Interactive) */}
-            <button
-              type="button"
-              onClick={() => setShowEmotionalStatusSheet(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-[#FAF6EC] text-[#1B1B1A] transition-colors cursor-pointer group min-w-0"
-              title="ویرایش وضعیت حال دل و باتری من"
-            >
-              <span className="text-sm shrink-0">
-                {getNeedStatusOption(myNeedStatus).emoji}
-              </span>
-              <span className="text-xs font-black truncate">
-                {getNeedStatusOption(myNeedStatus).shortLabel || getNeedStatusOption(myNeedStatus).label}
-              </span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#78746B] shrink-0">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: getBatteryVisual(myBatteryLevel).color }}
-                />
-                <span>{toPersianDigits(myBatteryLevel)}٪</span>
-              </span>
-              <Edit2 className="w-2.5 h-2.5 text-[#A6A297] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 hidden sm:inline" />
-            </button>
-
-            {/* Subtle Vertical Divider */}
-            <div className="w-px h-5 bg-[#D5CEBC] shrink-0" />
-
-            {/* Partner Emotional Status Pill (Opens Partner Hub) */}
-            {userProfile.partnerUid ? (
+      <main className="max-w-5xl mx-auto px-4 mt-3.5 sm:mt-6">
+        {/* --- COUPLE MOOD & BATTERY SPLIT CARDS (SHOWN ON HOME TAB ONLY FOR ZERO TAB CLUTTER) --- */}
+        {activeTab === "wishlist" && (
+          <div className="w-full mb-4" dir="rtl">
+            <div className="grid grid-cols-2 gap-2.5 max-w-xl mx-auto">
+              {/* My Mood Card */}
               <button
                 type="button"
-                onClick={() => setShowPartnerHub(true)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-[#FAF6EC] text-[#1B1B1A] transition-colors cursor-pointer group min-w-0"
-                title={`وضعیت ${partnerProfile?.displayName || 'پارتنر'} (برای امکانات و ارسال عشق لمس کنید)`}
+                onClick={() => setShowEmotionalStatusSheet(true)}
+                className="bg-[#FFFDF8] hover:bg-white border border-[#E8E2D4] hover:border-[#1B1B1A]/30 rounded-2xl p-2.5 px-3 flex items-center gap-2.5 text-right transition-all cursor-pointer group min-w-0"
               >
-                <span className="text-sm shrink-0">
-                  {getNeedStatusOption(partnerProfile?.needStatus || 'calm').emoji}
+                <span className="w-9 h-9 rounded-xl bg-[#FAF6EC] border border-[#EFECE2] flex items-center justify-center text-base shrink-0">
+                  {getNeedStatusOption(myNeedStatus).emoji}
                 </span>
-                <span className="text-xs font-black truncate">
-                  {partnerProfile?.displayName ? `${partnerProfile.displayName}: ` : ''}
-                  {getNeedStatusOption(partnerProfile?.needStatus || 'calm').shortLabel || getNeedStatusOption(partnerProfile?.needStatus || 'calm').label}
-                </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#78746B] shrink-0">
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{
-                      backgroundColor: getBatteryVisual(partnerProfile?.batteryLevel ?? 80).color
-                    }}
-                  />
-                  <span>{toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪</span>
-                </span>
-                <ChevronLeft className="w-3.5 h-3.5 text-[#A6A297] group-hover:text-[#1B1B1A] transition-colors shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-bold text-[#78746B] truncate">حال دل من</span>
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-black text-[#1B1B1A] shrink-0">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: getBatteryVisual(myBatteryLevel).color }}
+                      />
+                      <span>{toPersianDigits(myBatteryLevel)}٪</span>
+                    </span>
+                  </div>
+                  <p className="text-xs font-black text-[#1B1B1A] truncate mt-0.5">
+                    {getNeedStatusOption(myNeedStatus).shortLabel || getNeedStatusOption(myNeedStatus).label}
+                  </p>
+                </div>
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onOpenPairingModal}
-                className="flex-1 py-1.5 px-3 rounded-full border border-dashed border-[#D5CEBC] text-[11px] font-bold text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#FAF6EC] transition-colors cursor-pointer text-center truncate"
-              >
-                + اتصال پارتنر
-              </button>
-            )}
+
+              {/* Partner Mood Card */}
+              {userProfile.partnerUid ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPartnerHub(true)}
+                  className="bg-[#FFFDF8] hover:bg-white border border-[#E8E2D4] hover:border-[#F6C3E5] rounded-2xl p-2.5 px-3 flex items-center gap-2.5 text-right transition-all cursor-pointer group min-w-0"
+                >
+                  <span className="w-9 h-9 rounded-xl bg-[#FFF0F7] border border-[#F8BBD0]/60 flex items-center justify-center text-base shrink-0">
+                    {getNeedStatusOption(partnerProfile?.needStatus || "calm").emoji}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-bold text-[#78746B] truncate">
+                        {partnerProfile?.displayName || "پارتنر"}
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-black text-[#1B1B1A] shrink-0">
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{
+                            backgroundColor: getBatteryVisual(partnerProfile?.batteryLevel ?? 80).color
+                          }}
+                        />
+                        <span>{toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪</span>
+                      </span>
+                    </div>
+                    <p className="text-xs font-black text-[#1B1B1A] truncate mt-0.5 flex items-center justify-between gap-1">
+                      <span className="truncate">
+                        {getNeedStatusOption(partnerProfile?.needStatus || "calm").shortLabel ||
+                          getNeedStatusOption(partnerProfile?.needStatus || "calm").label}
+                      </span>
+                      <ChevronLeft className="w-3 h-3 text-[#A6A297] shrink-0" />
+                    </p>
+                  </div>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenPairingModal}
+                  className="bg-[#FFF0F7]/70 hover:bg-[#FFF0F7] border border-dashed border-[#E5ADD2] rounded-2xl p-2.5 px-3 flex items-center justify-center gap-2 text-center transition-all cursor-pointer min-w-0"
+                >
+                  <span className="w-8 h-8 rounded-xl bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center shrink-0">
+                    <Plus className="w-4 h-4 stroke-[2]" />
+                  </span>
+                  <div className="text-right min-w-0">
+                    <span className="block text-xs font-black text-[#1B1B1A] truncate">دعوت از پارتنر</span>
+                    <span className="block text-[10px] text-[#78746B] truncate">فعال‌سازی فضای مشترک</span>
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* --- EMPATHY CO-PILOT CARD (FOR PMS / PERIOD CARE) --- */}
-        {currentPartnerCycleStatus && (currentPartnerCycleStatus.phase === 'pms' || currentPartnerCycleStatus.phase === 'period') && (userProfile.gender === 'male' || partnerProfile?.gender === 'female') && (
-          <div className="mb-6">
+        {/* --- EMPATHY CO-PILOT CARD (HOME TAB ONLY + DISMISSIBLE FOR ZERO CROSS-TAB CLUTTER) --- */}
+        {activeTab === "wishlist" &&
+          !empathyDismissed &&
+          currentPartnerCycleStatus &&
+          (currentPartnerCycleStatus.phase === 'pms' || currentPartnerCycleStatus.phase === 'period') &&
+          (userProfile.gender === 'male' || partnerProfile?.gender === 'female') && (
+          <div className="mb-4">
             <EmpathyCoPilotCard
               partnerName={partnerProfile?.displayName || 'پارتنر شما'}
               phase={currentPartnerCycleStatus.phase}
-              phaseTitle={currentPartnerCycleStatus.phase === 'pms' ? 'دوره سندرم پیش از قاعدگی (PMS)' : 'دوره قاعدگی'}
+              phaseTitle={currentPartnerCycleStatus.phase === 'pms' ? 'فاز PMS' : 'دوره قاعدگی'}
               partnerWishlistItems={items.filter(i => !i.isCompleted)}
+              onDismiss={() => {
+                setEmpathyDismissed(true);
+                try { sessionStorage.setItem("empathy_copilot_dismissed", "1"); } catch {}
+              }}
               onViewWishlist={() => {
                 setActiveTab("wishlist");
                 window.scrollTo({ top: 300, behavior: 'smooth' });
@@ -2435,42 +2448,42 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
         {/* Segmented Sub-Switch inside Wishlist / Hall of Fame / Shared Calendar */}
         {(activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar") && (
-          <div className="flex items-center justify-center mb-6 overflow-x-auto no-scrollbar" dir="rtl">
-            <div className="inline-flex bg-[#EFECE2] p-1.5 rounded-full border border-[#E5E0D2] gap-1">
+          <div className="flex items-center justify-center mb-4" dir="rtl">
+            <div className="w-full max-w-md grid grid-cols-3 md:inline-flex md:w-auto bg-[#EFECE2] p-1 rounded-full border border-[#E5E0D2] gap-1">
               <button
                 type="button"
                 onClick={() => setActiveTab("wishlist")}
-                className={`px-4 sm:px-5 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-2.5 sm:px-5 py-2 rounded-full text-[11px] sm:text-xs font-black transition-colors cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${
                   activeTab === "wishlist"
                     ? "bg-[#1B1B1A] text-[#FAF6EC]"
                     : "text-[#78746B] hover:text-[#1B1B1A]"
                 }`}
               >
-                <Heart className={`w-3.5 h-3.5 stroke-[1.8] ${activeTab === "wishlist" ? "text-[#F6C3E5]" : "text-[#78746B]"}`} />
-                <span>در مسیر انجام ({toPersianDigits(wishlistItems.length)})</span>
+                <Heart className={`w-3.5 h-3.5 stroke-[1.8] shrink-0 ${activeTab === "wishlist" ? "text-[#F6C3E5]" : "text-[#78746B]"}`} />
+                <span>آرزوها ({toPersianDigits(wishlistItems.length)})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("hall")}
-                className={`px-4 sm:px-5 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-2.5 sm:px-5 py-2 rounded-full text-[11px] sm:text-xs font-black transition-colors cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${
                   activeTab === "hall"
                     ? "bg-[#1B1B1A] text-[#FAF6EC]"
                     : "text-[#78746B] hover:text-[#1B1B1A]"
                 }`}
               >
-                <Sparkles className={`w-3.5 h-3.5 stroke-[1.8] ${activeTab === "hall" ? "text-[#F6DC6B]" : "text-[#78746B]"}`} />
-                <span>تالار افتخارات ({toPersianDigits(hallOfFameItems.length)})</span>
+                <Sparkles className={`w-3.5 h-3.5 stroke-[1.8] shrink-0 ${activeTab === "hall" ? "text-[#F6DC6B]" : "text-[#78746B]"}`} />
+                <span>افتخارات ({toPersianDigits(hallOfFameItems.length)})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("calendar")}
-                className={`md:hidden px-4 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                className={`md:hidden px-2.5 py-2 rounded-full text-[11px] font-black transition-colors cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${
                   activeTab === "calendar"
                     ? "bg-[#1B1B1A] text-[#FAF6EC]"
                     : "text-[#78746B] hover:text-[#1B1B1A]"
                 }`}
               >
-                <CalendarIcon className={`w-3.5 h-3.5 stroke-[1.8] ${activeTab === "calendar" ? "text-[#B8CEF4]" : "text-[#78746B]"}`} />
+                <CalendarIcon className={`w-3.5 h-3.5 stroke-[1.8] shrink-0 ${activeTab === "calendar" ? "text-[#B8CEF4]" : "text-[#78746B]"}`} />
                 <span>تقویم مشترک</span>
               </button>
             </div>
@@ -2479,19 +2492,19 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
         {/* Sub-Navigation Bar inside Memories & Sticky Notes Pillar */}
         {(activeTab === "memories" || activeTab.startsWith("tab-")) && (
-          <div className="flex items-center justify-center mb-6 overflow-x-auto no-scrollbar" dir="rtl">
-            <div className="inline-flex items-center bg-[#EFECE2] p-1.5 rounded-full border border-[#E5E0D2] gap-1">
+          <div className="flex items-center justify-between gap-2 mb-4 overflow-x-auto no-scrollbar" dir="rtl">
+            <div className="inline-flex items-center bg-[#EFECE2] p-1 rounded-full border border-[#E5E0D2] gap-1 shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab("memories")}
-                className={`px-4 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === "memories"
                     ? "bg-[#1B1B1A] text-[#FAF6EC]"
                     : "text-[#78746B] hover:text-[#1B1B1A]"
                 }`}
               >
                 <Camera className={`w-3.5 h-3.5 stroke-[1.8] ${activeTab === "memories" ? "text-[#F6C3E5]" : "text-[#78746B]"}`} />
-                <span>آلبوم خاطرات ({toPersianDigits(memories.length)})</span>
+                <span>خاطرات ({toPersianDigits(memories.length)})</span>
               </button>
 
               {customTabs.map((tab) => (
@@ -2499,7 +2512,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <button
                     type="button"
                     onClick={() => setActiveTab(`tab-${tab.id}`)}
-                    className={`px-4 py-2 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                       activeTab === `tab-${tab.id}`
                         ? "bg-[#1B1B1A] text-[#FAF6EC]"
                         : "text-[#78746B] hover:text-[#1B1B1A]"
@@ -2522,100 +2535,50 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               <button
                 type="button"
                 onClick={() => setShowAddTabModal(true)}
-                className="px-3.5 py-2 rounded-full text-xs font-bold text-[#1B1B1A] bg-[#FAF6EC] hover:bg-[#F6DC6B] transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-[#1B1B1A] bg-[#FAF6EC] hover:bg-[#F6DC6B] transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
                 title="ساخت برد یادداشت چسبان جدید"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2]" />
-                <span>برد یادداشت جدید</span>
+                <span>برد جدید</span>
               </button>
             </div>
-          </div>
-        )}
 
-        {/* Search Bar Component */}
-        {(activeTab === "wishlist" || activeTab === "hall" || activeTab === "memories") && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-md mx-auto mb-4 relative text-right"
-            dir="rtl"
-          >
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={activeTab === "memories" ? "جستجو در خاطرات..." : "جستجو در بین آرزوها..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-10 py-2.5 bg-[#EFECE2]/80 focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A]/40 rounded-full text-xs font-semibold text-[#1B1B1A] placeholder-[#8E8A80] focus:outline-none transition-colors text-right shadow-2xs"
-              />
-              <div className="absolute top-1/2 right-3.5 -translate-y-1/2 text-[#8E8A80] pointer-events-none">
-                <Search className="w-3.5 h-3.5 stroke-[1.8]" />
-              </div>
-              {searchQuery && (
+            {activeTab === "memories" && (
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute top-1/2 left-2.5 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2] rounded-full transition-colors cursor-pointer"
-                  title="پاک کردن متن"
+                  onClick={() => setShowMemoriesSearch((v) => !v)}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer border ${
+                    showMemoriesSearch || searchQuery
+                      ? "bg-[#1B1B1A] text-[#FAF6EC] border-[#1B1B1A]"
+                      : "bg-[#FFFDF8] text-[#1B1B1A] border-[#E8E2D4] hover:bg-[#EFECE2]"
+                  }`}
+                  aria-label="جستجو در خاطرات"
                 >
-                  <X className="w-3 h-3" />
+                  <Search className="w-4 h-4 stroke-[1.8]" />
                 </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Notification Permission Activation Banner */}
-        {!notificationsEnabled && !notificationBannerDismissed && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            dir="rtl"
-            className="bg-[#FFF0F7] border border-[#F8BBD0] rounded-2xl p-2.5 sm:p-3 mb-4 flex items-center justify-between gap-2.5 text-right shadow-2xs max-w-xl mx-auto"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#EC407A] to-[#F6C3E5] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                <Bell className="w-3.5 h-3.5 stroke-[2]" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMemoryFormDate("");
+                    setMemoryFormTitle("");
+                    setMemoryFormContent("");
+                    setMemoryFormImageUrl("");
+                    setShowAddMemoryModal(true);
+                  }}
+                  className="hidden sm:flex px-3.5 py-2 rounded-full bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-xs font-bold items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2]" />
+                  <span>ثبت خاطره جدید</span>
+                </button>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-black text-[#1B1B1A] truncate">
-                  اعلان و ویبره ضربان قلب را فعال کنید
-                </p>
-                <p className="text-[10px] text-[#78746B] truncate">
-                  دریافت سریع «الان به یادتم» و پیام‌های لحظه‌ای پارتنر
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={requestNotificationPermission}
-                className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-[11px] font-bold rounded-full transition-colors cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-              >
-                <span>فعال‌سازی</span>
-                <Sparkles className="w-2.5 h-2.5 text-[#F6DC6B]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setNotificationBannerDismissed(true);
-                  try {
-                    localStorage.setItem("toghrool_notif_banner_dismissed", "true");
-                  } catch {}
-                }}
-                className="w-6 h-6 rounded-full text-[#78746B] hover:text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
-                title="بستن پیام"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          </motion.div>
+            )}
+          </div>
         )}
 
         {/* --- TAB 1: WISHLIST --- */}
         {activeTab === "wishlist" && (
-          <div dir="rtl" className="space-y-7">
+          <div dir="rtl" className="space-y-4">
             {/* Phase 2: Daily 3-Minute Intimacy Ritual Card */}
             <DailyQuestionCard
               userProfile={userProfile}
@@ -2624,20 +2587,37 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               refreshKey={dailyQuestionRefreshTrigger}
             />
 
-            {/* Streamlined Discovery Toolbar (Unified Category Rail + Utility Strip) */}
-            <div className="space-y-3">
-              {/* Category Rail with Item Counts */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {/* Single-Row Discovery Rail (Progressive Disclosure: Search & Budget tucked in Filter Toggle) */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                {/* Filter & Search Toggle Pill */}
+                <button
+                  type="button"
+                  onClick={() => setShowFilterDrawer((v) => !v)}
+                  className={`px-3 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap border ${
+                    showFilterDrawer || searchQuery || budgetFilter !== "all"
+                      ? "bg-[#1B1B1A] text-[#FAF6EC] border-[#1B1B1A]"
+                      : "bg-[#FFFDF8] text-[#1B1B1A] border-[#E8E2D4] hover:bg-[#EFECE2]"
+                  }`}
+                  aria-label="جستجو و فیلتر"
+                >
+                  <Search className="w-3.5 h-3.5 stroke-[2]" />
+                  <span>فیلتر</span>
+                  {(searchQuery || budgetFilter !== "all") && (
+                    <span className="w-2 h-2 rounded-full bg-[#F6C3E5]" />
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setCategoryFilter("all")}
-                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                  className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                     categoryFilter === "all"
-                      ? "bg-[#1B1B1A] text-[#FAF6EC] shadow-2xs"
+                      ? "bg-[#1B1B1A] text-[#FAF6EC]"
                       : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2]"
                   }`}
                 >
-                  همه موارد ({toPersianDigits(items.filter((i) => !i.isCompleted).length)})
+                  همه ({toPersianDigits(items.filter((i) => !i.isCompleted).length)})
                 </button>
 
                 {allCategories.map((cat) => {
@@ -2650,17 +2630,17 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       <button
                         type="button"
                         onClick={() => setCategoryFilter(cat.id)}
-                        className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+                        className={`px-3 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                           isSelected
-                            ? "bg-[#1B1B1A] text-[#FAF6EC] shadow-2xs"
+                            ? "bg-[#1B1B1A] text-[#FAF6EC]"
                             : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2]"
                         }`}
                       >
-                        <span className={`w-5 h-5 rounded-full ${cat.bg} text-[#1B1B1A] flex items-center justify-center`}>
+                        <span className={`w-4 h-4 rounded-full ${cat.bg} text-[#1B1B1A] flex items-center justify-center`}>
                           {typeof cat.iconName === "string" && !PRESET_ICONS[cat.iconName] ? (
-                            <span className="text-[11px]">{cat.iconName}</span>
+                            <span className="text-[10px]">{cat.iconName}</span>
                           ) : (
-                            <Icon className="w-3 h-3 stroke-[1.8]" />
+                            <Icon className="w-2.5 h-2.5 stroke-[2]" />
                           )}
                         </span>
                         <span>{cat.label}</span>
@@ -2688,62 +2668,80 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={() => setShowAddShelfModal(true)}
-                  className="px-3.5 py-2 rounded-full border border-dashed border-[#C8C3B6] hover:border-[#1B1B1A] text-[#78746B] hover:text-[#1B1B1A] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
-                  title="افزودن دسته‌بندی (قفسه) جدید"
+                  className="px-3 py-2 rounded-full border border-dashed border-[#C8C3B6] hover:border-[#1B1B1A] text-[#78746B] hover:text-[#1B1B1A] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>دسته جدید</span>
                 </button>
               </div>
 
-              {/* Utility Strip: Budget Filter + Date Roulette + Desktop Add */}
-              <div className="flex items-center justify-between gap-2 pt-0.5">
-                {/* Budget Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                  <span className="text-[10px] font-bold text-[#9E9A8F] ml-1 shrink-0">بودجه:</span>
-                  {[
-                    { id: "all", label: "همه" },
-                    { id: "economy", label: "اقتصادی 🟢" },
-                    { id: "medium", label: "میان‌رده 🟡" },
-                    { id: "luxury", label: "لاکچری 🟣" }
-                  ].map((b) => (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setBudgetFilter(b.id)}
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
-                        budgetFilter === b.id
-                          ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                          : "bg-[#EFECE2]/70 text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2]"
-                      }`}
-                    >
-                      {b.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Right Actions: Date Roulette & Desktop Add Wish */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowDateRoulette(true)}
-                    className="px-3 py-1 bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] text-xs font-bold rounded-full flex items-center gap-1.5 transition-all cursor-pointer border border-[#E8E2D4] shadow-2xs active:scale-95 whitespace-nowrap"
-                    title="گردونه شانس دیت دونفره"
+              {/* Expandable Search & Budget Drawer (Only visible on demand!) */}
+              <AnimatePresence>
+                {(showFilterDrawer || searchQuery || budgetFilter !== "all") && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
                   >
-                    <span className="text-sm">🎰</span>
-                    <span className="hidden sm:inline">دیت شانسی</span>
-                  </button>
+                    <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3 space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1 min-w-0">
+                          <input
+                            type="text"
+                            placeholder="جستجو در بین آرزوها..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-8 pr-9 py-2 bg-[#EFECE2]/80 focus:bg-[#FAF6EC] border border-transparent focus:border-[#1B1B1A]/30 rounded-full text-xs font-semibold text-[#1B1B1A] placeholder-[#8E8A80] focus:outline-none text-right"
+                          />
+                          <Search className="w-3.5 h-3.5 text-[#8E8A80] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none" />
+                          {searchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setSearchQuery("")}
+                              className="absolute top-1/2 left-2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] rounded-full cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(true)}
-                    className="hidden sm:flex px-3.5 py-1 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-xs font-bold rounded-full items-center gap-1.5 transition-all shadow-2xs active:scale-95 whitespace-nowrap"
-                  >
-                    <Plus className="w-3.5 h-3.5 stroke-[2]" />
-                    <span>آرزوی جدید</span>
-                  </button>
-                </div>
-              </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowDateRoulette(true)}
+                          className="px-3 py-2 bg-[#FAF6EC] hover:bg-[#F6DC6B]/60 text-[#1B1B1A] text-xs font-bold rounded-full flex items-center gap-1 transition-colors cursor-pointer border border-[#E8E2D4] shrink-0 whitespace-nowrap"
+                        >
+                          <span>🎰</span>
+                          <span>دیت شانسی</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                        <span className="text-[11px] font-bold text-[#78746B] ml-1 shrink-0">بودجه:</span>
+                        {[
+                          { id: "all", label: "همه" },
+                          { id: "economy", label: "اقتصادی 🟢" },
+                          { id: "medium", label: "میان‌رده 🟡" },
+                          { id: "luxury", label: "لاکچری 🟣" }
+                        ].map((b) => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() => setBudgetFilter(b.id)}
+                            className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+                              budgetFilter === b.id
+                                ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                                : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A]"
+                            }`}
+                          >
+                            {b.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {loading ? (
@@ -2959,25 +2957,48 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
         {/* --- TAB 2: HALL OF FAME --- */}
         {activeTab === "hall" && (
-          <div dir="rtl">
-            <div className="text-center max-w-xl mx-auto mb-10">
-              <div className="w-16 h-16 bg-[#F6DC6B] rounded-full flex items-center justify-center text-[#1B1B1A] mx-auto mb-4">
-                <Sparkles className="w-7 h-7 stroke-[1.7]" />
+          <div dir="rtl" className="space-y-5">
+            {hallOfFameItems.length > 0 && (
+              <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3.5 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-[#F6DC6B] rounded-xl flex items-center justify-center text-[#1B1B1A] shrink-0">
+                    <Sparkles className="w-4 h-4 stroke-[1.8]" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm sm:text-base font-black text-[#1B1B1A]">تالار افتخارات دونفره</h2>
+                    <p className="text-[11px] text-[#78746B] font-medium">رویاهایی که با هم به خاطره تبدیل کردیم</p>
+                  </div>
+                </div>
+                <div className="relative w-full sm:w-56">
+                  <input
+                    type="text"
+                    placeholder="جستجو در افتخارات..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-7 pr-8 py-1.5 bg-[#EFECE2]/80 focus:bg-[#FAF6EC] rounded-full text-xs font-semibold text-[#1B1B1A] placeholder-[#8E8A80] focus:outline-none text-right"
+                  />
+                  <Search className="w-3.5 h-3.5 text-[#8E8A80] absolute top-1/2 right-2.5 -translate-y-1/2 pointer-events-none" />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute top-1/2 left-2 -translate-y-1/2 text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-[#1B1B1A]">تالار افتخارات دونفره ما</h2>
-              <p className="text-[#78746B] text-sm mt-1.5 leading-relaxed">
-                آرشیو رویاها و تجربه‌هایی که با هم به واقعیت تبدیل کردیم؛ هر تیک، یک خاطره ماندگار است.
-              </p>
-            </div>
+            )}
 
             {hallOfFameItems.length === 0 ? (
-              <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[30px] p-14 text-center">
-                <div className="w-16 h-16 bg-[#EFECE2] rounded-full flex items-center justify-center text-[#1B1B1A] mx-auto mb-4">
-                  <Flame className="w-7 h-7 stroke-[1.7]" />
+              <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[28px] p-10 sm:p-14 text-center">
+                <div className="w-14 h-14 bg-[#F6DC6B] rounded-full flex items-center justify-center text-[#1B1B1A] mx-auto mb-3.5">
+                  <Sparkles className="w-6 h-6 stroke-[1.7]" />
                 </div>
-                <h3 className="text-lg font-black text-[#1B1B1A]">تالار افتخارات فعلاً خالیه</h3>
-                <p className="text-[#78746B] text-sm mt-1.5 max-w-sm mx-auto leading-relaxed">
-                  هر زمان یکی از آرزوهای لیست مشترک را به ۱۰۰٪ برسانید، به تالار افتخارات دونفره اضافه می‌شود.
+                <h3 className="text-base sm:text-lg font-black text-[#1B1B1A]">تالار افتخارات فعلاً خالیه</h3>
+                <p className="text-[#78746B] text-xs sm:text-sm mt-1.5 max-w-xs mx-auto leading-relaxed">
+                  هر زمان یکی از آرزوهای لیست مشترک را به ۱۰۰٪ برسانید، به عنوان خاطره ماندگار اینجا ثبت می‌شود.
                 </p>
               </div>
             ) : (
@@ -3070,24 +3091,24 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* --- TAB 3: CALENDAR --- */}
         {activeTab === "calendar" && (
           <div className="max-w-lg mx-auto" dir="rtl">
-            <div className="bg-[#FFFDF8] rounded-[30px] p-6 sm:p-8 border border-[#E8E2D4] mb-8 space-y-6">
+            <div className="bg-[#FFFDF8] rounded-[28px] p-4 sm:p-7 border border-[#E8E2D4] mb-5 space-y-4 sm:space-y-6">
               {/* Top Toggle for Cycle Overlay */}
-              <div className="flex items-center justify-between pb-4 border-b border-[#EFECE2]">
-                <h3 className="text-sm sm:text-base font-black text-[#1B1B1A] flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-full bg-[#B8CEF4] flex items-center justify-center text-[#1B1B1A]">
-                    <CalendarIcon className="w-4 h-4 stroke-[1.8]" />
+              <div className="flex items-center justify-between pb-3 border-b border-[#EFECE2]">
+                <h3 className="text-xs sm:text-base font-black text-[#1B1B1A] flex items-center gap-2">
+                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#B8CEF4] flex items-center justify-center text-[#1B1B1A]">
+                    <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
                   </span>
                   <span>تقویم مشترک زوجین</span>
                 </h3>
                 <button
                   onClick={() => setShowCycleOnCalendar((prev) => !prev)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 ${
                     showCycleOnCalendar
                       ? "bg-[#F6C3E5] text-[#1B1B1A]"
                       : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A]"
                   }`}
                 >
-                  <Droplet className="w-3.5 h-3.5 stroke-[1.8]" />
+                  <Droplet className="w-3 h-3 stroke-[1.8]" />
                   <span>چرخه سلامت: {showCycleOnCalendar ? "نمایان" : "مخفی"}</span>
                 </button>
               </div>
@@ -3317,22 +3338,47 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
         {/* --- TAB 5: MEMORIES --- */}
         {activeTab === "memories" && (
-          <div className="space-y-8" dir="rtl">
-            {/* Editorial Pastel Pink Header Banner */}
-            <div className="bg-[#F6C3E5] p-6 sm:p-7 rounded-[28px] relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <svg
-                viewBox="0 0 24 24"
-                className="w-36 h-36 absolute -bottom-8 left-6 text-[#E5ADD2] fill-current -rotate-12 pointer-events-none select-none"
-              >
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-              <div className="text-right relative z-10">
-                <span className="text-xs font-bold text-[#1B1B1A]/65 block mb-1">آلبوم لحظات ماندگار طغرل</span>
-                <h2 className="text-xl md:text-2xl font-black text-[#1B1B1A] flex items-center gap-2">
-                  <span>دفترچه خاطرات شیرین مشترک</span>
+          <div className="space-y-4" dir="rtl">
+            {/* Expandable Search Drawer (Only when search button in sub-nav is active) */}
+            <AnimatePresence>
+              {(showMemoriesSearch || searchQuery) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="جستجو در عنوان یا متن خاطرات..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-10 py-2.5 bg-[#FFFDF8] border border-[#E8E2D4] focus:border-[#1B1B1A]/40 rounded-full text-xs font-semibold text-[#1B1B1A] placeholder-[#8E8A80] focus:outline-none text-right"
+                    />
+                    <Search className="w-3.5 h-3.5 text-[#8E8A80] absolute top-1/2 right-3.5 -translate-y-1/2 pointer-events-none" />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        className="absolute top-1/2 left-2.5 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] rounded-full cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Sleek Compact Editorial Memories Strip (Replaces giant 175px mobile banner) */}
+            <div className="bg-[#F6C3E5]/70 border border-[#E5ADD2]/70 px-4 py-3 rounded-2xl flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-sm sm:text-base font-black text-[#1B1B1A] truncate">
+                  دفترچه خاطرات مشترک
                 </h2>
-                <p className="text-[#1B1B1A]/75 text-xs sm:text-sm mt-1 font-medium leading-relaxed">
-                  ثبت و مرور لحظات، عکس‌ها و داستان‌های قشنگی که با هم ساختیم.
+                <p className="text-[11px] text-[#4A3A45] font-medium truncate mt-0.5">
+                  عکس‌ها، لحظات ماندگار و کپسول‌های زمان دونفره
                 </p>
               </div>
               <button
@@ -3343,10 +3389,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   setMemoryFormImageUrl("");
                   setShowAddMemoryModal(true);
                 }}
-                className="px-5 py-3 rounded-full text-xs sm:text-sm font-bold text-[#FAF6EC] bg-[#1B1B1A] hover:bg-[#323230] transition-colors cursor-pointer flex items-center gap-2 self-start md:self-center relative z-10"
+                className="px-3.5 py-2 rounded-full text-xs font-bold text-[#FAF6EC] bg-[#1B1B1A] hover:bg-[#323230] transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
               >
-                <Plus className="w-4 h-4 stroke-[2]" />
-                <span>ثبت خاطره جدید</span>
+                <Plus className="w-3.5 h-3.5 stroke-[2]" />
+                <span>ثبت خاطره</span>
               </button>
             </div>
 
@@ -3384,6 +3430,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     const isCapsule = !!memory.isTimeCapsule;
                     const todayIso = new Date().toISOString().split("T")[0];
                     const isLocked = isCapsule && !!memory.unlockDate && memory.unlockDate > todayIso;
+                    const formatIsoToJalaliLabel = (raw?: string | null) => {
+                      if (!raw) return "";
+                      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+                      if (m && parseInt(m[1], 10) >= 1900) {
+                        const [jy, jm, jd] = gregorianToJalali(parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10));
+                        return toPersianDigits(`${jd} ${JALALI_MONTHS[jm - 1]} ${jy}`);
+                      }
+                      return toPersianDigits(raw);
+                    };
 
                     return (
                       <motion.div
@@ -3393,7 +3448,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         transition={{ delay: idx * 0.04 }}
                         onClick={() => {
                           if (isLocked) {
-                            triggerAlert(`این خاطره به عنوان یک کپسول زمان تا تاریخ ${memory.unlockDate} قفل است و محتوای آن برای هر دوی شما محفوظ و مهروموم شده است! ⏳🔒`);
+                            triggerAlert(`این خاطره به عنوان یک کپسول زمان تا تاریخ ${formatIsoToJalaliLabel(memory.unlockDate)} قفل است و محتوای آن برای هر دوی شما محفوظ و مهروموم شده است! ⏳🔒`);
                             return;
                           }
                           setSelectedMemory(memory);
@@ -3410,7 +3465,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             </div>
                             <span className="text-xs font-black text-[#1B1B1A]">کپسول زمان قفل‌شده 🔒</span>
                             <span className="text-[10px] text-[#78746B] mt-0.5">
-                              بازگشایی در: {memory.unlockDate ? toPersianDigits(memory.unlockDate) : "موعد مقرر"}
+                              بازگشایی در: {memory.unlockDate ? formatIsoToJalaliLabel(memory.unlockDate) : "موعد مقرر"}
                             </span>
                           </div>
                         ) : memory.imageUrl ? (
@@ -3429,7 +3484,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             {/* Date and Author Tag */}
                             <div className="flex items-center justify-between gap-2 mb-2.5">
                               <span className="text-[10px] font-bold text-[#78746B] bg-[#EFECE2] px-2.5 py-1 rounded-full">
-                                {toPersianDigits(memory.date)}
+                                {(() => {
+                                  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(memory.date || "");
+                                  if (m && parseInt(m[1], 10) >= 1900) {
+                                    const [jy, jm, jd] = gregorianToJalali(parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10));
+                                    return toPersianDigits(`${jd} ${JALALI_MONTHS[jm - 1]} ${jy}`);
+                                  }
+                                  return toPersianDigits(memory.date);
+                                })()}
                               </span>
                               <div className="flex items-center gap-1.5">
                                 {isCapsule && !isLocked && (

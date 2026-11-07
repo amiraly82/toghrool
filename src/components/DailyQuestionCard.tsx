@@ -91,71 +91,68 @@ export default function DailyQuestionCard({
   const hasPartnerAnswer = answerState?.hasPartnerAnswered === true;
 
   return (
-    <div className="w-full mb-6" dir="rtl">
-      {/* Sleek, Non-Cluttering Compact Banner */}
+    <div className="w-full" dir="rtl">
+      {/* Mobile-First 2-Row Editorial Card — Full Question Legibility */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         onClick={onOpenModal}
-        className="bg-[#FFFDF8] hover:bg-[#FAF6EC] border border-[#E8E2D4] hover:border-[#1B1B1A]/30 rounded-2xl p-3.5 sm:p-4 shadow-2xs transition-all cursor-pointer flex items-center justify-between gap-3 text-right group"
+        className="bg-gradient-to-br from-[#FFFDF8] to-[#FAF4E4] hover:from-[#FFFDF8] hover:to-[#F6EFE0] border border-[#E8E2D4] hover:border-[#1B1B1A]/30 rounded-[24px] p-3.5 sm:p-4 transition-all cursor-pointer text-right group"
       >
-        {/* Right Info: Emoji + Question Title */}
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="w-10 h-10 rounded-xl bg-[#FAF6EC] group-hover:bg-[#FFFDF8] border border-[#E5E0D2] flex items-center justify-center text-lg shrink-0 transition-colors shadow-2xs">
-            {categoryMeta.emoji}
-          </span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="text-[11px] font-bold text-[#78746B]">چالش ۳ دقیقه‌ای امروز</span>
-              <span
-                className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${categoryMeta.bg} ${categoryMeta.color} border ${categoryMeta.border}`}
-              >
-                {categoryMeta.label}
+        {/* Top Row: Category Badge + Status Action */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[#FAF6EC] border border-[#E5E0D2] flex items-center justify-center text-base shrink-0">
+              {categoryMeta.emoji}
+            </span>
+            <span className="text-xs font-black text-[#1B1B1A] whitespace-nowrap">
+              سوال امروز
+            </span>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap truncate max-w-[125px] sm:max-w-none ${categoryMeta.bg} ${categoryMeta.color} border ${categoryMeta.border}`}
+            >
+              {categoryMeta.label}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleOpenHistory}
+              className="w-7 h-7 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] border border-[#E8E2D4] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
+              title="تاریخچه سوال‌ها"
+              aria-label="تاریخچه سوال‌ها"
+            >
+              <History className="w-3.5 h-3.5" />
+            </button>
+
+            {isRevealed ? (
+              <span className="text-[11px] font-bold text-[#10B981] bg-[#ECFDF5] border border-[#A7F3D0] px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap">
+                <Sparkles className="w-3 h-3 text-[#10B981]" />
+                <span>مشاهده پاسخ‌ها</span>
               </span>
-            </div>
-            <p className="text-xs sm:text-sm font-black text-[#1B1B1A] truncate max-w-[210px] sm:max-w-md">
-              {question.text}
-            </p>
+            ) : hasMyAnswer ? (
+              <span className="text-[11px] font-bold text-[#78746B] bg-[#FAF6EC] border border-[#E8E2D4] px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap">
+                <Clock className="w-3 h-3 text-[#A6A297]" />
+                <span>منتظر {partnerName}</span>
+              </span>
+            ) : hasPartnerAnswer ? (
+              <span className="text-[11px] font-bold text-[#D81B60] bg-[#FFF0F7] border border-[#F8BBD0] px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap">
+                <span>🎁 پارتنر جواب داده</span>
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold text-[#FAF6EC] bg-[#1B1B1A] group-hover:bg-[#2F2E2C] px-3 py-1 rounded-full flex items-center gap-1 whitespace-nowrap transition-colors">
+                <span>پاسخ دادن</span>
+                <ChevronLeft className="w-3 h-3" />
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Left Status & Action */}
-        <div className="flex items-center gap-2 shrink-0">
-          {isRevealed ? (
-            <span className="text-[11px] font-bold text-[#10B981] bg-[#ECFDF5] border border-[#A7F3D0] px-2.5 py-1 rounded-full flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-[#10B981]" />
-              <span className="hidden sm:inline">پاسخ‌ها باز شد</span>
-              <span className="sm:hidden">بازگشایی شد</span>
-            </span>
-          ) : hasMyAnswer ? (
-            <span className="text-[11px] font-bold text-[#78746B] bg-[#FAF6EC] border border-[#E8E2D4] px-2.5 py-1 rounded-full flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-[#A6A297]" />
-              <span className="hidden sm:inline">در انتظار {partnerName}</span>
-              <span className="sm:hidden">منتظر پارتنر</span>
-            </span>
-          ) : hasPartnerAnswer ? (
-            <span className="text-[11px] font-bold text-[#D81B60] bg-[#FFF0F7] border border-[#F8BBD0] px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse">
-              <span>🎁 پارتنر پاسخ داده</span>
-            </span>
-          ) : (
-            <span className="text-[11px] font-bold text-[#1B1B1A] bg-[#FAF6EC] group-hover:bg-[#1B1B1A] group-hover:text-[#FAF6EC] border border-[#1B1B1A]/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors">
-              <Send className="w-3 h-3" />
-              <span>پاسخ دادن</span>
-            </span>
-          )}
-
-          {/* History Button */}
-          <button
-            type="button"
-            onClick={handleOpenHistory}
-            className="w-8 h-8 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] border border-[#E8E2D4] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
-            title="مشاهده آرشیو تاریخچه چالش‌ها"
-          >
-            <History className="w-3.5 h-3.5" />
-          </button>
-
-          <ChevronLeft className="w-4 h-4 text-[#A6A297] group-hover:text-[#1B1B1A] group-hover:-translate-x-0.5 transition-transform" />
-        </div>
+        {/* Bottom Row: Full Readable Question Text */}
+        <p className="mt-2.5 text-[13px] sm:text-sm font-bold text-[#1B1B1A] leading-relaxed line-clamp-2">
+          {question.text}
+        </p>
       </motion.div>
 
       {/* --- HISTORY MODAL --- */}

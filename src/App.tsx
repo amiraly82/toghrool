@@ -46,8 +46,13 @@ export default function App() {
     return null;
   });
   const [loading, setLoading] = useState(() => {
-    // If we have a cached profile, don't block with loading screen; load instantly
-    return !localStorage.getItem("cached_user_profile");
+    // Only show blocking loader if we have a session/token to restore AND no cached profile yet.
+    // Logged-out visitors see the Auth screen instantaneously (<50ms) even if Firebase is slow/blocked.
+    if (localStorage.getItem("cached_user_profile")) return false;
+    const hasSession = Boolean(
+      localStorage.getItem("custom_user_session") || localStorage.getItem("toghrool_auth_token")
+    );
+    return hasSession;
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -232,7 +237,13 @@ export default function App() {
       }
     });
 
+    // Safety fallback: never let slow Firebase network block UI for more than 1.5s
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+
     return () => {
+      clearTimeout(safetyTimer);
       unsubscribeAuth();
       if (unsubscribeUserDoc) {
         unsubscribeUserDoc();
@@ -431,7 +442,7 @@ export default function App() {
             />
           </motion.div>
         ) : (
-          /* Main App (Solo Mode with Top Banner OR Paired Mode) */
+          /* Main App (Solo Mode OR Paired Mode — single clean Dashboard header) */
           <motion.div
             key="dashboard-view"
             initial={{ opacity: 0 }}
@@ -439,36 +450,6 @@ export default function App() {
             exit={{ opacity: 0 }}
             className="relative min-h-screen"
           >
-            {/* Top Banner when Unpaired / Solo */}
-            {!userProfile.coupleId && (
-              <div className="sticky top-0 z-40 bg-[#FFF0F7] border-b border-[#F6C3E5] px-4 py-2.5 sm:py-3 shadow-xs" dir="rtl">
-                <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-right">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-[#EC407A] text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <Key className="w-4 h-4 stroke-[2]" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-black text-[#1B1B1A] block">
-                        حالت استفاده انفرادی فعال است
-                      </span>
-                      <p className="text-[11px] text-[#78746B] font-medium leading-tight">
-                        برای اشتراک‌گذاری لحظات، آرزوها و چرخه سلامت با پارتنرتان، کد اتصال را ثبت کنید.
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPairingModal(true)}
-                    className="px-4 py-1.5 sm:py-2 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] rounded-full text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
-                  >
-                    <span>وارد کردن کد پارتنر</span>
-                    <ArrowRight className="w-3.5 h-3.5 stroke-[2] rotate-180" />
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Main Synchronized Dashboard */}
             <Dashboard 
               userProfile={userProfile} 
@@ -477,7 +458,7 @@ export default function App() {
               onOpenPairingModal={() => setShowPairingModal(true)}
             />
 
-            {/* Interactive Pairing Modal when clicked from top banner */}
+            {/* Interactive Pairing Modal when clicked from header/status */}
             <AnimatePresence>
               {showPairingModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1B1B1A]/40 backdrop-blur-xs">
@@ -506,8 +487,17 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* PWA Install Prompt for Android & Mobile */}
-      <PWAInstallPrompt />
+      {/* PWA Install Prompt — only auto-prompts inside Dashboard, never on Auth/Pairing */}
+      <PWAInstallPrompt
+        canAutoPrompt={Boolean(
+          !loading &&
+          firebaseUser &&
+          userProfile &&
+          !isFemalePendingOnboarding &&
+          (userProfile.coupleId || skippedPairing) &&
+          !showPairingModal
+        )}
+      />
     </div>
   );
 }

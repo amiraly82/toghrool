@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Download, X, Smartphone, Sparkles, Check, Share2, MoreVertical, Globe, CheckCircle2 } from "lucide-react";
 
-export default function PWAInstallPrompt() {
+interface PWAInstallPromptProps {
+  canAutoPrompt?: boolean;
+}
+
+export default function PWAInstallPrompt({ canAutoPrompt = false }: PWAInstallPromptProps) {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isManualModal, setIsManualModal] = useState(false);
@@ -36,11 +40,6 @@ export default function PWAInstallPrompt() {
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Auto-show prompt on first visit if not dismissed
-      const dismissedUntil = localStorage.getItem("pwa_prompt_dismissed");
-      if (!dismissedUntil || Number(dismissedUntil) <= Date.now()) {
-        setShowPrompt(true);
-      }
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstall);
@@ -65,22 +64,23 @@ export default function PWAInstallPrompt() {
     };
     window.addEventListener("open-pwa-install", handleManualOpen);
 
-    // If on mobile browser (including iOS) and prompt hasn't shown after 3.5s, auto-show
+    // Subtle auto-chip ONLY when user is calmly inside the main Dashboard
     const dismissedUntil = localStorage.getItem("pwa_prompt_dismissed");
     const isDismissed = dismissedUntil && Number(dismissedUntil) > Date.now();
-    const timer = setTimeout(() => {
-      if (!standalone && !isDismissed && (isIosDevice || deferredPrompt)) {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (canAutoPrompt && !standalone && !isDismissed && (isIosDevice || deferredPrompt)) {
+      timer = setTimeout(() => {
         setShowPrompt(true);
-      }
-    }, 3500);
+      }, 6000);
+    }
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
       window.removeEventListener("appinstalled", handleAppInstalled);
       window.removeEventListener("open-pwa-install", handleManualOpen);
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
     };
-  }, [deferredPrompt]);
+  }, [deferredPrompt, canAutoPrompt]);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
@@ -107,15 +107,15 @@ export default function PWAInstallPrompt() {
     setShowPrompt(false);
     setIsManualModal(false);
     setShowInstructions(false);
-    // Dismiss the auto-popup for 2 days (manual button will still work!)
-    localStorage.setItem("pwa_prompt_dismissed", String(Date.now() + 2 * 24 * 60 * 60 * 1000));
+    // Dismiss the auto-popup for 7 days (manual button in menu still works anytime)
+    localStorage.setItem("pwa_prompt_dismissed", String(Date.now() + 7 * 24 * 60 * 60 * 1000));
   };
 
   if (isInstalled && !isManualModal) {
     return null;
   }
 
-  if (!showPrompt) {
+  if (!showPrompt || (!isManualModal && !canAutoPrompt)) {
     return null;
   }
 
@@ -267,88 +267,46 @@ export default function PWAInstallPrompt() {
           </motion.div>
         </div>
       ) : (
-        /* Floating Auto-Prompt Card (First-time visitor) */
+        /* Slim, Non-Intrusive Auto-Chip safely above the Bottom Dock & below z-50 Modals */
         <motion.div
-          initial={{ opacity: 0, y: 40, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 40, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-          className="fixed bottom-24 sm:bottom-6 inset-x-4 sm:inset-x-auto sm:left-6 max-w-sm z-50 bg-[#FFFDF8] border border-[#E8E2D4] rounded-[28px] p-4 shadow-xl shadow-[#1B1B1A]/8 text-right"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 16 }}
+          transition={{ duration: 0.25 }}
+          className="fixed bottom-[98px] sm:bottom-6 inset-x-4 sm:inset-x-auto sm:left-6 max-w-sm mx-auto sm:mx-0 z-30 bg-[#FFFDF8]/95 backdrop-blur-sm border border-[#E8E2D4] rounded-full py-2 px-3 shadow-lg shadow-[#1B1B1A]/6 flex items-center justify-between gap-2 text-right"
           dir="rtl"
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F6C3E5] to-[#EC407A] flex items-center justify-center text-white shrink-0 shadow-sm">
-                <Smartphone className="w-6 h-6 stroke-[1.8]" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black text-[#1B1B1A]">نصب اپلیکیشن طغرل</span>
-                  <span className="text-[10px] font-bold bg-[#FAF6EC] border border-[#E8E2D4] text-[#EC407A] px-2 py-0.5 rounded-full">
-                    PWA موبایل
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#78746B] mt-1 leading-snug">
-                  برای دسترسی سریع‌تر، آیکون روی صفحه اصلی و اجرای تمام‌صفحه بدون مرورگر.
-                </p>
-              </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-[#F6C3E5] flex items-center justify-center text-[#1B1B1A] shrink-0">
+              <Smartphone className="w-3.5 h-3.5 stroke-[2]" />
             </div>
-
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="w-7 h-7 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] shrink-0 transition-colors cursor-pointer"
-              title="بستن"
-            >
-              <X className="w-3.5 h-3.5 stroke-[2]" />
-            </button>
+            <span className="text-[11px] font-bold text-[#1B1B1A] truncate">
+              نصب طغرل روی صفحه اصلی گوشی
+            </span>
           </div>
 
-          {/* Inline instructions if opened on non-deferred or iOS */}
-          {showInstructions && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="mt-3 pt-3 border-t border-[#F0EBE0] text-[11px] text-[#78746B] space-y-1.5"
-            >
-              {isIOS ? (
-                <>
-                  <div className="flex items-center gap-2 text-[#1B1B1A] font-bold">
-                    <Share2 className="w-3.5 h-3.5 text-[#EC407A]" />
-                    <span>راهنمای نصب روی آیفون (Safari):</span>
-                  </div>
-                  <p>۱. در پایین صفحه دکمه <strong>Share</strong> را لمس کنید.</p>
-                  <p>۲. گزینه <strong>Add to Home Screen (افزودن به صفحه اصلی)</strong> را انتخاب کنید.</p>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 text-[#1B1B1A] font-bold">
-                    <MoreVertical className="w-3.5 h-3.5 text-[#EC407A]" />
-                    <span>راهنمای نصب روی اندروید:</span>
-                  </div>
-                  <p>۱. منوی <strong>سه نقطه (⋮)</strong> مرورگر کروم را لمس کنید.</p>
-                  <p>۲. گزینه <strong>نصب برنامه (Install app)</strong> را بزنید.</p>
-                </>
-              )}
-            </motion.div>
-          )}
-
-          <div className="mt-3 pt-3 border-t border-[#F0EBE0] flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={handleInstallClick}
-              className="flex-1 py-2.5 px-4 rounded-full bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm"
+              onClick={() => {
+                if (deferredPrompt) {
+                  handleInstallClick();
+                } else {
+                  setIsManualModal(true);
+                  setShowInstructions(true);
+                }
+              }}
+              className="py-1.5 px-3 rounded-full bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-[11px] font-bold transition-colors cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 stroke-[2] text-[#F6DC6B]" />
-              <span>نصب و افزودن به گوشی</span>
+              نصب
             </button>
-
             <button
               type="button"
               onClick={handleDismiss}
-              className="py-2.5 px-3.5 rounded-full bg-[#EFECE2] hover:bg-[#E5E0D2] text-[#78746B] text-xs font-bold transition-colors cursor-pointer"
+              className="w-6 h-6 rounded-full hover:bg-[#EFECE2] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
+              aria-label="بستن"
             >
-              بعداً
+              <X className="w-3.5 h-3.5 stroke-[2]" />
             </button>
           </div>
         </motion.div>
