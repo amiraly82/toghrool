@@ -24,13 +24,15 @@ interface DailyQuestionCardProps {
   partnerProfile: UserProfile | null;
   onOpenModal?: () => void;
   refreshKey?: number;
+  embeddedInHero?: boolean;
 }
 
 export default function DailyQuestionCard({
   userProfile,
   partnerProfile,
   onOpenModal,
-  refreshKey
+  refreshKey,
+  embeddedInHero = false
 }: DailyQuestionCardProps) {
   const [todayDateStr] = useState<string>(() => getTehranDateString());
   const [question] = useState<DailyQuestion>(() => getDailyQuestionForDate(todayDateStr));
@@ -92,68 +94,99 @@ export default function DailyQuestionCard({
 
   return (
     <div className="w-full" dir="rtl">
-      {/* Mobile-First 2-Row Editorial Card — Full Question Legibility */}
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        onClick={onOpenModal}
-        className="bg-gradient-to-br from-[#FFFDF8] to-[#FAF4E4] hover:from-[#FFFDF8] hover:to-[#F6EFE0] border border-[#E8E2D4] hover:border-[#1B1B1A]/30 rounded-[24px] p-3.5 sm:p-4 transition-all cursor-pointer text-right group"
-      >
-        {/* Top Row: Category Badge + Status Action */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-8 h-8 rounded-xl bg-[#FAF6EC] border border-[#E5E0D2] flex items-center justify-center text-base shrink-0">
-              {categoryMeta.emoji}
-            </span>
-            <span className="text-xs font-black text-[#1B1B1A] whitespace-nowrap">
-              سوال امروز
-            </span>
-            <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap truncate max-w-[125px] sm:max-w-none ${categoryMeta.bg} ${categoryMeta.color} border ${categoryMeta.border}`}
-            >
-              {categoryMeta.label}
-            </span>
+      {embeddedInHero ? (
+        /* Seamless Dark-Glass Prompt Docked Inside Home Hero Card */
+        <div
+          onClick={onOpenModal}
+          className="pt-3.5 mt-3.5 border-t border-white/10 cursor-pointer text-right group"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="w-3.5 h-3.5 text-[#F6C3E5] shrink-0" />
+              <span className="text-[11px] font-black text-[#FAF6EC]/90 whitespace-nowrap">
+                سوال امروز
+              </span>
+              <span className="text-[10px] font-medium text-[#FAF6EC]/50 truncate">
+                · {categoryMeta.label}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleOpenHistory}
+                className="w-6 h-6 rounded-full bg-white/[0.07] hover:bg-white/[0.14] flex items-center justify-center text-[#FAF6EC]/65 hover:text-[#FAF6EC] transition-colors cursor-pointer"
+                title="تاریخچه سوال‌ها"
+                aria-label="تاریخچه سوال‌ها"
+              >
+                <History className="w-3 h-3" />
+              </button>
+
+              {isRevealed ? (
+                <span className="text-[11px] font-bold text-[#C9E4CA] flex items-center gap-1 whitespace-nowrap">
+                  <span>مشاهده پاسخ‌ها</span>
+                  <ChevronLeft className="w-3 h-3" />
+                </span>
+              ) : hasMyAnswer ? (
+                <span className="text-[11px] font-semibold text-[#FAF6EC]/60 flex items-center gap-1 whitespace-nowrap">
+                  <Clock className="w-3 h-3" />
+                  <span>منتظر {partnerName}</span>
+                </span>
+              ) : hasPartnerAnswer ? (
+                <span className="text-[11px] font-bold text-[#F6C3E5] bg-[#F6C3E5]/15 px-2.5 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+                  <span>پارتنر جواب داده</span>
+                  <ChevronLeft className="w-3 h-3" />
+                </span>
+              ) : (
+                <span className="text-[11px] font-bold text-[#F6C3E5] group-hover:text-white flex items-center gap-0.5 whitespace-nowrap transition-colors">
+                  <span>ثبت پاسخ</span>
+                  <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={handleOpenHistory}
-              className="w-7 h-7 rounded-full bg-[#FAF6EC] hover:bg-[#EFECE2] border border-[#E8E2D4] flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] transition-colors cursor-pointer"
-              title="تاریخچه سوال‌ها"
-              aria-label="تاریخچه سوال‌ها"
-            >
-              <History className="w-3.5 h-3.5" />
-            </button>
-
-            {isRevealed ? (
-              <span className="text-[11px] font-bold text-[#10B981] bg-[#ECFDF5] border border-[#A7F3D0] px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap">
-                <Sparkles className="w-3 h-3 text-[#10B981]" />
-                <span>مشاهده پاسخ‌ها</span>
-              </span>
-            ) : hasMyAnswer ? (
-              <span className="text-[11px] font-bold text-[#78746B] bg-[#FAF6EC] border border-[#E8E2D4] px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap">
-                <Clock className="w-3 h-3 text-[#A6A297]" />
-                <span>منتظر {partnerName}</span>
-              </span>
-            ) : hasPartnerAnswer ? (
-              <span className="text-[11px] font-bold text-[#D81B60] bg-[#FFF0F7] border border-[#F8BBD0] px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap">
-                <span>🎁 پارتنر جواب داده</span>
-              </span>
-            ) : (
-              <span className="text-[11px] font-bold text-[#FAF6EC] bg-[#1B1B1A] group-hover:bg-[#2F2E2C] px-3 py-1 rounded-full flex items-center gap-1 whitespace-nowrap transition-colors">
-                <span>پاسخ دادن</span>
-                <ChevronLeft className="w-3 h-3" />
-              </span>
-            )}
-          </div>
+          <p className="mt-1.5 text-[13px] sm:text-sm font-bold text-[#FAF6EC] leading-relaxed line-clamp-2">
+            «{question.text}»
+          </p>
         </div>
+      ) : (
+        /* Calm Standalone Editorial Prompt Card (Zero Yellow/Black Sticker Clutter) */
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={onOpenModal}
+          className="bg-[#FFFDF9] hover:bg-white border border-[#EAE4D7] hover:border-[#D5CEBC] rounded-[22px] p-3.5 sm:p-4 transition-all cursor-pointer text-right group"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Sparkles className="w-3.5 h-3.5 text-[#C9648B] shrink-0" />
+              <span className="text-xs font-black text-[#191817] whitespace-nowrap">سوال امروز</span>
+              <span className="text-[11px] font-medium text-[#8A8479] truncate">· {categoryMeta.label}</span>
+            </div>
 
-        {/* Bottom Row: Full Readable Question Text */}
-        <p className="mt-2.5 text-[13px] sm:text-sm font-bold text-[#1B1B1A] leading-relaxed line-clamp-2">
-          {question.text}
-        </p>
-      </motion.div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleOpenHistory}
+                className="w-7 h-7 rounded-full hover:bg-[#EFECE2] flex items-center justify-center text-[#8A8479] hover:text-[#191817] transition-colors cursor-pointer"
+                title="تاریخچه سوال‌ها"
+                aria-label="تاریخچه سوال‌ها"
+              >
+                <History className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-[11px] font-bold text-[#191817] flex items-center gap-0.5 whitespace-nowrap">
+                <span>{isRevealed ? "مشاهده پاسخ‌ها" : hasMyAnswer ? `منتظر ${partnerName}` : hasPartnerAnswer ? "پارتنر جواب داده" : "ثبت پاسخ"}</span>
+                <ChevronLeft className="w-3.5 h-3.5 text-[#8A8479]" />
+              </span>
+            </div>
+          </div>
+
+          <p className="mt-2 text-[13px] sm:text-sm font-bold text-[#191817] leading-relaxed line-clamp-2">
+            {question.text}
+          </p>
+        </motion.div>
+      )}
 
       {/* --- HISTORY MODAL --- */}
       <AnimatePresence>

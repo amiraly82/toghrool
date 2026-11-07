@@ -423,14 +423,14 @@ export default function AuthAndPairing({
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Pill Mode Switcher (Login vs Sign Up) */}
+              {/* Pill Mode Switcher (Login vs Sign Up) — Elevated White Pill so Primary CTA stands alone */}
               {(authMode === 'login' || authMode === 'signup') && (
-                <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-[#EFECE2] rounded-full mb-6">
+                <div className="grid grid-cols-2 gap-1 p-1 segmented-track rounded-full mb-6">
                   <button
                     type="button"
                     onClick={() => { setAuthMode('login'); setError(""); setInfoMessage(""); }}
-                    className={`py-2 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-                      authMode === 'login' ? "bg-[#1B1B1A] text-[#FAF6EC]" : "text-[#78746B] hover:text-[#1B1B1A]"
+                    className={`py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      authMode === 'login' ? "segmented-pill-active font-black" : "text-[#78746B] hover:text-[#1B1B1A]"
                     }`}
                   >
                     ورود به حساب
@@ -438,8 +438,8 @@ export default function AuthAndPairing({
                   <button
                     type="button"
                     onClick={() => { setAuthMode('signup'); setError(""); setInfoMessage(""); }}
-                    className={`py-2 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-                      authMode === 'signup' ? "bg-[#1B1B1A] text-[#FAF6EC]" : "text-[#78746B] hover:text-[#1B1B1A]"
+                    className={`py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      authMode === 'signup' ? "segmented-pill-active font-black" : "text-[#78746B] hover:text-[#1B1B1A]"
                     }`}
                   >
                     عضویت جدید

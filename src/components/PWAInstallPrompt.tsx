@@ -64,21 +64,11 @@ export default function PWAInstallPrompt({ canAutoPrompt = false }: PWAInstallPr
     };
     window.addEventListener("open-pwa-install", handleManualOpen);
 
-    // Subtle auto-chip ONLY when user is calmly inside the main Dashboard
-    const dismissedUntil = localStorage.getItem("pwa_prompt_dismissed");
-    const isDismissed = dismissedUntil && Number(dismissedUntil) > Date.now();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (canAutoPrompt && !standalone && !isDismissed && (isIosDevice || deferredPrompt)) {
-      timer = setTimeout(() => {
-        setShowPrompt(true);
-      }, 6000);
-    }
-
+    // Only open when manually requested from the menu/settings (never pop up unsolicited over mobile navigation)
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
       window.removeEventListener("appinstalled", handleAppInstalled);
       window.removeEventListener("open-pwa-install", handleManualOpen);
-      if (timer) clearTimeout(timer);
     };
   }, [deferredPrompt, canAutoPrompt]);
 

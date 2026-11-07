@@ -96,11 +96,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Warm Editorial Minimalist Surfaces (Flat, Crisp, Shadowless) */
+/* Warm Editorial Surfaces with Subtle Depth Hierarchy */
 .glass-card {
-  background-color: #FFFDF8;
-  border: 1px solid #E8E2D4;
-  box-shadow: none;
+  background-color: #FFFDF9;
+  border: 1px solid #EAE4D7;
+  box-shadow: 0 4px 18px -6px rgba(27, 27, 26, 0.045);
+}
+
+.hero-ink-surface {
+  background: radial-gradient(120% 130% at 0% 0%, rgba(246, 195, 229, 0.16) 0%, rgba(25, 24, 23, 0) 55%), #191817;
+  color: #FAF6EC;
+  box-shadow: 0 16px 36px -12px rgba(25, 24, 23, 0.28);
+}
+
+.segmented-track {
+  background-color: #ECE7DC;
+  border: 1px solid #E2DCCE;
+}
+
+.segmented-pill-active {
+  background-color: #FFFDF9;
+  color: #191817;
+  box-shadow: 0 2px 8px rgba(25, 24, 23, 0.08);
 }
 
 .glass-card-hover {

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Heart, Sparkles, ChevronLeft } from "lucide-react";
+import { X, Heart, Sparkles, ChevronLeft, Dices, Flag, FileText, CalendarHeart } from "lucide-react";
 import { UserProfile } from "../types";
 import { getNeedStatusOption, getBatteryVisual } from "../utils/emotionalStatus";
 import { toPersianDigits } from "../utils/jalali";
@@ -53,7 +53,7 @@ export default function PartnerHubSheet({
       ? [
           {
             key: "daily_q",
-            emoji: "✨",
+            Icon: Sparkles,
             title: "چالش ۳ دقیقه‌ای امروز",
             subtitle: "گفت‌وگوی روزانه برای نزدیکی و صمیمیت بیشتر",
             onClick: () => run(onOpenDailyQuestion)
@@ -64,7 +64,7 @@ export default function PartnerHubSheet({
       ? [
           {
             key: "roulette",
-            emoji: "🎰",
+            Icon: Dices,
             title: "گردونه شانس دیت",
             subtitle: "انتخاب تصادفی یک رویا یا برنامه دونفره",
             onClick: () => run(onOpenDateRoulette)
@@ -73,21 +73,21 @@ export default function PartnerHubSheet({
       : []),
     {
       key: "flag",
-      emoji: "🕊️",
+      Icon: Flag,
       title: "پرچم سفید",
       subtitle: "پیشنهاد آشتی، بدون شکستن غرور",
       onClick: () => run(onOpenWhiteFlag)
     },
     {
       key: "cheat",
-      emoji: "📝",
+      Icon: FileText,
       title: "تقلب‌نامه شناخت",
       subtitle: "سایزها، نوشیدنی و گل محبوب",
       onClick: () => run(onOpenCheatSheet)
     },
     {
       key: "anniv",
-      emoji: "💍",
+      Icon: CalendarHeart,
       title: "روزشمار و سالگردها",
       subtitle: daysTogether ? `${toPersianDigits(daysTogether)} روز با هم` : "ثبت تاریخ آشنایی",
       onClick: () => run(onOpenAnniversary)
@@ -167,25 +167,28 @@ export default function PartnerHubSheet({
               <span>ارسال تپش قلب «الان به یادتم»</span>
             </button>
 
-            {/* Secondary actions as a calm list */}
-            <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl divide-y divide-[#EFECE2] overflow-hidden">
-              {secondaryActions.map((a) => (
-                <button
-                  key={a.key}
-                  type="button"
-                  onClick={a.onClick}
-                  className="w-full flex items-center gap-3 px-3.5 py-3 hover:bg-[#FAF6EC] transition-colors cursor-pointer text-right"
-                >
-                  <span className="w-8 h-8 rounded-xl bg-[#FAF6EC] border border-[#EFECE2] flex items-center justify-center text-base shrink-0">
-                    {a.emoji}
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-xs sm:text-sm font-bold text-[#1B1B1A]">{a.title}</span>
-                    <span className="block text-[11px] text-[#78746B] mt-0.5 truncate">{a.subtitle}</span>
-                  </span>
-                  <ChevronLeft className="w-4 h-4 text-[#A6A297] shrink-0" />
-                </button>
-              ))}
+            {/* Secondary actions as a calm monochrome list */}
+            <div className="bg-[#FFFDF9] border border-[#EAE4D7] rounded-2xl divide-y divide-[#EFECE2] overflow-hidden">
+              {secondaryActions.map((a) => {
+                const RowIcon = a.Icon;
+                return (
+                  <button
+                    key={a.key}
+                    type="button"
+                    onClick={a.onClick}
+                    className="w-full flex items-center gap-3 px-3.5 py-3 hover:bg-[#FAF6EC] transition-colors cursor-pointer text-right"
+                  >
+                    <span className="w-8 h-8 rounded-xl bg-[#F4F0E6] text-[#191817] flex items-center justify-center shrink-0">
+                      <RowIcon className="w-4 h-4 stroke-[1.75]" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-xs sm:text-sm font-bold text-[#191817]">{a.title}</span>
+                      <span className="block text-[11px] text-[#78746B] mt-0.5 truncate">{a.subtitle}</span>
+                    </span>
+                    <ChevronLeft className="w-4 h-4 text-[#A6A297] shrink-0" />
+                  </button>
+                );
+              })}
             </div>
 
             <p className="text-[11px] text-[#9E9A8F] text-center mt-4 flex items-center justify-center gap-1">

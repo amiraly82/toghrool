@@ -297,6 +297,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [showPartnerHub, setShowPartnerHub] = useState(false);
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [showMemoriesSearch, setShowMemoriesSearch] = useState(false);
+  const [openWishMenuId, setOpenWishMenuId] = useState<string | null>(null);
+  const [openReactionMemoryId, setOpenReactionMemoryId] = useState<string | null>(null);
   const [empathyDismissed, setEmpathyDismissed] = useState(() => {
     try {
       return sessionStorage.getItem("empathy_copilot_dismissed") === "1";
@@ -2272,67 +2274,81 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       </AnimatePresence>
 
       <main className="max-w-5xl mx-auto px-4 mt-3.5 sm:mt-6">
-        {/* --- COUPLE MOOD & BATTERY SPLIT CARDS (SHOWN ON HOME TAB ONLY FOR ZERO TAB CLUTTER) --- */}
+        {/* --- LEVEL 1 FOCAL HERO STAGE (HOME TAB): UNIFIED COUPLE PULSE + DAILY SPARK --- */}
         {activeTab === "wishlist" && (
-          <div className="w-full mb-4" dir="rtl">
-            <div className="grid grid-cols-2 gap-2.5 max-w-xl mx-auto">
-              {/* My Mood Card */}
+          <div className="hero-ink-surface rounded-[28px] p-4 sm:p-5 mb-4 text-[#FAF6EC]" dir="rtl">
+            {/* Subtle Hero Eyebrow */}
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="text-[11px] font-bold text-[#FAF6EC]/65">
+                نبض امروز رابطه‌مون
+              </span>
+              {userProfile.partnerUid && (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#FAF6EC]/75 bg-white/[0.07] px-2.5 py-0.5 rounded-full">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isPartnerOnline ? "bg-[#B8D89A]" : "bg-white/35"
+                    }`}
+                  />
+                  <span>
+                    {userProfile.coupleInfo?.relationshipStartDate
+                      ? `${toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز کنار هم`
+                      : isPartnerOnline
+                      ? "پارتنر آنلاین"
+                      : "فضای مشترک"}
+                  </span>
+                </span>
+              )}
+            </div>
+
+            {/* Two Harmonious Translucent Glass Mood Tiles */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* My Mood */}
               <button
                 type="button"
                 onClick={() => setShowEmotionalStatusSheet(true)}
-                className="bg-[#FFFDF8] hover:bg-white border border-[#E8E2D4] hover:border-[#1B1B1A]/30 rounded-2xl p-2.5 px-3 flex items-center gap-2.5 text-right transition-all cursor-pointer group min-w-0"
+                className="bg-white/[0.06] hover:bg-white/[0.11] border border-white/[0.09] rounded-2xl p-2.5 px-3 flex items-center gap-2.5 text-right transition-all cursor-pointer min-w-0"
               >
-                <span className="w-9 h-9 rounded-xl bg-[#FAF6EC] border border-[#EFECE2] flex items-center justify-center text-base shrink-0">
+                <span className="w-9 h-9 rounded-xl bg-white/[0.08] flex items-center justify-center text-base shrink-0">
                   {getNeedStatusOption(myNeedStatus).emoji}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-[10px] font-bold text-[#78746B] truncate">حال دل من</span>
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-black text-[#1B1B1A] shrink-0">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: getBatteryVisual(myBatteryLevel).color }}
-                      />
-                      <span>{toPersianDigits(myBatteryLevel)}٪</span>
+                    <span className="text-[10px] font-medium text-[#FAF6EC]/60 truncate">حال دل من</span>
+                    <span className="text-[10px] font-bold text-[#FAF6EC]/80 shrink-0">
+                      {toPersianDigits(myBatteryLevel)}٪
                     </span>
                   </div>
-                  <p className="text-xs font-black text-[#1B1B1A] truncate mt-0.5">
+                  <p className="text-xs font-black text-[#FAF6EC] truncate mt-0.5">
                     {getNeedStatusOption(myNeedStatus).shortLabel || getNeedStatusOption(myNeedStatus).label}
                   </p>
                 </div>
               </button>
 
-              {/* Partner Mood Card */}
+              {/* Partner Mood */}
               {userProfile.partnerUid ? (
                 <button
                   type="button"
                   onClick={() => setShowPartnerHub(true)}
-                  className="bg-[#FFFDF8] hover:bg-white border border-[#E8E2D4] hover:border-[#F6C3E5] rounded-2xl p-2.5 px-3 flex items-center gap-2.5 text-right transition-all cursor-pointer group min-w-0"
+                  className="bg-white/[0.06] hover:bg-white/[0.11] border border-white/[0.09] rounded-2xl p-2.5 px-3 flex items-center gap-2.5 text-right transition-all cursor-pointer min-w-0"
                 >
-                  <span className="w-9 h-9 rounded-xl bg-[#FFF0F7] border border-[#F8BBD0]/60 flex items-center justify-center text-base shrink-0">
+                  <span className="w-9 h-9 rounded-xl bg-[#F6C3E5]/15 flex items-center justify-center text-base shrink-0">
                     {getNeedStatusOption(partnerProfile?.needStatus || "calm").emoji}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-bold text-[#78746B] truncate">
+                      <span className="text-[10px] font-medium text-[#FAF6EC]/60 truncate">
                         {partnerProfile?.displayName || "پارتنر"}
                       </span>
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-black text-[#1B1B1A] shrink-0">
-                        <span
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{
-                            backgroundColor: getBatteryVisual(partnerProfile?.batteryLevel ?? 80).color
-                          }}
-                        />
-                        <span>{toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪</span>
+                      <span className="text-[10px] font-bold text-[#FAF6EC]/80 shrink-0">
+                        {toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪
                       </span>
                     </div>
-                    <p className="text-xs font-black text-[#1B1B1A] truncate mt-0.5 flex items-center justify-between gap-1">
+                    <p className="text-xs font-black text-[#FAF6EC] truncate mt-0.5 flex items-center justify-between gap-1">
                       <span className="truncate">
                         {getNeedStatusOption(partnerProfile?.needStatus || "calm").shortLabel ||
                           getNeedStatusOption(partnerProfile?.needStatus || "calm").label}
                       </span>
-                      <ChevronLeft className="w-3 h-3 text-[#A6A297] shrink-0" />
+                      <ChevronLeft className="w-3 h-3 text-[#FAF6EC]/45 shrink-0" />
                     </p>
                   </div>
                 </button>
@@ -2340,22 +2356,29 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={onOpenPairingModal}
-                  className="bg-[#FFF0F7]/70 hover:bg-[#FFF0F7] border border-dashed border-[#E5ADD2] rounded-2xl p-2.5 px-3 flex items-center justify-center gap-2 text-center transition-all cursor-pointer min-w-0"
+                  className="bg-[#F6C3E5]/12 hover:bg-[#F6C3E5]/20 border border-dashed border-[#F6C3E5]/40 rounded-2xl p-2.5 px-3 flex items-center justify-center gap-2 text-center transition-all cursor-pointer min-w-0"
                 >
-                  <span className="w-8 h-8 rounded-xl bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center shrink-0">
-                    <Plus className="w-4 h-4 stroke-[2]" />
-                  </span>
+                  <Plus className="w-4 h-4 text-[#F6C3E5] shrink-0" />
                   <div className="text-right min-w-0">
-                    <span className="block text-xs font-black text-[#1B1B1A] truncate">دعوت از پارتنر</span>
-                    <span className="block text-[10px] text-[#78746B] truncate">فعال‌سازی فضای مشترک</span>
+                    <span className="block text-xs font-black text-[#FAF6EC] truncate">دعوت از پارتنر</span>
+                    <span className="block text-[10px] text-[#FAF6EC]/60 truncate">فعال‌سازی فضای مشترک</span>
                   </div>
                 </button>
               )}
             </div>
+
+            {/* Integrated Daily Intimacy Question Spark inside Hero Stage */}
+            <DailyQuestionCard
+              userProfile={userProfile}
+              partnerProfile={partnerProfile}
+              onOpenModal={() => setShowDailyQuestionModal(true)}
+              refreshKey={dailyQuestionRefreshTrigger}
+              embeddedInHero
+            />
           </div>
         )}
 
-        {/* --- EMPATHY CO-PILOT CARD (HOME TAB ONLY + DISMISSIBLE FOR ZERO CROSS-TAB CLUTTER) --- */}
+        {/* --- EMPATHY CO-PILOT CARD (HOME TAB ONLY + DISMISSIBLE) --- */}
         {activeTab === "wishlist" &&
           !empathyDismissed &&
           currentPartnerCycleStatus &&
@@ -2379,111 +2402,110 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         )}
 
-        {/* Desktop Navigation Bar (5 Pillars — Editorial Pill Track) */}
-        <div className="hidden md:block w-full mb-8" dir="rtl">
+        {/* Desktop Navigation Bar (Elevated White Segmented Pill — Zero Competing Solid Black Tabs) */}
+        <div className="hidden md:block w-full mb-7" dir="rtl">
           <div className="flex items-center justify-center w-full">
-            <div className="inline-flex flex-wrap bg-[#EFECE2] p-1.5 rounded-full border border-[#E5E0D2] gap-1">
+            <div className="inline-flex flex-wrap segmented-track p-1.5 rounded-full gap-1">
               <button
                 onClick={() => setActiveTab("wishlist")}
-                className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "wishlist" || activeTab === "hall"
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#1B1B1A]/75 hover:text-[#1B1B1A] hover:bg-[#FAF6EC]/70"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <Heart className={`w-4 h-4 stroke-[1.7] ${activeTab === "wishlist" || activeTab === "hall" ? "text-[#F6C3E5]" : "text-[#1B1B1A]"}`} />
+                <Heart className="w-4 h-4 stroke-[1.8]" />
                 <span>آرزوها و افتخارات</span>
               </button>
 
               <button
                 onClick={() => setActiveTab("calendar")}
-                className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "calendar"
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#1B1B1A]/75 hover:text-[#1B1B1A] hover:bg-[#FAF6EC]/70"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <CalendarIcon className={`w-4 h-4 stroke-[1.7] ${activeTab === "calendar" ? "text-[#B8CEF4]" : "text-[#1B1B1A]"}`} />
+                <CalendarIcon className="w-4 h-4 stroke-[1.8]" />
                 <span>تقویم مشترک</span>
               </button>
 
               <button
                 onClick={() => setActiveTab("period")}
-                className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "period"
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#1B1B1A]/75 hover:text-[#1B1B1A] hover:bg-[#FAF6EC]/70"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <Droplet className={`w-4 h-4 stroke-[1.7] ${activeTab === "period" ? "text-[#F6C3E5]" : "text-[#1B1B1A]"}`} />
+                <Droplet className="w-4 h-4 stroke-[1.8]" />
                 <span>تقویم سلامت</span>
               </button>
 
               <button
                 onClick={() => setActiveTab("memories")}
-                className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "memories" || activeTab.startsWith("tab-")
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#1B1B1A]/75 hover:text-[#1B1B1A] hover:bg-[#FAF6EC]/70"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <Camera className={`w-4 h-4 stroke-[1.7] ${activeTab === "memories" || activeTab.startsWith("tab-") ? "text-[#F6DC6B]" : "text-[#1B1B1A]"}`} />
+                <Camera className="w-4 h-4 stroke-[1.8]" />
                 <span>خاطرات و یادداشت‌ها</span>
               </button>
 
               <button
                 onClick={() => setActiveTab("finance")}
-                className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "finance"
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#1B1B1A]/75 hover:text-[#1B1B1A] hover:bg-[#FAF6EC]/70"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <Wallet className={`w-4 h-4 stroke-[1.7] ${activeTab === "finance" ? "text-[#A7B86C]" : "text-[#1B1B1A]"}`} />
+                <Wallet className="w-4 h-4 stroke-[1.8]" />
                 <span>مدیریت مالی</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Segmented Sub-Switch inside Wishlist / Hall of Fame / Shared Calendar */}
+        {/* Quiet Level-2 Segmented Sub-Switch (Elevated White Pill on Soft Stone Track) */}
         {(activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar") && (
-          <div className="flex items-center justify-center mb-4" dir="rtl">
-            <div className="w-full max-w-md grid grid-cols-3 md:inline-flex md:w-auto bg-[#EFECE2] p-1 rounded-full border border-[#E5E0D2] gap-1">
+          <div className="flex items-center justify-center mb-3.5" dir="rtl">
+            <div className="w-full max-w-md grid grid-cols-3 md:inline-flex md:w-auto segmented-track p-1 rounded-full gap-1">
               <button
                 type="button"
                 onClick={() => setActiveTab("wishlist")}
-                className={`px-2.5 sm:px-5 py-2 rounded-full text-[11px] sm:text-xs font-black transition-colors cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${
+                className={`px-2.5 sm:px-5 py-2 rounded-full text-[11px] sm:text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
                   activeTab === "wishlist"
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#78746B] hover:text-[#1B1B1A]"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <Heart className={`w-3.5 h-3.5 stroke-[1.8] shrink-0 ${activeTab === "wishlist" ? "text-[#F6C3E5]" : "text-[#78746B]"}`} />
-                <span>آرزوها ({toPersianDigits(wishlistItems.length)})</span>
+                <span>آرزوها</span>
+                <span className="text-[10px] text-[#8A8479]">({toPersianDigits(wishlistItems.length)})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("hall")}
-                className={`px-2.5 sm:px-5 py-2 rounded-full text-[11px] sm:text-xs font-black transition-colors cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${
+                className={`px-2.5 sm:px-5 py-2 rounded-full text-[11px] sm:text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
                   activeTab === "hall"
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#78746B] hover:text-[#1B1B1A]"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <Sparkles className={`w-3.5 h-3.5 stroke-[1.8] shrink-0 ${activeTab === "hall" ? "text-[#F6DC6B]" : "text-[#78746B]"}`} />
-                <span>افتخارات ({toPersianDigits(hallOfFameItems.length)})</span>
+                <span>افتخارات</span>
+                <span className="text-[10px] text-[#8A8479]">({toPersianDigits(hallOfFameItems.length)})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("calendar")}
-                className={`md:hidden px-2.5 py-2 rounded-full text-[11px] font-black transition-colors cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${
+                className={`md:hidden px-2.5 py-2 rounded-full text-[11px] transition-all cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${
                   activeTab === "calendar"
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#78746B] hover:text-[#1B1B1A]"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <CalendarIcon className={`w-3.5 h-3.5 stroke-[1.8] shrink-0 ${activeTab === "calendar" ? "text-[#B8CEF4]" : "text-[#78746B]"}`} />
                 <span>تقویم مشترک</span>
               </button>
             </div>
@@ -2493,17 +2515,17 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* Sub-Navigation Bar inside Memories & Sticky Notes Pillar */}
         {(activeTab === "memories" || activeTab.startsWith("tab-")) && (
           <div className="flex items-center justify-between gap-2 mb-4 overflow-x-auto no-scrollbar" dir="rtl">
-            <div className="inline-flex items-center bg-[#EFECE2] p-1 rounded-full border border-[#E5E0D2] gap-1 shrink-0">
+            <div className="inline-flex items-center segmented-track p-1 rounded-full gap-1 shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab("memories")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === "memories"
-                    ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                    : "text-[#78746B] hover:text-[#1B1B1A]"
+                    ? "segmented-pill-active font-black"
+                    : "font-bold text-[#78746B] hover:text-[#191817]"
                 }`}
               >
-                <Camera className={`w-3.5 h-3.5 stroke-[1.8] ${activeTab === "memories" ? "text-[#F6C3E5]" : "text-[#78746B]"}`} />
+                <Camera className="w-3.5 h-3.5 stroke-[1.8]" />
                 <span>خاطرات ({toPersianDigits(memories.length)})</span>
               </button>
 
@@ -2512,10 +2534,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <button
                     type="button"
                     onClick={() => setActiveTab(`tab-${tab.id}`)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-black transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                       activeTab === `tab-${tab.id}`
-                        ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                        : "text-[#78746B] hover:text-[#1B1B1A]"
+                        ? "segmented-pill-active font-black"
+                        : "font-bold text-[#78746B] hover:text-[#191817]"
                     }`}
                   >
                     <span>{tab.icon || "📌"}</span>
@@ -2524,7 +2546,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <button
                     type="button"
                     onClick={(e) => handleDeleteTab(tab.id, e)}
-                    className="-top-1 -left-1 absolute bg-[#1B1B1A] hover:bg-[#D94E4E] text-[#FAF6EC] rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/tab:opacity-100 transition-opacity border border-[#FAF6EC] cursor-pointer z-10"
+                    className="-top-1 -left-1 absolute bg-[#191817] hover:bg-[#D94E4E] text-[#FAF6EC] rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/tab:opacity-100 transition-opacity border border-[#FAF6EC] cursor-pointer z-10"
                     title="حذف برد یادداشت"
                   >
                     <X className="w-2.5 h-2.5" />
@@ -2535,7 +2557,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               <button
                 type="button"
                 onClick={() => setShowAddTabModal(true)}
-                className="px-3 py-1.5 rounded-full text-xs font-bold text-[#1B1B1A] bg-[#FAF6EC] hover:bg-[#F6DC6B] transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-[#78746B] hover:text-[#191817] transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
                 title="ساخت برد یادداشت چسبان جدید"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2]" />
@@ -2550,26 +2572,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   onClick={() => setShowMemoriesSearch((v) => !v)}
                   className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer border ${
                     showMemoriesSearch || searchQuery
-                      ? "bg-[#1B1B1A] text-[#FAF6EC] border-[#1B1B1A]"
-                      : "bg-[#FFFDF8] text-[#1B1B1A] border-[#E8E2D4] hover:bg-[#EFECE2]"
+                      ? "bg-[#FFFDF9] text-[#191817] border-[#191817] shadow-2xs"
+                      : "bg-[#FFFDF9] text-[#78746B] border-[#E2DCCE] hover:text-[#191817]"
                   }`}
                   aria-label="جستجو در خاطرات"
                 >
                   <Search className="w-4 h-4 stroke-[1.8]" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMemoryFormDate("");
-                    setMemoryFormTitle("");
-                    setMemoryFormContent("");
-                    setMemoryFormImageUrl("");
-                    setShowAddMemoryModal(true);
-                  }}
-                  className="hidden sm:flex px-3.5 py-2 rounded-full bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-xs font-bold items-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5 stroke-[2]" />
-                  <span>ثبت خاطره جدید</span>
                 </button>
               </div>
             )}
@@ -2579,42 +2587,34 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* --- TAB 1: WISHLIST --- */}
         {activeTab === "wishlist" && (
           <div dir="rtl" className="space-y-4">
-            {/* Phase 2: Daily 3-Minute Intimacy Ritual Card */}
-            <DailyQuestionCard
-              userProfile={userProfile}
-              partnerProfile={partnerProfile}
-              onOpenModal={() => setShowDailyQuestionModal(true)}
-              refreshKey={dailyQuestionRefreshTrigger}
-            />
-
-            {/* Single-Row Discovery Rail (Progressive Disclosure: Search & Budget tucked in Filter Toggle) */}
+            {/* Quiet Monochrome Discovery Rail (Zero Solid-Black Filter Pills or Rainbow Icon Dots!) */}
             <div className="space-y-2.5">
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                 {/* Filter & Search Toggle Pill */}
                 <button
                   type="button"
                   onClick={() => setShowFilterDrawer((v) => !v)}
-                  className={`px-3 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap border ${
+                  className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap border ${
                     showFilterDrawer || searchQuery || budgetFilter !== "all"
-                      ? "bg-[#1B1B1A] text-[#FAF6EC] border-[#1B1B1A]"
-                      : "bg-[#FFFDF8] text-[#1B1B1A] border-[#E8E2D4] hover:bg-[#EFECE2]"
+                      ? "bg-[#FFFDF9] text-[#191817] border-[#191817] font-black shadow-2xs"
+                      : "bg-transparent text-[#78746B] border-[#DFD9CA] hover:border-[#B8B2A3] font-bold"
                   }`}
                   aria-label="جستجو و فیلتر"
                 >
-                  <Search className="w-3.5 h-3.5 stroke-[2]" />
+                  <Search className="w-3.5 h-3.5 stroke-[1.9]" />
                   <span>فیلتر</span>
                   {(searchQuery || budgetFilter !== "all") && (
-                    <span className="w-2 h-2 rounded-full bg-[#F6C3E5]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9648B]" />
                   )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setCategoryFilter("all")}
-                  className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer shrink-0 whitespace-nowrap border ${
                     categoryFilter === "all"
-                      ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                      : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2]"
+                      ? "bg-[#FFFDF9] text-[#191817] border-[#191817] font-black shadow-2xs"
+                      : "bg-transparent text-[#78746B] border-[#DFD9CA] hover:border-[#B8B2A3] font-semibold"
                   }`}
                 >
                   همه ({toPersianDigits(items.filter((i) => !i.isCompleted).length)})
@@ -2630,22 +2630,20 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       <button
                         type="button"
                         onClick={() => setCategoryFilter(cat.id)}
-                        className={`px-3 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+                        className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap border ${
                           isSelected
-                            ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                            : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2]"
+                            ? "bg-[#FFFDF9] text-[#191817] border-[#191817] font-black shadow-2xs"
+                            : "bg-transparent text-[#78746B] border-[#DFD9CA] hover:border-[#B8B2A3] font-semibold"
                         }`}
                       >
-                        <span className={`w-4 h-4 rounded-full ${cat.bg} text-[#1B1B1A] flex items-center justify-center`}>
-                          {typeof cat.iconName === "string" && !PRESET_ICONS[cat.iconName] ? (
-                            <span className="text-[10px]">{cat.iconName}</span>
-                          ) : (
-                            <Icon className="w-2.5 h-2.5 stroke-[2]" />
-                          )}
-                        </span>
+                        {typeof cat.iconName === "string" && !PRESET_ICONS[cat.iconName] ? (
+                          <span className="text-[11px] opacity-80">{cat.iconName}</span>
+                        ) : (
+                          <Icon className={`w-3.5 h-3.5 stroke-[1.8] ${isSelected ? "text-[#191817]" : "text-[#8A8479]"}`} />
+                        )}
                         <span>{cat.label}</span>
                         {catCount > 0 && (
-                          <span className={`text-[10px] font-bold ${isSelected ? "text-[#FAF6EC]/80" : "text-[#78746B]"}`}>
+                          <span className="text-[10px] text-[#8A8479]">
                             ({toPersianDigits(catCount)})
                           </span>
                         )}
@@ -2654,7 +2652,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         <button
                           type="button"
                           onClick={(e) => handleDeleteCategory(cat.id, e)}
-                          className="absolute -top-1 -left-1 bg-[#1B1B1A] hover:bg-[#D94E4E] text-[#FAF6EC] rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/cat:opacity-100 transition-opacity border border-[#FAF6EC] cursor-pointer z-10"
+                          className="absolute -top-1 -left-1 bg-[#191817] hover:bg-[#D94E4E] text-[#FAF6EC] rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/cat:opacity-100 transition-opacity border border-[#FAF6EC] cursor-pointer z-10"
                           title="حذف دسته‌بندی"
                         >
                           <X className="w-2.5 h-2.5" />
@@ -2668,14 +2666,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={() => setShowAddShelfModal(true)}
-                  className="px-3 py-2 rounded-full border border-dashed border-[#C8C3B6] hover:border-[#1B1B1A] text-[#78746B] hover:text-[#1B1B1A] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-full border border-dashed border-[#C8C3B6] hover:border-[#191817] text-[#78746B] hover:text-[#191817] text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>دسته جدید</span>
                 </button>
               </div>
 
-              {/* Expandable Search & Budget Drawer (Only visible on demand!) */}
+              {/* Expandable Search & Budget Drawer (Clean Monochrome Chips) */}
               <AnimatePresence>
                 {(showFilterDrawer || searchQuery || budgetFilter !== "all") && (
                   <motion.div
@@ -2684,7 +2682,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     exit={{ opacity: 0, height: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3 space-y-2.5">
+                    <div className="glass-card rounded-2xl p-3 space-y-2.5">
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1 min-w-0">
                           <input
@@ -2692,14 +2690,14 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             placeholder="جستجو در بین آرزوها..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-8 pr-9 py-2 bg-[#EFECE2]/80 focus:bg-[#FAF6EC] border border-transparent focus:border-[#1B1B1A]/30 rounded-full text-xs font-semibold text-[#1B1B1A] placeholder-[#8E8A80] focus:outline-none text-right"
+                            className="w-full pl-8 pr-9 py-2 bg-[#EFECE2]/80 focus:bg-[#FAF6EC] border border-transparent focus:border-[#191817]/30 rounded-full text-xs font-semibold text-[#191817] placeholder-[#8E8A80] focus:outline-none text-right"
                           />
                           <Search className="w-3.5 h-3.5 text-[#8E8A80] absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none" />
                           {searchQuery && (
                             <button
                               type="button"
                               onClick={() => setSearchQuery("")}
-                              className="absolute top-1/2 left-2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] rounded-full cursor-pointer"
+                              className="absolute top-1/2 left-2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#78746B] hover:text-[#191817] rounded-full cursor-pointer"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -2709,10 +2707,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         <button
                           type="button"
                           onClick={() => setShowDateRoulette(true)}
-                          className="px-3 py-2 bg-[#FAF6EC] hover:bg-[#F6DC6B]/60 text-[#1B1B1A] text-xs font-bold rounded-full flex items-center gap-1 transition-colors cursor-pointer border border-[#E8E2D4] shrink-0 whitespace-nowrap"
+                          className="px-3 py-2 bg-[#EFECE2] hover:bg-[#E4DFD1] text-[#191817] text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                         >
-                          <span>🎰</span>
-                          <span>دیت شانسی</span>
+                          <Sparkles className="w-3.5 h-3.5 text-[#C9648B]" />
+                          <span>پیشنهاد شانسی</span>
                         </button>
                       </div>
 
@@ -2720,18 +2718,18 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         <span className="text-[11px] font-bold text-[#78746B] ml-1 shrink-0">بودجه:</span>
                         {[
                           { id: "all", label: "همه" },
-                          { id: "economy", label: "اقتصادی 🟢" },
-                          { id: "medium", label: "میان‌رده 🟡" },
-                          { id: "luxury", label: "لاکچری 🟣" }
+                          { id: "economy", label: "اقتصادی" },
+                          { id: "medium", label: "میان‌رده" },
+                          { id: "luxury", label: "لوکس" }
                         ].map((b) => (
                           <button
                             key={b.id}
                             type="button"
                             onClick={() => setBudgetFilter(b.id)}
-                            className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+                            className={`px-3 py-1 rounded-full text-[11px] transition-all cursor-pointer shrink-0 whitespace-nowrap border ${
                               budgetFilter === b.id
-                                ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                                : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A]"
+                                ? "bg-[#FFFDF9] text-[#191817] border-[#191817] font-black"
+                                : "bg-transparent text-[#78746B] border-[#E2DCCE] hover:border-[#B8B2A3] font-semibold"
                             }`}
                           >
                             {b.label}
@@ -2769,108 +2767,144 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {wishlistItems.map((item) => {
                   const catConfig = allCategories.find((c) => c.id === item.category) || allCategories[0];
                   const CatIcon = catConfig.icon;
+                  const budgetText =
+                    item.budget === "economy"
+                      ? "اقتصادی"
+                      : item.budget === "luxury"
+                      ? "لوکس"
+                      : item.budget === "medium"
+                      ? "میان‌رده"
+                      : "";
+                  const isMenuOpen = openWishMenuId === item.id;
+
                   return (
                     <motion.div
                       key={item.id}
                       layout
-                      initial={{ opacity: 0, scale: 0.97 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="bg-[#FFFDF8] border border-[#E8E2D4] hover:border-[#D5CEBC] rounded-[28px] p-5 sm:p-6 flex flex-col justify-between transition-colors"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="glass-card glass-card-hover rounded-[26px] p-4 sm:p-5 flex flex-col justify-between relative"
                     >
                       <div>
-                        {/* Card Header: Pastel Circle Icon + Category Pill + Circular Oat Action Buttons */}
-                        <div className="flex items-center justify-between gap-2 mb-4">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-11 h-11 rounded-full ${catConfig.bg} text-[#1B1B1A] flex items-center justify-center shrink-0`}>
+                        {/* Quiet Level-3 Metadata Row + Discreet Overflow Menu (Zero Rainbow Stickers or 6-Button Clutter) */}
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-[#F2EEE4] text-[#191817] flex items-center justify-center shrink-0">
                               {typeof catConfig.iconName === "string" && !PRESET_ICONS[catConfig.iconName] ? (
-                                <span className="text-base">{catConfig.iconName}</span>
+                                <span className="text-sm">{catConfig.iconName}</span>
                               ) : (
-                                <CatIcon className="w-5 h-5 stroke-[1.7]" />
+                                <CatIcon className="w-4 h-4 stroke-[1.8]" />
                               )}
                             </div>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] font-bold text-[#78746B] block">
-                                  {catConfig.label}
-                                </span>
-                                {item.budget && (
-                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
-                                    item.budget === 'economy'
-                                      ? 'bg-[#DCE6B5] text-[#2D5A27]'
-                                      : item.budget === 'luxury'
-                                      ? 'bg-[#E2C9F4] text-[#4A154B]'
-                                      : 'bg-[#F6DC6B] text-[#5C4813]'
-                                  }`}>
-                                    {item.budget === 'economy' ? '🟢 اقتصادی' : item.budget === 'luxury' ? '🟣 لاکچری' : '🟡 میان‌رده'}
-                                  </span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#78746B] truncate">
+                                <span>{catConfig.label}</span>
+                                {budgetText && (
+                                  <>
+                                    <span className="text-[#CFC9BA]">·</span>
+                                    <span className="font-semibold text-[#8A8479]">{budgetText}</span>
+                                  </>
                                 )}
+                                <span className="text-[#CFC9BA]">·</span>
+                                <span className="font-medium text-[#9A9488]">{item.createdByName}</span>
                               </div>
-                              <span className="text-[10px] text-[#9E9A8F] font-medium">
-                                ثبت توسط {item.createdByName}
-                              </span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0 relative">
                             <button
+                              type="button"
                               onClick={() => handleSendPoke(item)}
-                              className="w-8 h-8 rounded-full bg-[#F6C3E5]/50 hover:bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer active:scale-90"
+                              className="w-8 h-8 rounded-full text-[#8A8479] hover:text-[#C9648B] hover:bg-[#FAF0F5] flex items-center justify-center transition-colors cursor-pointer active:scale-90"
                               title="یادآوری عاشقانه به پارتنر"
+                              aria-label="یادآوری عاشقانه"
                             >
-                              <MessageCircleHeart className="w-4 h-4 stroke-[1.7]" />
+                              <Heart className="w-4 h-4 stroke-[1.8]" />
                             </button>
+
                             <button
-                              onClick={() => handleOpenEditModal(item)}
-                              className="w-8 h-8 rounded-full text-[#A6A297] hover:text-[#1B1B1A] hover:bg-[#EFECE2] flex items-center justify-center transition-colors cursor-pointer active:scale-90"
-                              title="ویرایش آرزو"
+                              type="button"
+                              onClick={() => setOpenWishMenuId((prev) => (prev === item.id ? null : item.id))}
+                              className="w-8 h-8 rounded-full text-[#8A8479] hover:text-[#191817] hover:bg-[#EFECE2] flex items-center justify-center transition-colors cursor-pointer"
+                              aria-label="گزینه‌های کارت"
                             >
-                              <Edit2 className="w-3.5 h-3.5 stroke-[1.7]" />
+                              <MoreHorizontal className="w-4 h-4 stroke-[1.9]" />
                             </button>
-                            <button
-                              onClick={() => handleDeleteItem(item.id)}
-                              className="w-8 h-8 rounded-full text-[#A6A297] hover:text-[#D94E4E] hover:bg-[#F9C6B8]/40 flex items-center justify-center transition-colors cursor-pointer active:scale-90"
-                              title="حذف آرزو"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 stroke-[1.7]" />
-                            </button>
+
+                            {isMenuOpen && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-20"
+                                  onClick={() => setOpenWishMenuId(null)}
+                                />
+                                <div className="absolute left-0 top-9 z-30 w-36 bg-[#FFFDF9] border border-[#E2DCCE] rounded-2xl shadow-xl p-1 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenWishMenuId(null);
+                                      handleOpenEditModal(item);
+                                    }}
+                                    className="w-full px-3 py-2 rounded-xl text-xs font-bold text-[#191817] hover:bg-[#FAF6EC] flex items-center gap-2 cursor-pointer"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-[#78746B]" />
+                                    <span>ویرایش آرزو</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenWishMenuId(null);
+                                      handleDeleteItem(item.id);
+                                    }}
+                                    className="w-full px-3 py-2 rounded-xl text-xs font-bold text-[#D94E4E] hover:bg-[#FFF2F2] flex items-center gap-2 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>حذف آرزو</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
 
-                        {/* Title & Description */}
-                        <h3 className="text-base sm:text-lg font-black text-[#1B1B1A] leading-snug">{item.title}</h3>
+                        {/* Level-1 Card Typography: Bold, Confident Title */}
+                        <h3 className="text-[17px] sm:text-lg font-black text-[#191817] leading-snug tracking-tight">
+                          {item.title}
+                        </h3>
                         {item.description && (
-                          <p className="text-[#78746B] text-xs sm:text-sm mt-1.5 line-clamp-2 leading-relaxed">{item.description}</p>
+                          <p className="text-[#6E6A61] text-xs sm:text-sm mt-1 line-clamp-2 leading-relaxed">
+                            {item.description}
+                          </p>
                         )}
 
                         {/* Link Preview integration */}
                         {item.link && (
-                          <div className="mt-4">
+                          <div className="mt-3.5">
                             {item.linkPreview ? (
                               <a
                                 href={item.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="group block bg-[#FAF6EC] hover:bg-[#EFECE2] rounded-2xl border border-[#E8E2D4] p-2.5 transition-colors text-right"
+                                className="group block bg-[#FAF6EC] hover:bg-[#EFECE2] rounded-2xl border border-[#EAE4D7] p-2.5 transition-colors text-right"
                               >
                                 <div className="flex gap-3 items-center">
                                   {item.linkPreview.image && (
                                     <img
                                       src={item.linkPreview.image}
                                       alt="link preview"
-                                      className="w-13 h-13 object-cover rounded-xl shrink-0 border border-[#E8E2D4]"
+                                      className="w-12 h-12 object-cover rounded-xl shrink-0 border border-[#EAE4D7]"
                                       referrerPolicy="no-referrer"
                                     />
                                   )}
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="text-xs font-bold text-[#1B1B1A] truncate flex items-center gap-1">
+                                    <h4 className="text-xs font-bold text-[#191817] truncate flex items-center gap-1">
                                       <span>{item.linkPreview.title || "مشاهده لینک"}</span>
                                       <ExternalLink className="w-3 h-3 text-[#78746B] shrink-0" />
                                     </h4>
-                                    <p className="text-[10px] text-[#78746B] line-clamp-2 mt-0.5 leading-normal">
+                                    <p className="text-[10px] text-[#78746B] line-clamp-1 mt-0.5 leading-normal">
                                       {item.linkPreview.description}
                                     </p>
                                   </div>
@@ -2881,7 +2915,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                                 href={item.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1B1B1A] bg-[#EFECE2] hover:bg-[#E5E0D2] px-3.5 py-1.5 rounded-full transition-colors"
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#191817] bg-[#F2EEE4] hover:bg-[#E5E0D2] px-3 py-1.5 rounded-full transition-colors"
                               >
                                 <ExternalLink className="w-3.5 h-3.5 stroke-[1.7]" />
                                 <span>باز کردن لینک همراه</span>
@@ -2890,59 +2924,64 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                           </div>
                         )}
 
-                        {/* Target Date Pill */}
+                        {/* Calm Tonal Target Date */}
                         {item.date && (
-                          <div className="mt-3.5 inline-flex items-center gap-1.5 text-xs text-[#1B1B1A] font-bold bg-[#B8CEF4]/55 px-3 py-1 rounded-full">
-                            <CalendarIcon className="w-3.5 h-3.5 stroke-[1.8]" />
-                            <span>برنامه‌ریزی: {toPersianDigits(formatPersianDate(item.date))}</span>
+                          <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-[#5C5850] font-bold bg-[#F3EFE6] px-2.5 py-1 rounded-full">
+                            <CalendarIcon className="w-3 h-3 stroke-[1.8]" />
+                            <span>{toPersianDigits(formatPersianDate(item.date))}</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Health-Systems Style Thick Pastel Pill Progress Bar */}
-                      <div className="mt-6 pt-4 border-t border-[#EFECE2]">
-                        <div className="flex items-center justify-between text-xs font-bold text-[#78746B] mb-2">
-                          <span>پیشرفت دو نفره</span>
-                          <div className="flex items-baseline gap-1" dir="ltr">
-                            <span className="text-lg font-black text-[#1B1B1A]">{toPersianDigits(item.progress)}</span>
-                            <span className="text-[11px] text-[#78746B] font-bold">/ ۱۰۰٪</span>
-                          </div>
-                        </div>
-
-                        <div className="w-full bg-[#EFECE2] h-3.5 rounded-full overflow-hidden">
+                      {/* Sleek Minimal Progress Footer (Single Ink Progress Bar + Quiet Tonal Controls) */}
+                      <div className="mt-4 pt-3.5 border-t border-[#EFECE2]/90">
+                        <div className="w-full bg-[#ECE7DC] h-1.5 rounded-full overflow-hidden mb-3">
                           <div
-                            className="h-full rounded-full transition-all duration-300"
+                            className="h-full rounded-full transition-all duration-300 bg-[#191817]"
                             style={{
-                              width: `${Math.max(item.progress, item.progress > 0 ? 8 : 0)}%`,
-                              backgroundColor: catConfig.barHex || "#F6C3E5"
+                              width: `${Math.max(item.progress, item.progress > 0 ? 6 : 0)}%`
                             }}
                           />
                         </div>
 
-                        {/* Step progression buttons */}
-                        <div className="flex items-center justify-between gap-2 mt-4">
-                          <div className="flex gap-1.5">
-                            <button
-                              onClick={() => handleUpdateProgress(item.id, item.progress, -25)}
-                              disabled={item.progress === 0}
-                              className="px-3 py-1.5 bg-[#EFECE2] hover:bg-[#E5E0D2] rounded-full text-xs font-bold text-[#1B1B1A] disabled:opacity-40 cursor-pointer transition-colors"
-                            >
-                              -۲۵٪
-                            </button>
-                            <button
-                              onClick={() => handleUpdateProgress(item.id, item.progress, 25)}
-                              disabled={item.progress === 100}
-                              className="px-3 py-1.5 bg-[#F6DC6B] hover:bg-[#EED259] text-[#1B1B1A] rounded-full text-xs font-bold disabled:opacity-40 cursor-pointer transition-colors"
-                            >
-                              +۲۵٪
-                            </button>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-bold text-[#78746B] ml-1">
+                              {toPersianDigits(item.progress)}٪
+                            </span>
+
+                            {item.progress > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateProgress(item.id, item.progress, -25)}
+                                className="w-7 h-7 bg-[#F2EEE4] hover:bg-[#E5E0D2] rounded-full text-xs font-bold text-[#5C5850] flex items-center justify-center cursor-pointer transition-colors"
+                                title="کاهش پیشرفت"
+                              >
+                                −
+                              </button>
+                            )}
+
+                            {item.progress < 100 && (
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateProgress(item.id, item.progress, 25)}
+                                className="px-2.5 py-1 bg-[#F2EEE4] hover:bg-[#E5E0D2] text-[#191817] rounded-full text-[11px] font-bold cursor-pointer transition-colors"
+                              >
+                                +۲۵٪
+                              </button>
+                            )}
                           </div>
 
                           <button
+                            type="button"
                             onClick={() => handleUpdateProgress(item.id, item.progress, 100 - item.progress)}
-                            className="px-4 py-1.5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] rounded-full text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                              item.progress >= 75
+                                ? "bg-[#191817] text-[#FAF6EC] shadow-xs"
+                                : "bg-transparent hover:bg-[#191817] text-[#191817] hover:text-[#FAF6EC] border border-[#D8D1C0] hover:border-[#191817]"
+                            }`}
                           >
-                            <CheckCircle className="w-3.5 h-3.5 stroke-[1.8] text-[#A7B86C]" />
+                            <CheckCircle className="w-3.5 h-3.5 stroke-[1.8]" />
                             <span>انجام شد</span>
                           </button>
                         </div>
@@ -2955,127 +2994,115 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         )}
 
-        {/* --- TAB 2: HALL OF FAME --- */}
+        {/* --- TAB 2: HALL OF FAME (HERO TROPHY STAGE + CALM CARDS) --- */}
         {activeTab === "hall" && (
           <div dir="rtl" className="space-y-5">
-            {hallOfFameItems.length > 0 && (
-              <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-2xl p-3.5 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-[#F6DC6B] rounded-xl flex items-center justify-center text-[#1B1B1A] shrink-0">
-                    <Sparkles className="w-4 h-4 stroke-[1.8]" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm sm:text-base font-black text-[#1B1B1A]">تالار افتخارات دونفره</h2>
-                    <p className="text-[11px] text-[#78746B] font-medium">رویاهایی که با هم به خاطره تبدیل کردیم</p>
-                  </div>
+            {/* Level-1 Hero Stage for Hall of Fame */}
+            <div className="hero-ink-surface rounded-[28px] p-5 sm:p-6 text-[#FAF6EC] space-y-3.5">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <span className="text-[11px] font-bold text-[#F6C3E5] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>تالار افتخارات دونفره</span>
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
+                    {toPersianDigits(items.filter((i) => i.isCompleted).length)} رویای برآورده‌شده
+                  </h2>
+                  <p className="text-[11px] text-[#FAF6EC]/60 font-medium mt-1">
+                    آرزوهایی که با هم از لیست خط زدیم و به خاطره تبدیل کردیم
+                  </p>
                 </div>
-                <div className="relative w-full sm:w-56">
+              </div>
+
+              {items.some((i) => i.isCompleted) && (
+                <div className="relative pt-1">
                   <input
                     type="text"
-                    placeholder="جستجو در افتخارات..."
+                    placeholder="جستجو در بین افتخارات..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-7 pr-8 py-1.5 bg-[#EFECE2]/80 focus:bg-[#FAF6EC] rounded-full text-xs font-semibold text-[#1B1B1A] placeholder-[#8E8A80] focus:outline-none text-right"
+                    className="w-full pl-8 pr-9 py-2 bg-white/[0.08] focus:bg-white/[0.14] border border-white/10 rounded-full text-xs font-semibold text-[#FAF6EC] placeholder-[#FAF6EC]/45 focus:outline-none text-right"
                   />
-                  <Search className="w-3.5 h-3.5 text-[#8E8A80] absolute top-1/2 right-2.5 -translate-y-1/2 pointer-events-none" />
+                  <Search className="w-3.5 h-3.5 text-[#FAF6EC]/55 absolute top-1/2 right-3 -translate-y-1/2 mt-0.5 pointer-events-none" />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="absolute top-1/2 left-2 -translate-y-1/2 text-[#78746B] hover:text-[#1B1B1A] cursor-pointer"
+                      className="absolute top-1/2 left-2.5 -translate-y-1/2 mt-0.5 text-[#FAF6EC]/65 hover:text-white cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {hallOfFameItems.length === 0 ? (
-              <div className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[28px] p-10 sm:p-14 text-center">
-                <div className="w-14 h-14 bg-[#F6DC6B] rounded-full flex items-center justify-center text-[#1B1B1A] mx-auto mb-3.5">
-                  <Sparkles className="w-6 h-6 stroke-[1.7]" />
+              <div className="glass-card rounded-[28px] p-10 sm:p-14 text-center">
+                <div className="w-12 h-12 bg-[#F2EEE4] rounded-2xl flex items-center justify-center text-[#191817] mx-auto mb-3.5">
+                  <Sparkles className="w-5 h-5 stroke-[1.7]" />
                 </div>
-                <h3 className="text-base sm:text-lg font-black text-[#1B1B1A]">تالار افتخارات فعلاً خالیه</h3>
+                <h3 className="text-base sm:text-lg font-black text-[#191817]">هنوز موردی ثبت نشده</h3>
                 <p className="text-[#78746B] text-xs sm:text-sm mt-1.5 max-w-xs mx-auto leading-relaxed">
-                  هر زمان یکی از آرزوهای لیست مشترک را به ۱۰۰٪ برسانید، به عنوان خاطره ماندگار اینجا ثبت می‌شود.
+                  هر زمان یکی از آرزوهای لیست مشترک را تکمیل کنید، به عنوان خاطره ماندگار اینجا ثبت می‌شود.
                 </p>
               </div>
             ) : (
-              <div className="space-y-10">
+              <div className="space-y-8">
                 {allCategories.map((cat) => {
                   const catItems = groupedHallOfFame[cat.id] || [];
                   if (catItems.length === 0) return null;
                   const Icon = cat.icon;
 
                   return (
-                    <div key={cat.id} className="space-y-4">
-                      <div className="flex items-center justify-between border-b border-[#E8E2D4] pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-9 h-9 rounded-full ${cat.bg} text-[#1B1B1A] flex items-center justify-center`}>
-                            {typeof cat.iconName === "string" && !PRESET_ICONS[cat.iconName] ? (
-                              <span className="text-xs">{cat.iconName}</span>
-                            ) : (
-                              <Icon className="w-4 h-4 stroke-[1.8]" />
-                            )}
-                          </div>
-                          <h3 className="text-base font-black text-[#1B1B1A]">{cat.label} برآورده‌شده</h3>
+                    <div key={cat.id} className="space-y-3.5">
+                      <div className="flex items-center justify-between border-b border-[#E8E2D4] pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4 stroke-[1.8] text-[#78746B]" />
+                          <h3 className="text-sm sm:text-base font-black text-[#191817]">{cat.label}</h3>
                         </div>
-                        <span className="text-xs bg-[#1B1B1A] text-[#FAF6EC] px-3 py-1 rounded-full font-bold">
+                        <span className="text-[11px] text-[#78746B] font-bold">
                           {toPersianDigits(catItems.length)} مورد
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {catItems.map((item) => (
                           <motion.div
                             key={item.id}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[26px] p-5 relative flex flex-col justify-between"
+                            className="glass-card rounded-[24px] p-4 sm:p-5 relative flex flex-col justify-between"
                           >
                             <div>
-                              <div className="flex items-center justify-between gap-2 mb-3">
-                                <span className="px-3 py-1 rounded-full bg-[#F6DC6B] text-[#1B1B1A] font-black text-[10px]">
-                                  ✓ خاطره ماندگار
+                              <div className="flex items-center justify-between gap-2 mb-2.5">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#F2EEE4] text-[#5C5850] font-bold text-[10px]">
+                                  ✓ برآورده‌شده
                                 </span>
                                 <button
                                   onClick={() => handleDeleteItem(item.id)}
-                                  className="w-8 h-8 rounded-full text-[#A6A297] hover:text-[#D94E4E] hover:bg-[#F9C6B8]/40 flex items-center justify-center transition-colors cursor-pointer"
+                                  className="w-7 h-7 rounded-full text-[#A6A297] hover:text-[#D94E4E] hover:bg-[#FFF2F2] flex items-center justify-center transition-colors cursor-pointer"
                                   title="حذف از تالار افتخارات"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 stroke-[1.7]" />
                                 </button>
                               </div>
 
-                              <h4 className="text-sm sm:text-base font-black text-[#1B1B1A] leading-snug">{item.title}</h4>
+                              <h4 className="text-base font-black text-[#191817] leading-snug">{item.title}</h4>
                               {item.description && (
-                                <p className="text-xs text-[#78746B] mt-1.5 line-clamp-3 leading-relaxed">
+                                <p className="text-xs text-[#78746B] mt-1 line-clamp-3 leading-relaxed">
                                   {item.description}
                                 </p>
                               )}
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-[#EFECE2]">
-                              {item.link && (
-                                <a
-                                  href={item.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[11px] font-bold text-[#1B1B1A] hover:underline flex items-center gap-1 mb-2"
-                                >
-                                  <ExternalLink className="w-3 h-3 stroke-[1.8]" />
-                                  <span>مشاهده لینک خاطره</span>
-                                </a>
-                              )}
-                              <div className="flex items-center justify-between text-[10px] text-[#1B1B1A] font-bold bg-[#EFECE2] px-3 py-2 rounded-full">
-                                <span>ثبت با {item.createdByName}</span>
-                                <span>
-                                  {item.completedAt?.seconds
-                                    ? new Date(item.completedAt.seconds * 1000).toLocaleDateString("fa-IR")
-                                    : "تکمیل‌شده"}
-                                </span>
-                              </div>
+                            <div className="mt-4 pt-3 border-t border-[#EFECE2] flex items-center justify-between text-[11px] text-[#8A8479] font-semibold">
+                              <span>ثبت با {item.createdByName}</span>
+                              <span>
+                                {item.completedAt?.seconds
+                                  ? new Date(item.completedAt.seconds * 1000).toLocaleDateString("fa-IR")
+                                  : "تکمیل‌شده"}
+                              </span>
                             </div>
                           </motion.div>
                         ))}
@@ -3091,24 +3118,24 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* --- TAB 3: CALENDAR --- */}
         {activeTab === "calendar" && (
           <div className="max-w-lg mx-auto" dir="rtl">
-            <div className="bg-[#FFFDF8] rounded-[28px] p-4 sm:p-7 border border-[#E8E2D4] mb-5 space-y-4 sm:space-y-6">
+            <div className="glass-card rounded-[28px] p-4 sm:p-7 border border-[#E8E2D4] mb-5 space-y-4 sm:space-y-6">
               {/* Top Toggle for Cycle Overlay */}
               <div className="flex items-center justify-between pb-3 border-b border-[#EFECE2]">
-                <h3 className="text-xs sm:text-base font-black text-[#1B1B1A] flex items-center gap-2">
-                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#B8CEF4] flex items-center justify-center text-[#1B1B1A]">
+                <h3 className="text-xs sm:text-base font-black text-[#191817] flex items-center gap-2">
+                  <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#F2EFE9] flex items-center justify-center text-[#191817]">
                     <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
                   </span>
                   <span>تقویم مشترک زوجین</span>
                 </h3>
                 <button
                   onClick={() => setShowCycleOnCalendar((prev) => !prev)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 ${
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1.5 border ${
                     showCycleOnCalendar
-                      ? "bg-[#F6C3E5] text-[#1B1B1A]"
-                      : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A]"
+                      ? "bg-[#FFFDF9] border-[#191817]/20 text-[#191817] shadow-2xs"
+                      : "bg-[#F2EFE9] border-transparent text-[#78746B] hover:text-[#191817]"
                   }`}
                 >
-                  <Droplet className="w-3 h-3 stroke-[1.8]" />
+                  <span className={`w-2 h-2 rounded-full ${showCycleOnCalendar ? "bg-[#E187B8]" : "bg-[#B5B0A4]"}`} />
                   <span>چرخه سلامت: {showCycleOnCalendar ? "نمایان" : "مخفی"}</span>
                 </button>
               </div>
@@ -3184,31 +3211,35 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
                   const phaseInfo = showCycleOnCalendar ? getMenstrualPhaseForDate(targetDate) : null;
 
-                  let tileColorClass = "bg-[#EFECE2]/75 text-[#1B1B1A] hover:bg-[#EFECE2]";
+                  let tileColorClass = "bg-[#F4F0E6] text-[#191817] hover:bg-[#EAE4D7]";
                   let phaseLabel = "";
 
-                  if (phaseInfo) {
+                  if (phaseInfo && !isToday) {
                     if (phaseInfo.phase === "period" || phaseInfo.phase === "due" || phaseInfo.phase === "delayed") {
-                      tileColorClass = "bg-[#F6C3E5] text-[#1B1B1A]";
+                      tileColorClass = "bg-[#F6C3E5]/45 text-[#191817]";
                       phaseLabel = "دوره پریود";
                     } else if (phaseInfo.phase === "pms") {
-                      tileColorClass = "bg-[#B8CEF4] text-[#1B1B1A]";
+                      tileColorClass = "bg-[#B8CEF4]/40 text-[#191817]";
                       phaseLabel = "دوره PMS";
                     } else if (phaseInfo.phase === "ovulation") {
-                      tileColorClass = "bg-[#A7B86C] text-[#1B1B1A]";
+                      tileColorClass = "bg-[#A7B86C]/45 text-[#191817]";
                       phaseLabel = "روز تخمک‌گذاری";
                     } else if (phaseInfo.phase === "fertile") {
-                      tileColorClass = "bg-[#DCE6B5] text-[#1B1B1A]";
+                      tileColorClass = "bg-[#DCE6B5]/45 text-[#191817]";
                       phaseLabel = "دوره باروری";
                     }
+                  }
+
+                  if (isToday) {
+                    tileColorClass = "bg-[#191817] text-[#FAF6EC] shadow-sm";
                   }
 
                   return (
                     <div
                       key={`day-${day}`}
-                      className={`aspect-square rounded-[16px] sm:rounded-[18px] flex flex-col items-center justify-center transition-colors relative select-none cursor-pointer ${tileColorClass} ${
-                        isToday ? "border-[1.8px] border-dashed border-[#1B1B1A]" : ""
-                      } ${hasItems && !isToday ? "ring-2 ring-[#1B1B1A]" : ""}`}
+                      className={`aspect-square rounded-[15px] sm:rounded-[18px] flex flex-col items-center justify-center transition-colors relative select-none cursor-pointer ${tileColorClass} ${
+                        hasItems && !isToday ? "ring-1.5 ring-[#191817]" : ""
+                      }`}
                       title={`${phaseLabel ? `[${phaseLabel}] ` : ""}${hasItems ? `(${dayItems.length} برنامه: ${dayItems.map((i) => i.title).join("، ")})` : ""}`}
                     >
                       <span className="text-sm sm:text-base font-bold leading-none">
@@ -3216,19 +3247,17 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       </span>
 
                       {isToday && (
-                        <span className="text-[10px] sm:text-xs font-bold leading-none mt-1">
+                        <span className="text-[9px] sm:text-[10px] font-bold leading-none mt-1 text-[#F6C3E5]">
                           امروز
                         </span>
                       )}
 
                       {hasItems && !isToday && (
-                        <span className="text-[8px] font-bold leading-none mt-1 px-1.5 py-0.5 rounded-full bg-[#1B1B1A] text-[#FAF6EC] max-w-[90%] truncate">
-                          {dayItems.length === 1 ? dayItems[0].title : `${toPersianDigits(dayItems.length)} برنامه`}
-                        </span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#191817] mt-1" />
                       )}
 
                       {hasItems && isToday && (
-                        <span className="w-2 h-2 rounded-full bg-[#1B1B1A] absolute top-1.5 left-1.5" title="دارای برنامه مشترک" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#F6C3E5] absolute top-1.5 left-1.5" title="دارای برنامه مشترک" />
                       )}
                     </div>
                   );
@@ -3261,17 +3290,17 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             {/* List of items scheduled for current month */}
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <h4 className="text-base font-black text-[#1B1B1A]">برنامه‌ها و سفرهای این ماه</h4>
+                <h4 className="text-base font-black text-[#191817]">برنامه‌ها و سفرهای این ماه</h4>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="px-3.5 py-1.5 rounded-full bg-[#1B1B1A] text-[#FAF6EC] text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-full bg-[#FFFDF9] border border-[#191817] hover:bg-[#191817] text-[#191817] hover:text-[#FAF6EC] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2]" />
                   <span>برنامه جدید</span>
                 </button>
               </div>
               {itemsInCurrentJalaliMonth.length === 0 ? (
-                <div className="text-center py-9 px-4 text-[#78746B] bg-[#FFFDF8] rounded-[26px] border border-[#E8E2D4] text-xs font-semibold">
+                <div className="text-center py-9 px-4 text-[#78746B] glass-card rounded-[26px] border border-[#E8E2D4] text-xs font-semibold">
                   هیچ برنامه یا سفری برای این ماه تنظیم نشده است. از دکمه «برنامه جدید» آرزویی با تاریخ ثبت کنید.
                 </div>
               ) : (
@@ -3282,18 +3311,18 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     return (
                       <div
                         key={item.id}
-                        className="bg-[#FFFDF8] border border-[#E8E2D4] rounded-[24px] p-4 flex items-center justify-between gap-4"
+                        className="glass-card border border-[#E8E2D4] rounded-[24px] p-4 flex items-center justify-between gap-4"
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-11 h-11 rounded-full ${catConfig.bg} text-[#1B1B1A] flex items-center justify-center shrink-0`}>
+                          <div className="w-10 h-10 rounded-xl bg-[#F2EFE9] text-[#191817] flex items-center justify-center shrink-0">
                             {typeof catConfig.iconName === "string" && !PRESET_ICONS[catConfig.iconName] ? (
                               <span className="text-sm">{catConfig.iconName}</span>
                             ) : (
-                              <CatIcon className="w-5 h-5 stroke-[1.7]" />
+                              <CatIcon className="w-4.5 h-4.5 stroke-[1.7]" />
                             )}
                           </div>
                           <div>
-                            <h5 className="text-sm font-black text-[#1B1B1A]">{item.title}</h5>
+                            <h5 className="text-sm font-black text-[#191817]">{item.title}</h5>
                             <span className="text-xs text-[#78746B] font-bold flex items-center gap-1 mt-0.5">
                               <CalendarIcon className="w-3.5 h-3.5 stroke-[1.7]" />
                               <span>{toPersianDigits(formatPersianDate(item.date))}</span>
@@ -3306,7 +3335,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                             setActiveTab("wishlist");
                             setCategoryFilter(item.category);
                           }}
-                          className="px-4 py-2 bg-[#EFECE2] hover:bg-[#1B1B1A] text-[#1B1B1A] hover:text-[#FAF6EC] rounded-full text-xs font-bold transition-colors cursor-pointer shrink-0"
+                          className="px-3.5 py-1.5 bg-[#F2EFE9] hover:bg-[#191817] text-[#191817] hover:text-[#FAF6EC] rounded-full text-xs font-bold transition-colors cursor-pointer shrink-0"
                         >
                           مشاهده
                         </button>
@@ -3371,14 +3400,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               )}
             </AnimatePresence>
 
-            {/* Sleek Compact Editorial Memories Strip (Replaces giant 175px mobile banner) */}
-            <div className="bg-[#F6C3E5]/70 border border-[#E5ADD2]/70 px-4 py-3 rounded-2xl flex items-center justify-between gap-3">
+            {/* Level-1 Hero Focal Stage for Shared Memories (Replaces loud pink strip) */}
+            <div className="hero-ink-surface px-5 py-4 sm:py-5 rounded-[26px] flex items-center justify-between gap-3 text-[#FAF6EC]">
               <div className="min-w-0">
-                <h2 className="text-sm sm:text-base font-black text-[#1B1B1A] truncate">
-                  دفترچه خاطرات مشترک
+                <span className="text-[10px] font-bold text-[#F6C3E5] block">آلبوم دونفره ما</span>
+                <h2 className="text-lg sm:text-xl font-black tracking-tight truncate mt-0.5">
+                  {toPersianDigits(memories.length)} خاطره ماندگار
                 </h2>
-                <p className="text-[11px] text-[#4A3A45] font-medium truncate mt-0.5">
-                  عکس‌ها، لحظات ماندگار و کپسول‌های زمان دونفره
+                <p className="text-[11px] text-[#FAF6EC]/60 font-medium truncate mt-0.5">
+                  لحظه‌ها، عکس‌ها و کپسول‌های زمان مشترک
                 </p>
               </div>
               <button
@@ -3389,9 +3419,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   setMemoryFormImageUrl("");
                   setShowAddMemoryModal(true);
                 }}
-                className="px-3.5 py-2 rounded-full text-xs font-bold text-[#FAF6EC] bg-[#1B1B1A] hover:bg-[#323230] transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+                className="px-4 py-2 rounded-full text-xs font-black text-[#191817] bg-[#FAF6EC] hover:bg-white transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs"
               >
-                <Plus className="w-3.5 h-3.5 stroke-[2]" />
+                <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
                 <span>ثبت خاطره</span>
               </button>
             </div>
@@ -3453,19 +3483,19 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                           }
                           setSelectedMemory(memory);
                         }}
-                        className={`group bg-[#FFFDF8] border rounded-[26px] overflow-hidden transition-all flex flex-col text-right relative cursor-pointer ${
-                          isLocked ? "border-[#E5ADD2] bg-gradient-to-br from-[#FFFDF8] to-[#FFF0F7]" : "border-[#E8E2D4] hover:border-[#1B1B1A]/35"
+                        className={`group glass-card border rounded-[26px] overflow-hidden transition-all flex flex-col text-right relative cursor-pointer ${
+                          isLocked ? "border-[#DDD6C6]" : "border-[#E8E2D4] hover:border-[#191817]/30"
                         }`}
                       >
                         {/* Optional Memory Image Cover or Locked Capsule Banner */}
                         {isLocked ? (
-                          <div className="relative h-36 bg-[#FAF6EC] border-b border-[#E8E2D4] flex flex-col items-center justify-center text-center p-4 overflow-hidden">
-                            <div className="w-10 h-10 rounded-full bg-[#F6C3E5] text-[#1B1B1A] flex items-center justify-center mb-1.5 shadow-xs animate-pulse">
-                              <Lock className="w-5 h-5" />
+                          <div className="relative h-32 bg-[#F5F1E8] border-b border-[#E8E2D4] flex flex-col items-center justify-center text-center p-4 overflow-hidden">
+                            <div className="w-9 h-9 rounded-xl bg-[#E8E2D5] text-[#191817] flex items-center justify-center mb-1.5">
+                              <Lock className="w-4 h-4 stroke-[1.9]" />
                             </div>
-                            <span className="text-xs font-black text-[#1B1B1A]">کپسول زمان قفل‌شده 🔒</span>
-                            <span className="text-[10px] text-[#78746B] mt-0.5">
-                              بازگشایی در: {memory.unlockDate ? formatIsoToJalaliLabel(memory.unlockDate) : "موعد مقرر"}
+                            <span className="text-xs font-black text-[#191817]">کپسول زمان مهروموم‌شده</span>
+                            <span className="text-[10px] text-[#78746B] mt-0.5 font-medium">
+                              بازگشایی در {memory.unlockDate ? formatIsoToJalaliLabel(memory.unlockDate) : "موعد مقرر"}
                             </span>
                           </div>
                         ) : memory.imageUrl ? (
@@ -3481,32 +3511,31 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
                         <div className="p-5 flex-1 flex flex-col justify-between gap-3">
                           <div>
-                            {/* Date and Author Tag */}
-                            <div className="flex items-center justify-between gap-2 mb-2.5">
-                              <span className="text-[10px] font-bold text-[#78746B] bg-[#EFECE2] px-2.5 py-1 rounded-full">
-                                {(() => {
-                                  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(memory.date || "");
-                                  if (m && parseInt(m[1], 10) >= 1900) {
-                                    const [jy, jm, jd] = gregorianToJalali(parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10));
-                                    return toPersianDigits(`${jd} ${JALALI_MONTHS[jm - 1]} ${jy}`);
-                                  }
-                                  return toPersianDigits(memory.date);
-                                })()}
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                {isCapsule && !isLocked && (
-                                  <span className="text-[10px] font-bold text-[#15803D] bg-[#DCFCE7] px-2 py-0.5 rounded-full border border-[#BBF7D0]">
-                                    گشوده‌شده 🔓
-                                  </span>
-                                )}
-                                <span className="text-[10px] font-bold text-[#1B1B1A] bg-[#F6C3E5] px-2.5 py-1 rounded-full">
-                                  {memory.createdByName}
+                            {/* Quiet Monochrome Date & Author Metadata */}
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#8A8479]">
+                                <span>
+                                  {(() => {
+                                    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(memory.date || "");
+                                    if (m && parseInt(m[1], 10) >= 1900) {
+                                      const [jy, jm, jd] = gregorianToJalali(parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10));
+                                      return toPersianDigits(`${jd} ${JALALI_MONTHS[jm - 1]} ${jy}`);
+                                    }
+                                    return toPersianDigits(memory.date);
+                                  })()}
                                 </span>
+                                <span className="text-[#D0C9B8]">·</span>
+                                <span className="text-[#5C5850]">{memory.createdByName}</span>
                               </div>
+                              {isCapsule && !isLocked && (
+                                <span className="text-[10px] font-bold text-[#5D7C2B] bg-[#EEF4E3] px-2 py-0.5 rounded-full">
+                                  گشوده‌شده
+                                </span>
+                              )}
                             </div>
 
-                            {/* Memory Title */}
-                            <h3 className="text-sm sm:text-base font-black text-[#1B1B1A] leading-snug mb-1.5">
+                            {/* Bold Editorial Memory Title */}
+                            <h3 className="text-[17px] sm:text-lg font-black text-[#191817] leading-snug mb-1.5 tracking-tight">
                               {memory.title}
                             </h3>
 
@@ -3516,19 +3545,19 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                                 این متن تا روز بازگشایی کپسول زمان مخفی و محفوظ است و سپس نمایان خواهد شد.
                               </p>
                             ) : (
-                              <p className="text-[#78746B] text-xs leading-relaxed whitespace-pre-wrap break-words font-medium line-clamp-3">
+                              <p className="text-[#6E6A61] text-xs leading-relaxed whitespace-pre-wrap break-words font-medium line-clamp-3">
                                 {memory.content}
                               </p>
                             )}
 
                             {!isLocked && memory.content && memory.content.length > 100 && (
-                              <span className="text-[11px] font-black text-[#1B1B1A] mt-2 inline-block underline decoration-[#F6C3E5] decoration-2 underline-offset-4">
+                              <span className="text-[11px] font-black text-[#191817] mt-2 inline-block underline decoration-[#D8D1C0] decoration-2 underline-offset-4">
                                 مطالعه کامل خاطره
                               </span>
                             )}
                           </div>
 
-                        {/* Reactions and Comments Bar on Card */}
+                        {/* Calm Reactions & Comments Footer (Emoji Picker Progressive on Tap!) */}
                         {(() => {
                           const groupedReactions: { [emoji: string]: { count: number; userReacted: boolean } } = {};
                           (memory.reactions || []).forEach((r) => {
@@ -3540,11 +3569,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                               groupedReactions[r.emoji].userReacted = true;
                             }
                           });
+                          const isPickerOpen = openReactionMemoryId === memory.id;
 
                           return (
-                            <div className="pt-3 border-t border-[#EFECE2] space-y-2.5">
-                              {/* Active Reaction Chips */}
-                              {Object.keys(groupedReactions).length > 0 && (
+                            <div className="pt-3 border-t border-[#EFECE2] space-y-2">
+                              <div className="flex items-center justify-between gap-2 text-xs">
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   {Object.entries(groupedReactions).map(([emoji, data]) => (
                                     <button
@@ -3554,40 +3583,32 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                                         e.stopPropagation();
                                         handleToggleMemoryReaction(memory.id, emoji);
                                       }}
-                                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
+                                      className={`px-2 py-0.5 rounded-full text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 border ${
                                         data.userReacted
-                                          ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                                          : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
+                                          ? "bg-[#FFFDF9] text-[#191817] border-[#191817]"
+                                          : "bg-[#F4F0E6] text-[#5C5850] border-transparent hover:bg-[#EAE4D7]"
                                       }`}
                                     >
                                       <span>{emoji}</span>
                                       <span className="text-[10px]">{toPersianDigits(data.count)}</span>
                                     </button>
                                   ))}
-                                </div>
-                              )}
 
-                              {/* Quick Emoji Picker & Comments Count & Delete */}
-                              <div className="flex items-center justify-between gap-1 text-xs">
-                                <div className="flex items-center gap-1">
-                                  {["❤️", "😍", "🥹", "😂", "🔥", "🌸"].slice(0, 4).map((emoji) => (
-                                    <button
-                                      key={emoji}
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleToggleMemoryReaction(memory.id, emoji);
-                                      }}
-                                      className="w-7 h-7 rounded-full hover:bg-[#EFECE2] transition-colors text-sm cursor-pointer flex items-center justify-center"
-                                      title={`واکنش با ${emoji}`}
-                                    >
-                                      {emoji}
-                                    </button>
-                                  ))}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenReactionMemoryId((prev) => (prev === memory.id ? null : memory.id));
+                                    }}
+                                    className="px-2.5 py-1 rounded-full text-[11px] font-bold text-[#78746B] hover:text-[#191817] bg-[#F4F0E6] hover:bg-[#EAE4D7] flex items-center gap-1 cursor-pointer transition-colors"
+                                  >
+                                    <Smile className="w-3.5 h-3.5 stroke-[1.8]" />
+                                    <span>واکنش</span>
+                                  </button>
                                 </div>
 
-                                <div className="flex items-center gap-1.5">
-                                  <span className="flex items-center gap-1 text-[11px] font-bold text-[#1B1B1A] bg-[#EFECE2] px-2.5 py-1 rounded-full">
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <span className="flex items-center gap-1 text-[11px] font-bold text-[#78746B] hover:text-[#191817] px-2 py-1 rounded-full">
                                     <MessageCircleHeart className="w-3.5 h-3.5 stroke-[1.7]" />
                                     <span>
                                       {(memory.comments || []).length > 0
@@ -3601,13 +3622,35 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                                       e.stopPropagation();
                                       handleDeleteMemory(memory.id);
                                     }}
-                                    className="w-7 h-7 rounded-full bg-[#EFECE2] hover:bg-[#F9C6B8] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
+                                    className="w-7 h-7 rounded-full text-[#A6A297] hover:text-[#D94E4E] hover:bg-[#FFF2F2] flex items-center justify-center transition-colors cursor-pointer"
                                     title="حذف خاطره"
                                   >
                                     <Trash2 className="w-3.5 h-3.5 stroke-[1.7]" />
                                   </button>
                                 </div>
                               </div>
+
+                              {isPickerOpen && (
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex items-center gap-1.5 bg-[#FAF6EC] border border-[#EAE4D7] rounded-full px-2.5 py-1 w-fit"
+                                >
+                                  {["❤️", "😍", "🥹", "😂", "🔥", "🌸"].map((emoji) => (
+                                    <button
+                                      key={emoji}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleMemoryReaction(memory.id, emoji);
+                                        setOpenReactionMemoryId(null);
+                                      }}
+                                      className="w-7 h-7 rounded-full hover:bg-white transition-colors text-sm cursor-pointer flex items-center justify-center"
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           );
                         })()}
