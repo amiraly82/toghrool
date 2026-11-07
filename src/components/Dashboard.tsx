@@ -2051,29 +2051,60 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       <header className="sticky top-0 z-30 pt-2 pb-1.5 backdrop-blur-sm bg-black/[0.01]" dir="rtl">
         <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
-            {/* Couple avatars: mine opens profile, partner's opens Partner Hub */}
+            {/* Couple avatars with directly connected battery indicators */}
             <div className="flex items-center shrink-0">
+              {/* My Avatar & Attached Battery */}
               <button
                 type="button"
-                onClick={() => setShowProfileModal(true)}
+                onClick={() => setShowEmotionalStatusSheet(true)}
                 className="relative z-10 rounded-full cursor-pointer transition-transform active:scale-95"
-                aria-label="پروفایل من"
+                title="حال دل و باتری من — کلیک برای مشاهده و ویرایش"
+                aria-label="پروفایل و باتری من"
               >
                 {renderAvatar(userProfile, "❤️", "w-11 h-11")}
+                {/* Battery Pill attached directly to the profile photo */}
+                <span
+                  className={`absolute -bottom-1 -left-1 px-1.5 py-0.2 rounded-full border-2 border-[#141414] shadow-[0_1px_0_#141414] text-[9px] font-black flex items-center gap-0.5 whitespace-nowrap ${
+                    myBatteryLevel > 60
+                      ? "bg-[#B5F285] text-[#141414]"
+                      : myBatteryLevel > 25
+                      ? "bg-[#F5F97A] text-[#141414]"
+                      : "bg-[#FF8B6A] text-white"
+                  }`}
+                >
+                  <Zap className="w-2.5 h-2.5 fill-current shrink-0" />
+                  <span>{toPersianDigits(myBatteryLevel)}٪</span>
+                </span>
               </button>
+
+              {/* Partner Avatar & Attached Battery */}
               {userProfile.partnerUid ? (
                 <button
                   type="button"
                   onClick={() => setShowPartnerHub(true)}
                   className="relative z-0 -mr-2.5 rounded-full cursor-pointer transition-transform active:scale-95"
-                  aria-label="فضای پارتنر"
+                  title="حال دل و باتری پارتنر — کلیک برای جزئیات"
+                  aria-label="فضای پارتنر و باتری"
                 >
                   {renderAvatar(partnerProfile, "💖", "w-11 h-11")}
                   <span
-                    className={`absolute -bottom-0.5 -left-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#141414] ${
+                    className={`absolute -top-0.5 -left-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#141414] ${
                       isPartnerOnline ? "bg-[#B5F285]" : "bg-white"
                     }`}
                   />
+                  {/* Battery Pill attached directly to the partner profile photo */}
+                  <span
+                    className={`absolute -bottom-1 -left-1 px-1.5 py-0.2 rounded-full border-2 border-[#141414] shadow-[0_1px_0_#141414] text-[9px] font-black flex items-center gap-0.5 whitespace-nowrap ${
+                      (partnerProfile?.batteryLevel ?? 80) > 60
+                        ? "bg-[#B5F285] text-[#141414]"
+                        : (partnerProfile?.batteryLevel ?? 80) > 25
+                        ? "bg-[#F5F97A] text-[#141414]"
+                        : "bg-[#FF8B6A] text-white"
+                    }`}
+                  >
+                    <Zap className="w-2.5 h-2.5 fill-current shrink-0" />
+                    <span>{toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪</span>
+                  </span>
                 </button>
               ) : (
                 <button
@@ -2087,26 +2118,58 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => (userProfile.partnerUid ? setShowPartnerHub(true) : onOpenPairingModal?.())}
-              className="min-w-0 text-right cursor-pointer"
-            >
-              <h1 className="text-lg sm:text-2xl font-black text-[#141414] leading-tight truncate tracking-tight">
-                {userProfile.partnerUid
-                  ? `${userProfile.displayName} و ${partnerProfile?.displayName || "پارتنر"}`
-                  : userProfile.displayName}
-              </h1>
-              <p className="text-xs text-[#141414]/80 font-extrabold mt-0.5 truncate flex items-center gap-1">
-                {!userProfile.partnerUid ? (
-                  <span className="underline decoration-2">+ اتصال به پارتنر</span>
-                ) : userProfile.coupleInfo?.relationshipStartDate ? (
-                  <span>{toPersianDigits(calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate))} روز با هم ✦</span>
-                ) : (
-                  <span>{isPartnerOnline ? "پارتنر آنلاین است ✦" : "فضای مشترک دونفره"}</span>
-                )}
-              </p>
-            </button>
+            <div className="min-w-0 text-right">
+              <button
+                type="button"
+                onClick={() => (userProfile.partnerUid ? setShowPartnerHub(true) : onOpenPairingModal?.())}
+                className="text-right cursor-pointer block"
+              >
+                <h1 className="text-base sm:text-xl font-black text-[#141414] leading-tight truncate tracking-tight">
+                  {userProfile.partnerUid
+                    ? `${userProfile.displayName} و ${partnerProfile?.displayName || "پارتنر"}`
+                    : userProfile.displayName}
+                </h1>
+              </button>
+
+              {/* Compact Mood & Battery Pills next to names in header */}
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowEmotionalStatusSheet(true)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 hover:bg-white border border-[#141414] shadow-[0_1px_0_#141414] text-[10px] font-black text-[#141414] cursor-pointer active:translate-y-0.5 transition-all"
+                  title="حال دل من — کلیک برای تغییر"
+                >
+                  <span>{getNeedStatusOption(myNeedStatus).emoji}</span>
+                  <span className="truncate max-w-[80px]">
+                    {getNeedStatusOption(myNeedStatus).shortLabel || getNeedStatusOption(myNeedStatus).label}
+                  </span>
+                </button>
+
+                {userProfile.partnerUid ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowPartnerHub(true)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FBC2F3] hover:brightness-95 border border-[#141414] shadow-[0_1px_0_#141414] text-[10px] font-black text-[#141414] cursor-pointer active:translate-y-0.5 transition-all"
+                    title="حال دل پارتنر — کلیک برای جزئیات"
+                  >
+                    <span>{getNeedStatusOption(partnerProfile?.needStatus || "calm").emoji}</span>
+                    <span className="truncate max-w-[80px]">
+                      {getNeedStatusOption(partnerProfile?.needStatus || "calm").shortLabel || "آرام"}
+                    </span>
+                  </button>
+                ) : null}
+
+                {daysTogether ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAnniversaryModal(true)}
+                    className="text-[10px] text-[#141414]/75 font-bold hover:underline cursor-pointer hidden sm:inline-block"
+                  >
+                    • {toPersianDigits(daysTogether)} روز با هم ✦
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
 
           {/* Left Controls: Solo Pair Pill (if unpaired) + Circular Neobrutalist Menu Button */}
@@ -2276,143 +2339,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       </AnimatePresence>
 
       <main className="max-w-5xl mx-auto px-4 mt-2 sm:mt-4">
-        {/* --- LEVEL 1 NEOBRUTALIST COUPLE HERO CARD (HOME TAB): LAVENDER STAGE + MOOD PILLS + DAILY QUESTION --- */}
+        {/* --- DAILY QUESTION HERO CARD (HOME TAB) --- */}
         {activeTab === "wishlist" && (
-          <div className="bg-[#A594F9] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[30px] p-4 sm:p-5 mb-4 text-[#141414]" dir="rtl">
-            {/* Two Neobrutalist Profile & Connected Battery Cards */}
-            <div className="grid grid-cols-2 gap-2.5">
-              {/* My Profile & Connected Battery Card */}
-              <button
-                type="button"
-                onClick={() => setShowEmotionalStatusSheet(true)}
-                className="bg-white hover:bg-[#FFFDF8] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[22px] p-2.5 sm:p-3 flex items-center gap-2.5 text-right transition-transform active:translate-y-0.5 cursor-pointer min-w-0 group"
-                title="مشاهده و ویرایش حال دل و میزان باتری"
-              >
-                {/* Profile Photo with Physically Connected Battery Pill */}
-                <div className="relative shrink-0 select-none">
-                  {renderAvatar(userProfile, "من", "w-11 h-11 sm:w-12 sm:h-12")}
-                  {/* Mood Emoji docked on top-right */}
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#141414] shadow-[0_1px_0_#141414] flex items-center justify-center text-[11px] leading-none">
-                    {getNeedStatusOption(myNeedStatus).emoji}
-                  </span>
-                  {/* Battery Pill physically attached to the bottom of avatar */}
-                  <div
-                    className={`absolute -bottom-1 -left-1 px-1.5 py-0.5 rounded-full border-2 border-[#141414] shadow-[0_1px_0_#141414] flex items-center gap-0.5 text-[9px] font-black whitespace-nowrap ${
-                      myBatteryLevel > 60
-                        ? "bg-[#B5F285] text-[#141414]"
-                        : myBatteryLevel > 25
-                        ? "bg-[#F5F97A] text-[#141414]"
-                        : "bg-[#FF8B6A] text-white"
-                    }`}
-                  >
-                    <Zap className="w-2.5 h-2.5 fill-current shrink-0" />
-                    <span>{toPersianDigits(myBatteryLevel)}٪</span>
-                  </div>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-[11px] font-black text-[#141414] truncate">
-                      {userProfile.displayName ? `حال دل ${userProfile.displayName}` : "حال دل من"}
-                    </span>
-                    <ChevronLeft className="w-3.5 h-3.5 text-[#141414]/70 stroke-[2.2] shrink-0 group-hover:-translate-x-0.5 transition-transform" />
-                  </div>
-                  <p className="text-xs font-black text-[#141414] truncate mt-0.5">
-                    {getNeedStatusOption(myNeedStatus).shortLabel || getNeedStatusOption(myNeedStatus).label}
-                  </p>
-                  {/* Micro battery gauge bar */}
-                  <div className="w-full bg-[#141414]/10 h-1.5 rounded-full border border-[#141414]/25 overflow-hidden mt-1.5">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${Math.max(8, myBatteryLevel)}%`,
-                        backgroundColor: myBatteryLevel > 60 ? '#B5F285' : myBatteryLevel > 25 ? '#F5F97A' : '#FF8B6A'
-                      }}
-                    />
-                  </div>
-                </div>
-              </button>
-
-              {/* Partner Profile & Connected Battery Card */}
-              {userProfile.partnerUid ? (
-                <button
-                  type="button"
-                  onClick={() => setShowPartnerHub(true)}
-                  className="bg-[#FBC2F3] hover:bg-[#F9A8EE] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[22px] p-2.5 sm:p-3 flex items-center gap-2.5 text-right transition-transform active:translate-y-0.5 cursor-pointer min-w-0 group"
-                  title="مشاهده جزئیات حال پارتنر و فضای دونفره"
-                >
-                  {/* Partner Photo with Physically Connected Battery Pill */}
-                  <div className="relative shrink-0 select-none">
-                    {renderAvatar(partnerProfile, "💖", "w-11 h-11 sm:w-12 sm:h-12")}
-                    {/* Mood Emoji docked on top-right */}
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#141414] shadow-[0_1px_0_#141414] flex items-center justify-center text-[11px] leading-none">
-                      {getNeedStatusOption(partnerProfile?.needStatus || "calm").emoji}
-                    </span>
-                    {/* Battery Pill physically attached to the bottom of partner avatar */}
-                    <div
-                      className={`absolute -bottom-1 -left-1 px-1.5 py-0.5 rounded-full border-2 border-[#141414] shadow-[0_1px_0_#141414] flex items-center gap-0.5 text-[9px] font-black whitespace-nowrap ${
-                        (partnerProfile?.batteryLevel ?? 80) > 60
-                          ? "bg-[#B5F285] text-[#141414]"
-                          : (partnerProfile?.batteryLevel ?? 80) > 25
-                          ? "bg-[#F5F97A] text-[#141414]"
-                          : "bg-[#FF8B6A] text-white"
-                      }`}
-                    >
-                      <Zap className="w-2.5 h-2.5 fill-current shrink-0" />
-                      <span>{toPersianDigits(partnerProfile?.batteryLevel ?? 80)}٪</span>
-                    </div>
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] font-black text-[#141414] truncate">
-                        {partnerProfile?.displayName || "پارتنر"}
-                      </span>
-                      <ChevronLeft className="w-3.5 h-3.5 text-[#141414]/70 stroke-[2.2] shrink-0 group-hover:-translate-x-0.5 transition-transform" />
-                    </div>
-                    <p className="text-xs font-black text-[#141414] truncate mt-0.5">
-                      {getNeedStatusOption(partnerProfile?.needStatus || "calm").shortLabel ||
-                        getNeedStatusOption(partnerProfile?.needStatus || "calm").label}
-                    </p>
-                    {/* Micro battery gauge bar */}
-                    <div className="w-full bg-[#141414]/10 h-1.5 rounded-full border border-[#141414]/25 overflow-hidden mt-1.5">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.max(8, partnerProfile?.batteryLevel ?? 80)}%`,
-                          backgroundColor:
-                            (partnerProfile?.batteryLevel ?? 80) > 60
-                              ? '#B5F285'
-                              : (partnerProfile?.batteryLevel ?? 80) > 25
-                              ? '#F5F97A'
-                              : '#FF8B6A'
-                        }}
-                      />
-                    </div>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onOpenPairingModal}
-                  className="bg-[#B5F285] hover:bg-[#A3ED6B] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[22px] p-2.5 px-3 flex items-center justify-center gap-2 text-center transition-transform active:translate-y-0.5 cursor-pointer min-w-0"
-                >
-                  <Plus className="w-4 h-4 text-[#141414] stroke-[2.5] shrink-0" />
-                  <div className="text-right min-w-0">
-                    <span className="block text-xs font-black text-[#141414] truncate">دعوت از پارتنر</span>
-                    <span className="block text-[10px] font-bold text-[#141414]/75 truncate">اتصال دو نفره و باتری مشترک</span>
-                  </div>
-                </button>
-              )}
-            </div>
-
-            {/* Integrated Daily Intimacy Question Spark inside Hero Stage */}
+          <div className="mb-4" dir="rtl">
             <DailyQuestionCard
               userProfile={userProfile}
               partnerProfile={partnerProfile}
               onOpenModal={() => setShowDailyQuestionModal(true)}
               refreshKey={dailyQuestionRefreshTrigger}
-              embeddedInHero
+              embeddedInHero={false}
             />
           </div>
         )}
