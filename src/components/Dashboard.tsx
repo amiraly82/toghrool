@@ -2535,30 +2535,30 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* Search Bar Component */}
         {(activeTab === "wishlist" || activeTab === "hall" || activeTab === "memories") && (
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-md mx-auto mb-7 relative text-right"
+            className="max-w-md mx-auto mb-4 relative text-right"
             dir="rtl"
           >
             <div className="relative">
               <input
                 type="text"
-                placeholder={activeTab === "memories" ? "جستجو در بین خاطرات (عنوان یا متن)..." : "جستجو در بین آرزوها (عنوان یا توضیحات)..."}
+                placeholder={activeTab === "memories" ? "جستجو در خاطرات..." : "جستجو در بین آرزوها..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-12 py-3 bg-[#EFECE2] focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A] rounded-full text-xs sm:text-sm font-semibold text-[#1B1B1A] placeholder-[#78746B] focus:outline-none transition-colors text-right"
+                className="w-full pl-9 pr-10 py-2.5 bg-[#EFECE2]/80 focus:bg-[#FFFDF8] border border-transparent focus:border-[#1B1B1A]/40 rounded-full text-xs font-semibold text-[#1B1B1A] placeholder-[#8E8A80] focus:outline-none transition-colors text-right shadow-2xs"
               />
-              <div className="absolute top-1/2 right-4 -translate-y-1/2 text-[#78746B] pointer-events-none">
-                <Search className="w-4 h-4 stroke-[1.8]" />
+              <div className="absolute top-1/2 right-3.5 -translate-y-1/2 text-[#8E8A80] pointer-events-none">
+                <Search className="w-3.5 h-3.5 stroke-[1.8]" />
               </div>
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute top-1/2 left-3 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2] rounded-full transition-colors cursor-pointer"
+                  className="absolute top-1/2 left-2.5 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2] rounded-full transition-colors cursor-pointer"
                   title="پاک کردن متن"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                 </button>
               )}
             </div>
@@ -2568,33 +2568,33 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* Notification Permission Activation Banner */}
         {!notificationsEnabled && !notificationBannerDismissed && (
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             dir="rtl"
-            className="bg-[#FFF0F7] border border-[#F8BBD0] rounded-2xl p-3 sm:p-3.5 mb-5 flex items-center justify-between gap-3 text-right shadow-2xs max-w-2xl mx-auto"
+            className="bg-[#FFF0F7] border border-[#F8BBD0] rounded-2xl p-2.5 sm:p-3 mb-4 flex items-center justify-between gap-2.5 text-right shadow-2xs max-w-xl mx-auto"
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#EC407A] to-[#F6C3E5] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Bell className="w-4 h-4 stroke-[2]" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#EC407A] to-[#F6C3E5] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                <Bell className="w-3.5 h-3.5 stroke-[2]" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-black text-[#1B1B1A] truncate">
-                  نوتیفیکیشن موبایل و ویبره ضربان قلب را فعال کنید
+                <p className="text-xs font-black text-[#1B1B1A] truncate">
+                  اعلان و ویبره ضربان قلب را فعال کنید
                 </p>
-                <p className="text-[10px] sm:text-[11px] text-[#78746B] truncate">
-                  برای اینکه با ارسال «الان به یادتم» پارتنرتان، فوراً گوشی بلرزد و باخبر شوید
+                <p className="text-[10px] text-[#78746B] truncate">
+                  دریافت سریع «الان به یادتم» و پیام‌های لحظه‌ای پارتنر
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={requestNotificationPermission}
-                className="px-3.5 py-1.5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-xs font-bold rounded-full transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+                className="px-3 py-1 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-[11px] font-bold rounded-full transition-colors cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
               >
                 <span>فعال‌سازی</span>
-                <Sparkles className="w-3 h-3 text-[#F6DC6B]" />
+                <Sparkles className="w-2.5 h-2.5 text-[#F6DC6B]" />
               </button>
               <button
                 type="button"
@@ -2604,10 +2604,10 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     localStorage.setItem("toghrool_notif_banner_dismissed", "true");
                   } catch {}
                 }}
-                className="w-7 h-7 rounded-full text-[#78746B] hover:text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
+                className="w-6 h-6 rounded-full text-[#78746B] hover:text-[#1B1B1A] flex items-center justify-center cursor-pointer transition-colors"
                 title="بستن پیام"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             </div>
           </motion.div>
@@ -2624,92 +2624,36 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               refreshKey={dailyQuestionRefreshTrigger}
             />
 
-            {/* Editorial Pastel Pink Couple Summary Banner (Reference Assistant Card Style) */}
-            <div className="bg-[#F6C3E5] rounded-[28px] p-5 sm:p-6 relative overflow-hidden">
-              <svg
-                viewBox="0 0 24 24"
-                className="w-32 h-32 sm:w-36 sm:h-36 absolute -bottom-7 left-4 text-[#E5ADD2] fill-current -rotate-12 pointer-events-none select-none"
-              >
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs font-bold text-[#1B1B1A]/65 block mb-1">
-                    دستیار رویاهای مشترک طغرل
-                  </span>
-                  <h2 className="text-base sm:text-lg font-black text-[#1B1B1A] leading-relaxed">
-                    شما{" "}
-                    <span className="text-[#D94E4E]">
-                      {toPersianDigits(wishlistItems.length)} آرزوی فعال
-                    </span>{" "}
-                    در مسیر انجام و{" "}
-                    <span className="text-[#1B1B1A] underline decoration-[#E5ADD2] decoration-2 underline-offset-4">
-                      {toPersianDigits(hallOfFameItems.length)} خاطره تکمیل‌شده
-                    </span>{" "}
-                    دارید
-                  </h2>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => setShowDateRoulette(true)}
-                    className="py-2.5 px-3.5 bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] text-xs sm:text-sm font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E5ADD2] shadow-sm"
-                    title="گردونه شانس دیت دونفره"
-                  >
-                    <span className="text-base">🎰</span>
-                    <span className="hidden sm:inline">گردونه دیت</span>
-                  </button>
-                  <button
-                    onClick={() => setShowAddModal(true)}
-                    className="py-2.5 px-5 bg-[#1B1B1A] hover:bg-[#323230] text-[#FAF6EC] text-xs sm:text-sm font-bold rounded-full flex items-center gap-2 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4 stroke-[2]" />
-                    <span>افزودن آرزو</span>
-                  </button>
-                  <button
-                    onClick={() => setShowAddShelfModal(true)}
-                    className="w-10 h-10 rounded-full bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] flex items-center justify-center transition-colors cursor-pointer"
-                    title="افزودن دسته‌بندی (قفسه) جدید"
-                  >
-                    <Layers className="w-4 h-4 stroke-[1.8]" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Section Header + Category Pills */}
+            {/* Streamlined Discovery Toolbar (Unified Category Rail + Utility Strip) */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg sm:text-xl font-black text-[#1B1B1A]">قفسه‌های آرزو</h3>
-                <span className="px-3.5 py-1.5 rounded-full bg-[#1B1B1A] text-[#FAF6EC] text-xs font-bold">
-                  {categoryFilter === "all"
-                    ? "همه دسته‌ها"
-                    : (allCategories.find((c) => c.id === categoryFilter)?.label || "همه")}
-                </span>
-              </div>
-
+              {/* Category Rail with Item Counts */}
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 <button
+                  type="button"
                   onClick={() => setCategoryFilter("all")}
-                  className={`px-4 py-2 rounded-full text-xs font-bold transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                     categoryFilter === "all"
-                      ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                      : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
+                      ? "bg-[#1B1B1A] text-[#FAF6EC] shadow-2xs"
+                      : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2]"
                   }`}
                 >
-                  همه موارد
+                  همه موارد ({toPersianDigits(items.filter((i) => !i.isCompleted).length)})
                 </button>
+
                 {allCategories.map((cat) => {
                   const Icon = cat.icon;
                   const isCustom = customCategories.some((c) => c.id === cat.id);
                   const isSelected = categoryFilter === cat.id;
+                  const catCount = items.filter((i) => !i.isCompleted && i.category === cat.id).length;
                   return (
                     <div key={cat.id} className="relative group/cat flex items-center shrink-0">
                       <button
+                        type="button"
                         onClick={() => setCategoryFilter(cat.id)}
-                        className={`px-4 py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+                        className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                           isSelected
-                            ? "bg-[#1B1B1A] text-[#FAF6EC]"
-                            : "bg-[#EFECE2] text-[#1B1B1A] hover:bg-[#E5E0D2]"
+                            ? "bg-[#1B1B1A] text-[#FAF6EC] shadow-2xs"
+                            : "bg-[#EFECE2] text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2]"
                         }`}
                       >
                         <span className={`w-5 h-5 rounded-full ${cat.bg} text-[#1B1B1A] flex items-center justify-center`}>
@@ -2720,9 +2664,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                           )}
                         </span>
                         <span>{cat.label}</span>
+                        {catCount > 0 && (
+                          <span className={`text-[10px] font-bold ${isSelected ? "text-[#FAF6EC]/80" : "text-[#78746B]"}`}>
+                            ({toPersianDigits(catCount)})
+                          </span>
+                        )}
                       </button>
                       {isCustom && (
                         <button
+                          type="button"
                           onClick={(e) => handleDeleteCategory(cat.id, e)}
                           className="absolute -top-1 -left-1 bg-[#1B1B1A] hover:bg-[#D94E4E] text-[#FAF6EC] rounded-full p-0.5 opacity-100 md:opacity-0 group-hover/cat:opacity-100 transition-opacity border border-[#FAF6EC] cursor-pointer z-10"
                           title="حذف دسته‌بندی"
@@ -2733,54 +2683,66 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                     </div>
                   );
                 })}
+
+                {/* Inline Add Category Chip */}
+                <button
+                  type="button"
+                  onClick={() => setShowAddShelfModal(true)}
+                  className="px-3.5 py-2 rounded-full border border-dashed border-[#C8C3B6] hover:border-[#1B1B1A] text-[#78746B] hover:text-[#1B1B1A] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                  title="افزودن دسته‌بندی (قفسه) جدید"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>دسته جدید</span>
+                </button>
               </div>
 
-              {/* Budget Filter Pills */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
-                <span className="text-[11px] font-bold text-[#78746B] ml-1 shrink-0">بودجه:</span>
-                <button
-                  onClick={() => setBudgetFilter('all')}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 ${
-                    budgetFilter === 'all'
-                      ? 'bg-[#1B1B1A] text-[#FAF6EC]'
-                      : 'bg-[#EFECE2] text-[#78746B] hover:bg-[#E5E0D2]'
-                  }`}
-                >
-                  همه بودجه‌ها
-                </button>
-                <button
-                  onClick={() => setBudgetFilter('economy')}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1 ${
-                    budgetFilter === 'economy'
-                      ? 'bg-[#A7B86C] text-[#1B1B1A]'
-                      : 'bg-[#EFECE2] text-[#78746B] hover:bg-[#E5E0D2]'
-                  }`}
-                >
-                  <span>🟢</span>
-                  <span>اقتصادی</span>
-                </button>
-                <button
-                  onClick={() => setBudgetFilter('medium')}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1 ${
-                    budgetFilter === 'medium'
-                      ? 'bg-[#F6DC6B] text-[#1B1B1A]'
-                      : 'bg-[#EFECE2] text-[#78746B] hover:bg-[#E5E0D2]'
-                  }`}
-                >
-                  <span>🟡</span>
-                  <span>میان‌رده</span>
-                </button>
-                <button
-                  onClick={() => setBudgetFilter('luxury')}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1 ${
-                    budgetFilter === 'luxury'
-                      ? 'bg-[#E2C9F4] text-[#1B1B1A]'
-                      : 'bg-[#EFECE2] text-[#78746B] hover:bg-[#E5E0D2]'
-                  }`}
-                >
-                  <span>🟣</span>
-                  <span>لاکچری</span>
-                </button>
+              {/* Utility Strip: Budget Filter + Date Roulette + Desktop Add */}
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                {/* Budget Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                  <span className="text-[10px] font-bold text-[#9E9A8F] ml-1 shrink-0">بودجه:</span>
+                  {[
+                    { id: "all", label: "همه" },
+                    { id: "economy", label: "اقتصادی 🟢" },
+                    { id: "medium", label: "میان‌رده 🟡" },
+                    { id: "luxury", label: "لاکچری 🟣" }
+                  ].map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setBudgetFilter(b.id)}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+                        budgetFilter === b.id
+                          ? "bg-[#1B1B1A] text-[#FAF6EC]"
+                          : "bg-[#EFECE2]/70 text-[#78746B] hover:text-[#1B1B1A] hover:bg-[#E5E0D2]"
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Right Actions: Date Roulette & Desktop Add Wish */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowDateRoulette(true)}
+                    className="px-3 py-1 bg-[#FFFDF8] hover:bg-[#FAF6EC] text-[#1B1B1A] text-xs font-bold rounded-full flex items-center gap-1.5 transition-all cursor-pointer border border-[#E8E2D4] shadow-2xs active:scale-95 whitespace-nowrap"
+                    title="گردونه شانس دیت دونفره"
+                  >
+                    <span className="text-sm">🎰</span>
+                    <span className="hidden sm:inline">دیت شانسی</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(true)}
+                    className="hidden sm:flex px-3.5 py-1 bg-[#1B1B1A] hover:bg-[#2F2E2C] text-[#FAF6EC] text-xs font-bold rounded-full items-center gap-1.5 transition-all shadow-2xs active:scale-95 whitespace-nowrap"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[2]" />
+                    <span>آرزوی جدید</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -5733,6 +5695,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         onOpenWhiteFlag={() => setShowWhiteFlagModal(true)}
         onOpenCheatSheet={() => setShowPartnerCheatSheetModal(true)}
         onOpenAnniversary={() => setShowAnniversaryModal(true)}
+        onOpenDailyQuestion={() => setShowDailyQuestionModal(true)}
+        onOpenDateRoulette={() => setShowDateRoulette(true)}
       />
 
       {/* --- FLOATING CHARCOAL BOTTOM DOCK WITH RAISED PASTEL PINK '+' ACTION BUTTON (EXACT REFERENCE STYLE) --- */}

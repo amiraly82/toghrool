@@ -16,6 +16,8 @@ interface PartnerHubSheetProps {
   onOpenWhiteFlag: () => void;
   onOpenCheatSheet: () => void;
   onOpenAnniversary: () => void;
+  onOpenDailyQuestion?: () => void;
+  onOpenDateRoulette?: () => void;
 }
 
 /**
@@ -32,7 +34,9 @@ export default function PartnerHubSheet({
   onSendLovePing,
   onOpenWhiteFlag,
   onOpenCheatSheet,
-  onOpenAnniversary
+  onOpenAnniversary,
+  onOpenDailyQuestion,
+  onOpenDateRoulette
 }: PartnerHubSheetProps) {
   const partnerName = partnerProfile?.displayName || "پارتنر";
   const need = getNeedStatusOption(partnerProfile?.needStatus || "calm");
@@ -45,6 +49,28 @@ export default function PartnerHubSheet({
   };
 
   const secondaryActions = [
+    ...(onOpenDailyQuestion
+      ? [
+          {
+            key: "daily_q",
+            emoji: "✨",
+            title: "چالش ۳ دقیقه‌ای امروز",
+            subtitle: "گفت‌وگوی روزانه برای نزدیکی و صمیمیت بیشتر",
+            onClick: () => run(onOpenDailyQuestion)
+          }
+        ]
+      : []),
+    ...(onOpenDateRoulette
+      ? [
+          {
+            key: "roulette",
+            emoji: "🎰",
+            title: "گردونه شانس دیت",
+            subtitle: "انتخاب تصادفی یک رویا یا برنامه دونفره",
+            onClick: () => run(onOpenDateRoulette)
+          }
+        ]
+      : []),
     {
       key: "flag",
       emoji: "🕊️",
