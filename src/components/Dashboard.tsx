@@ -3301,7 +3301,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
         {/* --- TAB 4: PERIOD TRACKER (TOGHROOL CYCLE ENGINE & NEOBRUTALIST UI) --- */}
         {activeTab === "period" && (
-          <div className="max-w-5xl mx-auto" dir="rtl">
+          <div className="max-w-xl mx-auto pb-28 sm:pb-12" dir="rtl">
             <ImpoPeriodTracker
               userProfile={userProfile}
               onSendPoke={handleSendPeriodSupportPoke}

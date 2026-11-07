@@ -31,9 +31,12 @@ import {
   Brain,
   Dna,
   Moon,
-  Flower2
+  Flower2,
+  CircleDot,
+  ArrowUpRight
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { NeoZigZagTrend } from "./NeoBrutalStickers";
 import {
   UserProfile,
   ImpoPeriodSettings,
@@ -930,60 +933,60 @@ export default function ImpoPeriodTracker({
         return {
           title: "فاز قاعدگی (پریود)",
           subtitle: "روزهای استراحت، آرامش و مراقبت ویژه",
-          color: "#F6C3E5",
-          bgClass: "bg-[#F6C3E5]",
-          borderClass: "border-[#E5ADD2]",
-          pillText: "text-[#1B1B1A]",
+          color: "#FBC2F3",
+          bgClass: "bg-[#FBC2F3]",
+          borderClass: "border-[#141414]",
+          pillText: "text-[#141414]",
           icon: Droplet
         };
       case "follicular":
         return {
           title: "فاز فولیکولار",
           subtitle: "روزهای پرانرژی، نشاط و خلاقیت",
-          color: "#F6DC6B",
-          bgClass: "bg-[#F6DC6B]",
-          borderClass: "border-[#E8CE55]",
-          pillText: "text-[#1B1B1A]",
+          color: "#F5F97A",
+          bgClass: "bg-[#F5F97A]",
+          borderClass: "border-[#141414]",
+          pillText: "text-[#141414]",
           icon: Sparkles
         };
       case "ovulation":
         return {
           title: "روز تخمک‌گذاری",
           subtitle: "اوج باروری و بیشترین شانس لقاح",
-          color: "#A7B86C",
-          bgClass: "bg-[#A7B86C]",
-          borderClass: "border-[#96A75B]",
-          pillText: "text-[#1B1B1A]",
+          color: "#B5F285",
+          bgClass: "bg-[#B5F285]",
+          borderClass: "border-[#141414]",
+          pillText: "text-[#141414]",
           icon: Flower2
         };
       case "fertile":
         return {
           title: "پنجره باروری",
           subtitle: "آمادگی بدن و شانس بالای بارداری",
-          color: "#A7B86C",
-          bgClass: "bg-[#A7B86C]",
-          borderClass: "border-[#96A75B]",
-          pillText: "text-[#1B1B1A]",
+          color: "#B5F285",
+          bgClass: "bg-[#B5F285]",
+          borderClass: "border-[#141414]",
+          pillText: "text-[#141414]",
           icon: Flower2
         };
       case "delayed":
         return {
           title: "تاخیر در قاعدگی",
           subtitle: `${toPersianDigits(cycleStatus.delayedDays)} روز از موعد گذشته`,
-          color: "#F9C6B8",
-          bgClass: "bg-[#F9C6B8]",
-          borderClass: "border-[#E8A594]",
-          pillText: "text-[#1B1B1A]",
+          color: "#FF8B6A",
+          bgClass: "bg-[#FF8B6A]",
+          borderClass: "border-[#141414]",
+          pillText: "text-[#141414]",
           icon: AlertCircle
         };
       case "pms":
         return {
           title: "پیش از قاعدگی (PMS)",
           subtitle: "نیاز به همراهی، همدلی و نوشیدنی‌های گرم",
-          color: "#B8CEF4",
-          bgClass: "bg-[#B8CEF4]",
-          borderClass: "border-[#9ABBE5]",
-          pillText: "text-[#1B1B1A]",
+          color: "#7FD1F7",
+          bgClass: "bg-[#7FD1F7]",
+          borderClass: "border-[#141414]",
+          pillText: "text-[#141414]",
           icon: Moon
         };
       case "luteal":
@@ -991,10 +994,10 @@ export default function ImpoPeriodTracker({
         return {
           title: "روزهای عادی چرخه",
           subtitle: "روزهای آرام، باثبات و تعادل هورمونی",
-          color: "#D8D1C0",
-          bgClass: "bg-[#D8D1C0]",
-          borderClass: "border-[#C5BDAA]",
-          pillText: "text-[#1B1B1A]",
+          color: "#FFFFFF",
+          bgClass: "bg-white",
+          borderClass: "border-[#141414]",
+          pillText: "text-[#141414]",
           icon: Coffee
         };
     }
@@ -1046,6 +1049,11 @@ export default function ImpoPeriodTracker({
       }
     ];
   }, [biorhythm, cycleStatus.progressPercent]);
+
+  const formatDayRange = (start: number, end: number) => {
+    if (start >= end) return `روز ${toPersianDigits(start)}`;
+    return `روز ${toPersianDigits(start)} تا ${toPersianDigits(end)}`;
+  };
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -1108,71 +1116,46 @@ export default function ImpoPeriodTracker({
         </div>
       )}
 
-      {/* Single-Row Top Bar: Neobrutalist Pill Rail */}
-      <div className="flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-          <button
-            onClick={() => setActiveSubTab("dashboard")}
-            className={`px-3 sm:px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
-              activeSubTab === "dashboard"
-                ? "bg-[#F5F97A] text-[#141414]"
-                : "bg-white text-[#141414]"
-            }`}
-          >
-            <Activity className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>چرخه</span>
-          </button>
+      {/* 1. Single Clean Sub-Tab Rail */}
+      <div className="flex items-center justify-start gap-2 overflow-x-auto no-scrollbar pb-1" dir="rtl">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("dashboard")}
+          className={`px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
+            activeSubTab === "dashboard"
+              ? "bg-[#F5F97A] text-[#141414]"
+              : "bg-white text-[#141414] hover:bg-white/80"
+          }`}
+        >
+          <Activity className="w-3.5 h-3.5 stroke-[2.2]" />
+          <span>چرخه سلامت</span>
+        </button>
 
-          <button
-            onClick={() => setActiveSubTab("predictions")}
-            className={`px-3 sm:px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
-              activeSubTab === "predictions"
-                ? "bg-[#F5F97A] text-[#141414]"
-                : "bg-white text-[#141414]"
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>پیش‌بینی</span>
-          </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("predictions")}
+          className={`px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
+            activeSubTab === "predictions"
+              ? "bg-[#F5F97A] text-[#141414]"
+              : "bg-white text-[#141414] hover:bg-white/80"
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 stroke-[2.2]" />
+          <span>پیش‌بینی دوره‌ها</span>
+        </button>
 
-          <button
-            onClick={() => setActiveSubTab("history")}
-            className={`px-3 sm:px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
-              activeSubTab === "history"
-                ? "bg-[#F5F97A] text-[#141414]"
-                : "bg-white text-[#141414]"
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>تاریخچه ({toPersianDigits(logs.length)})</span>
-          </button>
-        </div>
-
-        {/* Circular vs Calendar Toggle */}
-        {activeSubTab === "dashboard" && (
-          <div className="flex items-center gap-1.5 shrink-0 pb-0.5">
-            <button
-              onClick={() => setViewMode("circular")}
-              className={`px-3 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
-                viewMode === "circular"
-                  ? "bg-[#FBC2F3] text-[#141414]"
-                  : "bg-white text-[#141414]"
-              }`}
-            >
-              حلقه
-            </button>
-            <button
-              onClick={() => setViewMode("calendar")}
-              className={`px-3 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
-                viewMode === "calendar"
-                  ? "bg-[#FBC2F3] text-[#141414]"
-                  : "bg-white text-[#141414]"
-              }`}
-            >
-              تقویم
-            </button>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("history")}
+          className={`px-4 py-2 rounded-full text-xs font-black border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap active:translate-y-0.5 ${
+            activeSubTab === "history"
+              ? "bg-[#F5F97A] text-[#141414]"
+              : "bg-white text-[#141414] hover:bg-white/80"
+          }`}
+        >
+          <BarChart3 className="w-3.5 h-3.5 stroke-[2.2]" />
+          <span>تاریخچه ({toPersianDigits(logs.length)})</span>
+        </button>
       </div>
 
       {/* Non-blocking Quick Setup Prompt if female user hasn't configured cycle yet */}
@@ -1199,119 +1182,165 @@ export default function ImpoPeriodTracker({
         <div className="space-y-5">
           {/* HERO VISUAL: Encased in Neobrutalist Lavender Stage Card */}
           <div className="bg-[#A594F9] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[34px] p-4 sm:p-6 flex flex-col items-center">
+            {/* Stage Card Header (Screen 2 Reference: Status Title on Right, 2 Circular Action Buttons on Left) */}
+            <div className="w-full flex items-center justify-between pb-3 sm:pb-4 border-b-2 border-[#141414]/15 mb-3" dir="rtl">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center">
+                  <Activity className="w-4 h-4 text-[#141414] stroke-[2.2]" />
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] font-bold text-[#141414]/75 block leading-tight">وضعیت چرخه سلامت</span>
+                  <h3 className="text-sm sm:text-base font-black text-[#141414] leading-tight">
+                    {partnerRole === "male"
+                      ? `چرخه پارتنر (${toPersianDigits(safeCycleLength)} روز)`
+                      : `چرخه من (${toPersianDigits(safeCycleLength)} روز)`}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Two Circular Neobrutalist Action Buttons (Exact Screen 2 Reference) */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewMode((v) => (v === "circular" ? "calendar" : "circular"))}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center transition-all cursor-pointer text-[#141414] active:translate-y-0.5"
+                  title={viewMode === "circular" ? "نمای تقویم ماهانه" : "نمای حلقه چرخشی"}
+                >
+                  {viewMode === "circular" ? (
+                    <CalendarIcon className="w-4 h-4 stroke-[2.2]" />
+                  ) : (
+                    <CircleDot className="w-4 h-4 stroke-[2.2]" />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowSettingsModal(true)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center transition-all cursor-pointer text-[#141414] active:translate-y-0.5"
+                  title="تنظیمات چرخه"
+                >
+                  <Settings className="w-4 h-4 stroke-[2.2]" />
+                </button>
+              </div>
+            </div>
+
             {viewMode === "circular" ? (
               <div className="flex flex-col items-center w-full">
                 <div className="relative w-[272px] h-[272px] sm:w-[320px] sm:h-[320px] flex items-center justify-center select-none">
                   <svg className="w-full h-full" viewBox="0 0 320 320">
-                    {/* Crisp White Center Stage with 2.5px Black Ink Casing */}
+                    {/* Outer Neobrutalist Black Border Frame */}
                     <circle
                       cx={ringCx}
                       cy={ringCy}
-                      r={ringR}
-                      fill="#FFFFFF"
+                      r={ringR + ringStrokeWidth / 2 + 1}
+                      fill="none"
                       stroke="#141414"
-                      strokeWidth={ringStrokeWidth + 5}
+                      strokeWidth="2.5"
                     />
+
+                    {/* Background Track Circle */}
                     <circle
                       cx={ringCx}
                       cy={ringCy}
                       r={ringR}
-                      fill="#FFFFFF"
-                      stroke="#FFF8E7"
+                      fill="none"
+                      stroke="#EFECE2"
                       strokeWidth={ringStrokeWidth}
                     />
+
+                    {/* Inner Neobrutalist Black Border & Clean White Center Dial */}
                     <circle
                       cx={ringCx}
                       cy={ringCy}
-                      r={ringR - ringStrokeWidth / 2 - 2}
+                      r={ringR - ringStrokeWidth / 2 - 1}
                       fill="#FFFFFF"
                       stroke="#141414"
                       strokeWidth="2.5"
                     />
 
-                    {/* 1. Pastel Pink Capsule: Period Phase (Days 1 to periodLength) */}
+                    {/* 1. Bubblegum Pink Capsule: Period Phase (Days 1 to periodLength) */}
                     {cycleGeometry.period && (
                       <g>
                         <path
                           d={cycleGeometry.period.path}
                           fill="none"
-                          stroke="#F6C3E5"
-                          strokeWidth={ringStrokeWidth}
+                          stroke="#FBC2F3"
+                          strokeWidth={ringStrokeWidth - 4}
                           strokeLinecap="round"
                         />
                         {/* Droplet Icon */}
                         <g transform={`translate(${cycleGeometry.period.iconPos.x - 7.5}, ${cycleGeometry.period.iconPos.y - 7.5})`}>
                           <path
                             d="M7.5 2C7.5 2 3 6.8 3 9.6a4.5 4.5 0 009 0C12 6.8 7.5 2 7.5 2z"
-                            fill="none"
-                            stroke="#1B1B1A"
-                            strokeWidth="1.5"
+                            fill="#141414"
+                            stroke="#141414"
+                            strokeWidth="1.2"
                             strokeLinejoin="round"
                           />
                         </g>
                       </g>
                     )}
 
-                    {/* 2. Butter Yellow Capsule: Follicular Phase (Days periodLength + 1 to fertileStart - 1) */}
+                    {/* 2. Lemon Yellow Capsule: Follicular Phase */}
                     {cycleGeometry.follicular && (
                       <g>
                         <path
                           d={cycleGeometry.follicular.path}
                           fill="none"
-                          stroke="#F6DC6B"
-                          strokeWidth={ringStrokeWidth}
+                          stroke="#F5F97A"
+                          strokeWidth={ringStrokeWidth - 4}
                           strokeLinecap="round"
                         />
                         {/* Sparkles / Energy Icon */}
                         <g transform={`translate(${cycleGeometry.follicular.iconPos.x - 7.5}, ${cycleGeometry.follicular.iconPos.y - 7.5})`}>
                           <path
                             d="M7.5 2l1.4 3.4 3.6 1.4-3.6 1.4-1.4 3.6-1.4-3.6-3.6-1.4 3.6-1.4L7.5 2z"
-                            fill="none"
-                            stroke="#1B1B1A"
-                            strokeWidth="1.5"
+                            fill="#141414"
+                            stroke="#141414"
+                            strokeWidth="1.2"
                             strokeLinejoin="round"
                           />
                         </g>
                       </g>
                     )}
 
-                    {/* 3. Sage Olive Capsule: Fertile Window & Ovulation (Days fertileStart to fertileEnd) */}
+                    {/* 3. Lime Green Capsule: Fertile Window & Ovulation */}
                     {cycleGeometry.fertile && (
                       <g>
                         <path
                           d={cycleGeometry.fertile.path}
                           fill="none"
-                          stroke="#A7B86C"
-                          strokeWidth={ringStrokeWidth}
+                          stroke="#B5F285"
+                          strokeWidth={ringStrokeWidth - 4}
                           strokeLinecap="round"
                         />
                         {/* Blossom / Flower Icon */}
                         <g transform={`translate(${cycleGeometry.fertile.iconPos.x - 7.5}, ${cycleGeometry.fertile.iconPos.y - 7.5})`}>
-                          <circle cx="7.5" cy="7.5" r="2.2" fill="none" stroke="#1B1B1A" strokeWidth="1.4" />
+                          <circle cx="7.5" cy="7.5" r="2.2" fill="#141414" stroke="#141414" strokeWidth="1.2" />
                           <path
                             d="M7.5 2.2a2.3 2.3 0 010 4.6M7.5 8.2a2.3 2.3 0 010 4.6M2.2 7.5a2.3 2.3 0 014.6 0M8.2 7.5a2.3 2.3 0 014.6 0"
                             fill="none"
-                            stroke="#1B1B1A"
+                            stroke="#141414"
                             strokeWidth="1.3"
                           />
                         </g>
 
                         {/* Ovulation Day Node */}
                         <g transform={`translate(${cycleGeometry.fertile.ovuPos.x}, ${cycleGeometry.fertile.ovuPos.y})`}>
-                          <circle cx="0" cy="0" r="7" fill="#1B1B1A" />
-                          <circle cx="0" cy="0" r="2.5" fill="#FAF6EC" />
+                          <circle cx="0" cy="0" r="8" fill="#141414" />
+                          <circle cx="0" cy="0" r="3.5" fill="#B5F285" />
                         </g>
                       </g>
                     )}
 
-                    {/* 4. Warm Sand Capsule: Normal Days (Days fertileEnd + 1 to pmsStart - 1) */}
+                    {/* 4. Crisp White Capsule: Normal Days */}
                     {cycleGeometry.normal && (
                       <g>
                         <path
                           d={cycleGeometry.normal.path}
                           fill="none"
-                          stroke="#D8D1C0"
-                          strokeWidth={ringStrokeWidth}
+                          stroke="#FFFFFF"
+                          strokeWidth={ringStrokeWidth - 4}
                           strokeLinecap="round"
                         />
                         {/* Coffee / Balanced Normal Days Icon */}
@@ -1319,39 +1348,39 @@ export default function ImpoPeriodTracker({
                           <path
                             d="M10 2v2M6 2v2M2 6h9a2 2 0 012 2v2a3 3 0 01-3 3H4a3 3 0 01-3-3V8a2 2 0 012-2z"
                             fill="none"
-                            stroke="#1B1B1A"
-                            strokeWidth="1.4"
+                            stroke="#141414"
+                            strokeWidth="1.3"
                             strokeLinecap="round"
                             strokeLinejoin="round"
                           />
                           <path
                             d="M13 7h1a2 2 0 010 4h-1"
                             fill="none"
-                            stroke="#1B1B1A"
-                            strokeWidth="1.4"
+                            stroke="#141414"
+                            strokeWidth="1.3"
                             strokeLinecap="round"
                           />
                         </g>
                       </g>
                     )}
 
-                    {/* 5. Powder Blue Capsule: PMS Phase (Days pmsStart to cycleLength) */}
+                    {/* 5. Sky Blue Capsule: PMS Phase */}
                     {cycleGeometry.pms && (
                       <g>
                         <path
                           d={cycleGeometry.pms.path}
                           fill="none"
-                          stroke="#B8CEF4"
-                          strokeWidth={ringStrokeWidth}
+                          stroke="#7FD1F7"
+                          strokeWidth={ringStrokeWidth - 4}
                           strokeLinecap="round"
                         />
                         {/* Moon / Calm & PMS Care Icon */}
                         <g transform={`translate(${cycleGeometry.pms.iconPos.x - 7.5}, ${cycleGeometry.pms.iconPos.y - 7.5})`}>
                           <path
                             d="M11.5 8.5a4.5 4.5 0 11-5.5-5.5 5.2 5.2 0 005.5 5.5z"
-                            fill="none"
-                            stroke="#1B1B1A"
-                            strokeWidth="1.4"
+                            fill="#141414"
+                            stroke="#141414"
+                            strokeWidth="1.2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
                           />
@@ -1359,7 +1388,7 @@ export default function ImpoPeriodTracker({
                       </g>
                     )}
 
-                    {/* 5. TODAY (امروز) CURSOR & POINTER */}
+                    {/* TODAY (امروز) CURSOR & POINTER */}
                     <g>
                       {/* Outer dashed beacon ring */}
                       <circle
@@ -1367,35 +1396,37 @@ export default function ImpoPeriodTracker({
                         cy={cycleGeometry.today.pos.y}
                         r="18"
                         fill="none"
-                        stroke="#1B1B1A"
+                        stroke="#141414"
                         strokeWidth="2"
                         strokeDasharray="3 3"
-                        opacity="0.8"
+                        opacity="0.7"
                       />
-                      {/* Solid Charcoal Disk */}
+                      {/* Bold Coral / Black Neo Target */}
                       <circle
                         cx={cycleGeometry.today.pos.x}
                         cy={cycleGeometry.today.pos.y}
-                        r="12"
-                        fill="#1B1B1A"
-                        stroke="#FAF6EC"
+                        r="13"
+                        fill="#FF8B6A"
+                        stroke="#141414"
                         strokeWidth="2.5"
                       />
-                      {/* Cream Center Core */}
+                      {/* White Center Core */}
                       <circle
                         cx={cycleGeometry.today.pos.x}
                         cy={cycleGeometry.today.pos.y}
-                        r="4"
-                        fill="#FAF6EC"
+                        r="4.5"
+                        fill="#FFFFFF"
+                        stroke="#141414"
+                        strokeWidth="1.5"
                       />
                     </g>
                   </svg>
 
                   {/* Center Editorial Hero Typography */}
-                  <div className="absolute flex flex-col items-center justify-center text-center px-5 pt-2 z-10 select-none max-w-[200px]">
+                  <div className="absolute flex flex-col items-center justify-center text-center px-5 pt-1 z-10 select-none max-w-[200px]">
                     {/* Active Phase Pill Badge */}
                     <div
-                      className="mb-1 px-2.5 py-0.5 rounded-full text-[11px] font-black inline-flex items-center gap-1 border-2 border-[#141414] whitespace-nowrap"
+                      className="mb-1 px-3 py-0.5 rounded-full text-[11px] font-black inline-flex items-center gap-1.5 border-2 border-[#141414] shadow-[0_1.5px_0_#141414] whitespace-nowrap"
                       style={{ backgroundColor: currentPhaseMeta.color, color: "#141414" }}
                     >
                       <currentPhaseMeta.icon className="w-3 h-3 stroke-[2.2] shrink-0" />
@@ -1430,7 +1461,7 @@ export default function ImpoPeriodTracker({
                       </>
                     ) : (
                       <>
-                        <span className="text-[52px] sm:text-[68px] font-black leading-none tracking-tight text-[#141414]">
+                        <span className="text-[56px] sm:text-[68px] font-black leading-none tracking-tight text-[#141414] my-0.5">
                           {toPersianDigits(cycleStatus.currentCycleDay)}
                         </span>
                         <button
@@ -1450,7 +1481,7 @@ export default function ImpoPeriodTracker({
                     )}
 
                     {(effectiveIsOwner || sharing.sharePhase) && (
-                      <span className="mt-2 px-3 py-1 rounded-full bg-[#F5F97A] border-2 border-[#141414] text-[#141414] text-[11px] font-black">
+                      <span className="mt-2 px-3 py-1 rounded-full bg-[#F5F97A] border-2 border-[#141414] shadow-[0_1.5px_0_#141414] text-[#141414] text-[11px] font-black">
                         {cycleStatus.phase === "due"
                           ? "موعد مورد انتظار امروز"
                           : cycleStatus.daysUntilNextPeriod > 0
@@ -1461,25 +1492,25 @@ export default function ImpoPeriodTracker({
                   </div>
                 </div>
 
-                {/* 5-PHASE VISUAL TIMELINE LEGEND (Neobrutalist Pills) */}
-                <div className="w-full max-w-xl mt-3 flex sm:grid sm:grid-cols-5 gap-2 overflow-x-auto no-scrollbar pb-1 px-0.5">
+                {/* 5-PHASE VISUAL TIMELINE LEGEND (Neobrutalist Chips with formatDayRange) */}
+                <div className="w-full max-w-xl mt-4 flex sm:grid sm:grid-cols-5 gap-2 overflow-x-auto no-scrollbar pb-1 px-0.5">
                   <button
                     type="button"
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "period" ? null : "period"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2.5 rounded-2xl border-2 border-[#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "period" || cycleStatus.phase === "due"
-                        ? "bg-[#FBC2F3]"
-                        : "bg-white"
+                        ? "bg-[#FBC2F3] shadow-[0_3px_0_#141414] ring-2 ring-[#141414]"
+                        : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFF8E7]"
                     }`}
                   >
                     <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#FBC2F3] border border-[#141414] shrink-0" />
                       <span>پریود</span>
                     </div>
-                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
-                      روز ۱ تا {toPersianDigits(safePeriodLength)}
+                    <div className="text-[10px] text-[#141414]/75 mt-0.5 font-bold whitespace-nowrap">
+                      {formatDayRange(1, safePeriodLength)}
                     </div>
                   </button>
 
@@ -1488,18 +1519,18 @@ export default function ImpoPeriodTracker({
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "follicular" ? null : "follicular"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2.5 rounded-2xl border-2 border-[#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "follicular"
-                        ? "bg-[#F5F97A]"
-                        : "bg-white"
+                        ? "bg-[#F5F97A] shadow-[0_3px_0_#141414] ring-2 ring-[#141414]"
+                        : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFF8E7]"
                     }`}
                   >
                     <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#F5F97A] border border-[#141414] shrink-0" />
                       <span>فولیکولار</span>
                     </div>
-                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
-                      روز {toPersianDigits(safePeriodLength + 1)} تا {toPersianDigits(Math.max(safePeriodLength + 1, safeFertileStart - 1))}
+                    <div className="text-[10px] text-[#141414]/75 mt-0.5 font-bold whitespace-nowrap">
+                      {formatDayRange(safePeriodLength + 1, safeFertileStart - 1)}
                     </div>
                   </button>
 
@@ -1508,18 +1539,18 @@ export default function ImpoPeriodTracker({
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "fertile" ? null : "fertile"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2.5 rounded-2xl border-2 border-[#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "fertile" || cycleStatus.phase === "ovulation"
-                        ? "bg-[#B5F285]"
-                        : "bg-white"
+                        ? "bg-[#B5F285] shadow-[0_3px_0_#141414] ring-2 ring-[#141414]"
+                        : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFF8E7]"
                     }`}
                   >
                     <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#B5F285] border border-[#141414] shrink-0" />
                       <span>باروری</span>
                     </div>
-                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
-                      روز {toPersianDigits(safeFertileStart)} تا {toPersianDigits(safeFertileEnd)}
+                    <div className="text-[10px] text-[#141414]/75 mt-0.5 font-bold whitespace-nowrap">
+                      {formatDayRange(safeFertileStart, safeFertileEnd)}
                     </div>
                   </button>
 
@@ -1528,18 +1559,18 @@ export default function ImpoPeriodTracker({
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "normal" ? null : "normal"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2.5 rounded-2xl border-2 border-[#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "luteal"
-                        ? "bg-[#FAD074]"
-                        : "bg-white"
+                        ? "bg-white shadow-[0_3px_0_#141414] ring-2 ring-[#141414]"
+                        : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFF8E7]"
                     }`}
                   >
                     <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#FAD074] border border-[#141414] shrink-0" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-white border border-[#141414] shrink-0" />
                       <span>روزهای عادی</span>
                     </div>
-                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
-                      روز {toPersianDigits(safeFertileEnd + 1)} تا {toPersianDigits(Math.max(safeFertileEnd + 1, safePmsStart - 1))}
+                    <div className="text-[10px] text-[#141414]/75 mt-0.5 font-bold whitespace-nowrap">
+                      {formatDayRange(safeFertileEnd + 1, safePmsStart - 1)}
                     </div>
                   </button>
 
@@ -1548,18 +1579,18 @@ export default function ImpoPeriodTracker({
                     onClick={() =>
                       setSelectedLegendPhase((prev) => (prev === "pms" ? null : "pms"))
                     }
-                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414] text-center transition-all cursor-pointer ${
+                    className={`min-w-[104px] sm:min-w-0 shrink-0 p-2.5 rounded-2xl border-2 border-[#141414] text-center transition-all cursor-pointer ${
                       cycleStatus.phase === "pms"
-                        ? "bg-[#7FD1F7]"
-                        : "bg-white"
+                        ? "bg-[#7FD1F7] shadow-[0_3px_0_#141414] ring-2 ring-[#141414]"
+                        : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFF8E7]"
                     }`}
                   >
                     <div className="flex items-center justify-center gap-1.5 text-xs font-black text-[#141414] whitespace-nowrap">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#7FD1F7] border border-[#141414] shrink-0" />
                       <span>دوره PMS</span>
                     </div>
-                    <div className="text-[10px] text-[#141414]/80 mt-0.5 font-bold whitespace-nowrap">
-                      روز {toPersianDigits(safePmsStart)} تا {toPersianDigits(safeCycleLength)}
+                    <div className="text-[10px] text-[#141414]/75 mt-0.5 font-bold whitespace-nowrap">
+                      {formatDayRange(safePmsStart, safeCycleLength)}
                     </div>
                   </button>
                 </div>
@@ -1777,14 +1808,14 @@ export default function ImpoPeriodTracker({
             )}
 
             {/* NEOBRUTALIST 1-PRIMARY / 1-SECONDARY HIERARCHY ACTION BAR */}
-            <div className="mt-4 w-full max-w-md mx-auto space-y-2.5">
+            <div className="mt-4 w-full max-w-md mx-auto space-y-2">
               {partnerRole === "male" ? (
                 <>
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={() => setShowCareModal(true)}
-                      className="py-3 px-4 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5"
+                      className="py-3 px-4 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5 transition-all"
                     >
                       <Heart className="w-3.5 h-3.5 text-[#FBC2F3] fill-current" />
                       <span>ارسال محبت ویژه</span>
@@ -1793,33 +1824,32 @@ export default function ImpoPeriodTracker({
                     <button
                       type="button"
                       onClick={() => handlePartnerPoke("عزیزم همیشه کنارت هستم و به فکرتم 💕")}
-                      className="py-3 px-4 bg-[#FBC2F3] hover:bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] text-[#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5"
+                      className="py-3 px-4 bg-[#FBC2F3] hover:bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] text-[#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5 transition-all"
                     >
                       <Send className="w-3.5 h-3.5 stroke-[2.2]" />
                       <span>تلنگر سریع عشق</span>
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-center gap-2 pt-1">
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowSharingModal(true)}
+                      className="px-3.5 py-1 rounded-full bg-white hover:bg-[#FFF8E7] border-2 border-[#141414] shadow-[0_1.5px_0_#141414] text-[#141414] text-[11px] font-black flex items-center gap-1.5 cursor-pointer transition-all"
+                    >
+                      <FileText className="w-3 h-3 stroke-[2]" />
+                      <span>تنظیمات حریم خصوصی</span>
+                    </button>
                     {sharing.allowPartnerLogging && (
                       <button
                         type="button"
                         onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-                        className="px-3 py-1.5 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
+                        className="px-3.5 py-1 rounded-full bg-white hover:bg-[#FFF8E7] border-2 border-[#141414] shadow-[0_1.5px_0_#141414] text-[#141414] text-[11px] font-black flex items-center gap-1.5 cursor-pointer transition-all"
                       >
-                        <HeartPulse className="w-3.5 h-3.5 stroke-[2]" />
+                        <HeartPulse className="w-3 h-3 stroke-[2]" />
                         <span>ثبت برای پارتنر</span>
                       </button>
                     )}
-
-                    <button
-                      type="button"
-                      onClick={() => setShowSettingsModal(true)}
-                      className="px-3 py-1.5 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
-                    >
-                      <Settings className="w-3.5 h-3.5 stroke-[2]" />
-                      <span>تنظیمات چرخه</span>
-                    </button>
                   </div>
                 </>
               ) : (
@@ -1828,7 +1858,7 @@ export default function ImpoPeriodTracker({
                     <button
                       type="button"
                       onClick={handleQuickGotPeriodToday}
-                      className="py-3 px-4 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5"
+                      className="py-3 px-4 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5 transition-all"
                     >
                       <Droplet className="w-3.5 h-3.5 text-[#FBC2F3] fill-current" />
                       <span>امروز پریود شدم</span>
@@ -1837,18 +1867,18 @@ export default function ImpoPeriodTracker({
                     <button
                       type="button"
                       onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-                      className="py-3 px-4 bg-[#FBC2F3] hover:bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] text-[#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5"
+                      className="py-3 px-4 bg-[#FBC2F3] hover:bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] text-[#141414] rounded-full text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5 transition-all"
                     >
                       <HeartPulse className="w-3.5 h-3.5 stroke-[2.2]" />
                       <span>ثبت حال و علائم</span>
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => setShowSharingModal(true)}
-                      className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
+                      className="px-3.5 py-1 rounded-full bg-white hover:bg-[#FFF8E7] border-2 border-[#141414] shadow-[0_1.5px_0_#141414] text-[#141414] text-[11px] font-black flex items-center gap-1.5 cursor-pointer transition-all"
                     >
                       <FileText className="w-3 h-3 stroke-[2]" />
                       <span>حریم خصوصی</span>
@@ -1860,19 +1890,10 @@ export default function ImpoPeriodTracker({
                         setCustomCareMessage("");
                         setShowCareModal(true);
                       }}
-                      className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
+                      className="px-3.5 py-1 rounded-full bg-white hover:bg-[#FFF8E7] border-2 border-[#141414] shadow-[0_1.5px_0_#141414] text-[#141414] text-[11px] font-black flex items-center gap-1.5 cursor-pointer transition-all"
                     >
                       <Send className="w-3 h-3 stroke-[2]" />
                       <span>پیام به پارتنر</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowSettingsModal(true)}
-                      className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[#141414] text-[11px] font-black flex items-center gap-1 cursor-pointer"
-                    >
-                      <Settings className="w-3 h-3 stroke-[2]" />
-                      <span>تنظیمات چرخه</span>
                     </button>
                   </div>
                 </>
@@ -1880,63 +1901,100 @@ export default function ImpoPeriodTracker({
             </div>
           </div>
 
-          {/* NEOBRUTALIST APRICOT INSIGHT CARD */}
-          <div className="bg-[#FAD074] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[28px] p-4 sm:p-5 relative overflow-hidden">
-            <div className="relative z-10 space-y-2 max-w-2xl">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-black text-[#141414] flex items-center gap-1.5">
-                  <span className="w-6 h-6 rounded-full bg-white border-2 border-[#141414] flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-[#141414] stroke-[2.2]" />
+          {/* TWO NEOBRUTALIST BENTO CARDS (Exact Screen 2 Reference: Apricot & Pink Side-by-Side) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Bento Card 1: Apricot (#FAD074) - Daily Guidance */}
+            <div className="bg-[#FAD074] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[28px] p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden">
+              <div className="relative z-10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-[#141414] flex items-center gap-1.5">
+                    <span className="w-6 h-6 rounded-full bg-white border-2 border-[#141414] flex items-center justify-center">
+                      <Sparkles className="w-3.5 h-3.5 text-[#141414] stroke-[2.2]" />
+                    </span>
+                    <span>راهنمای امروز طغرل</span>
                   </span>
-                  <span>راهنمای امروز طغرل</span>
-                </span>
+                  <div className="flex items-center gap-1">
+                    <NeoZigZagTrend color="#141414" className="w-6 h-3 opacity-70" />
+                    <ArrowUpRight className="w-4 h-4 text-[#141414] stroke-[2.5]" />
+                  </div>
+                </div>
+
+                <p className="text-xs font-bold text-[#141414] leading-relaxed line-clamp-3">
+                  {cycleStatus.diffDays >= 90
+                    ? "بیش از ۳ ماه از آخرین قاعدگی گذشته؛ در صورت رد بارداری با پزشک مشورت کنید."
+                    : partnerRole === "male"
+                    ? (sharing.sharePhase
+                        ? `${userProfile.displayName} عزیز، پارتنر شما در ${cycleStatus.phaseTitle} است. ${cycleStatus.partnerTip}`
+                        : "با آرامش و ابراز محبت بی‌قید و شرط در کنار پارتنرتان باشید.")
+                    : `${userProfile.displayName} عزیز، امروز در روز ${toPersianDigits(cycleStatus.currentCycleDay)} چرخه هستی. ${cycleStatus.selfCareTip}`}
+                </p>
+              </div>
+
+              <div className="pt-3 relative z-10">
                 {partnerRole === "male" ? (
                   <button
                     type="button"
                     onClick={() => setShowCareModal(true)}
-                    className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[11px] font-black text-[#141414] flex items-center gap-0.5 cursor-pointer"
+                    className="w-full py-2 px-3 rounded-full bg-white hover:bg-[#FFF8E7] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[11px] font-black text-[#141414] flex items-center justify-center gap-1 cursor-pointer transition-all"
                   >
-                    <span>پیام همدلی</span>
+                    <span>ارسال پیام همدلی</span>
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => handleOpenLogModal(toGregorianIsoString(new Date()))}
-                    className="px-3 py-1 rounded-full bg-white border-2 border-[#141414] text-[11px] font-black text-[#141414] flex items-center gap-0.5 cursor-pointer"
+                    className="w-full py-2 px-3 rounded-full bg-white hover:bg-[#FFF8E7] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[11px] font-black text-[#141414] flex items-center justify-center gap-1 cursor-pointer transition-all"
                   >
-                    <span>ثبت احوالات</span>
+                    <span>ثبت احوالات روز</span>
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
+            </div>
 
-              {cycleStatus.diffDays >= 90 ? (
-                <p className="text-xs sm:text-sm font-black text-[#141414] leading-relaxed">
-                  بیش از <span className="underline">۳ ماه</span> از آخرین قاعدگی گذشته است؛ لطفاً در صورت رد بارداری با متخصص زنان مشورت کنید.
-                </p>
-              ) : partnerRole === "male" ? (
-                <p className="text-xs sm:text-sm font-bold text-[#141414] leading-relaxed">
-                  {userProfile.displayName} عزیز،{" "}
-                  {sharing.sharePhase ? (
-                    <>
-                      پارتنرتان امروز در{" "}
-                      <span className="font-black underline">{cycleStatus.phaseTitle}</span> است.{" "}
-                      {cycleStatus.partnerTip}
-                    </>
-                  ) : (
-                    "با آرامش، توجه و ابراز محبت بی‌قید و شرط در کنار پارتنرتان باشید."
-                  )}
-                </p>
-              ) : (
-                <p className="text-xs sm:text-sm font-bold text-[#141414] leading-relaxed">
-                  {userProfile.displayName} عزیز، امروز در{" "}
-                  <span className="font-black underline">
-                    روز {toPersianDigits(cycleStatus.currentCycleDay)} چرخه
-                  </span>{" "}
-                  ({cycleStatus.phaseTitle}) هستی. {cycleStatus.selfCareTip}
-                </p>
-              )}
+            {/* Bento Card 2: Bubblegum Pink (#FBC2F3) - Cycle Rhythm & Countdown */}
+            <div className="bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[28px] p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden">
+              <div className="relative z-10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-[#141414] flex items-center gap-1.5">
+                    <span className="w-6 h-6 rounded-full bg-white border-2 border-[#141414] flex items-center justify-center">
+                      <Activity className="w-3.5 h-3.5 text-[#141414] stroke-[2.2]" />
+                    </span>
+                    <span>ریتم و موعد چرخه</span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <NeoZigZagTrend color="#141414" className="w-6 h-3 opacity-70" />
+                    <ArrowUpRight className="w-4 h-4 text-[#141414] stroke-[2.5]" />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-2xl font-black text-[#141414]">
+                    {cycleStatus.phase === "due"
+                      ? "موعد امروز"
+                      : cycleStatus.isDelayed
+                      ? `${toPersianDigits(cycleStatus.delayedDays)} روز تأخیر`
+                      : `${toPersianDigits(cycleStatus.daysUntilNextPeriod)} روز مانده`}
+                  </div>
+                  <p className="text-[11px] font-bold text-[#141414]/80 leading-relaxed">
+                    {cycleStatus.isDelayed
+                      ? "دوره قاعدگی از موعد پیش‌بینی شده فراتر رفته است."
+                      : `طول متوسط چرخه: ${toPersianDigits(safeCycleLength)} روز`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => setActiveSubTab("predictions")}
+                  className="w-full py-2 px-3 rounded-full bg-white hover:bg-[#FFF8E7] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[11px] font-black text-[#141414] flex items-center justify-center gap-1 cursor-pointer transition-all"
+                >
+                  <span>مشاهده پیش‌بینی آینده</span>
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
