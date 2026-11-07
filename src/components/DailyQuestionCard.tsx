@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles,
@@ -7,7 +7,9 @@ import {
   CheckCircle2,
   Calendar,
   Clock,
-  ChevronLeft
+  ChevronLeft,
+  Flame,
+  HeartHandshake
 } from "lucide-react";
 import { UserProfile, DailyQuestion, DailyQuestionAnswerState } from "../types";
 import {
@@ -90,59 +92,174 @@ export default function DailyQuestionCard({
   const hasMyAnswer = !!answerState?.myAnswer;
   const hasPartnerAnswer = answerState?.hasPartnerAnswered === true;
 
+  // Four distinct CTA states requested by the user:
+  // State 1: Neither has answered yet
+  // State 2: I answered, partner hasn't answered
+  // State 3: Partner answered, I haven't answered
+  // State 4: Both answered (answers revealed)
+  const ctaState = useMemo(() => {
+    if (isRevealed || (hasMyAnswer && hasPartnerAnswer)) {
+      return {
+        type: "both_answered" as const,
+        bg: "bg-[#B5F285] hover:bg-[#A3ED6B]",
+        textColor: "text-[#141414]",
+        title: "مشاهده پاسخ‌های دونفره 💕",
+        subtitle: `پاسخ‌ها باز شدند! برای خوندن جواب ${partnerName} کلیک کن`,
+        badge: "پاسخ‌ها باز شد 🔓",
+        badgeBg: "bg-white",
+        Icon: HeartHandshake,
+        idleAnimation: {
+          scale: [1, 1.025, 1],
+          boxShadow: [
+            "0 4px 0 #141414",
+            "0 6px 0 #141414",
+            "0 4px 0 #141414"
+          ]
+        },
+        idleDuration: 2.0
+      };
+    }
+
+    if (!hasMyAnswer && hasPartnerAnswer) {
+      return {
+        type: "partner_answered_waiting_me" as const,
+        bg: "bg-[#FF8B6A] hover:bg-[#FF7550]",
+        textColor: "text-white",
+        title: `${partnerName} جواب داده! نوبت توئه 🔥`,
+        subtitle: "همین الان پاسخ بده تا قفل جواب‌ها باز بشه!",
+        badge: "منتظر پاسخ تو ⚡",
+        badgeBg: "bg-[#F5F97A] text-[#141414]",
+        Icon: Flame,
+        idleAnimation: {
+          scale: [1, 1.03, 1],
+          rotate: [0, -0.8, 0.8, 0],
+          boxShadow: [
+            "0 4px 0 #141414",
+            "0 7px 0 #141414",
+            "0 4px 0 #141414"
+          ]
+        },
+        idleDuration: 1.5
+      };
+    }
+
+    if (hasMyAnswer && !hasPartnerAnswer) {
+      return {
+        type: "i_answered_waiting_partner" as const,
+        bg: "bg-[#FBC2F3] hover:bg-[#F9A8EE]",
+        textColor: "text-[#141414]",
+        title: `منتظر پاسخ ${partnerName} ⏳`,
+        subtitle: `تو پاسخ دادی! برای یادآوری یا ارسال تلنگر کلیک کن`,
+        badge: "در انتظار پارتنر",
+        badgeBg: "bg-white text-[#141414]",
+        Icon: Clock,
+        idleAnimation: {
+          y: [0, -2, 0],
+          scale: [1, 1.018, 1],
+          boxShadow: [
+            "0 4px 0 #141414",
+            "0 5.5px 0 #141414",
+            "0 4px 0 #141414"
+          ]
+        },
+        idleDuration: 2.4
+      };
+    }
+
+    // Default: State 1 - Neither has answered yet
+    return {
+      type: "nobody_answered" as const,
+      bg: "bg-[#F5F97A] hover:bg-[#EEF347]",
+      textColor: "text-[#141414]",
+      title: "پاسخ به سوال امروز ✦",
+      subtitle: "اولین نفر باش که پاسخ میده و شروعش کن!",
+      badge: "چالش دونفره امروز",
+      badgeBg: "bg-white text-[#141414]",
+      Icon: Sparkles,
+      idleAnimation: {
+        scale: [1, 1.025, 1],
+        boxShadow: [
+          "0 4px 0 #141414",
+          "0 6px 0 #141414",
+          "0 4px 0 #141414"
+        ]
+      },
+      idleDuration: 2.1
+    };
+  }, [isRevealed, hasMyAnswer, hasPartnerAnswer, partnerName]);
+
   return (
     <div className="w-full" dir="rtl">
       {embeddedInHero ? (
-        /* Neobrutalist Embedded Question Strip inside Home Hero Card */
+        /* Neobrutalist Embedded Question Card inside Home Hero Card */
         <div
           onClick={onOpenModal}
-          className="mt-3.5 bg-white border-2 border-[#141414] rounded-[22px] p-3.5 shadow-[0_3px_0_#141414] cursor-pointer text-right group transition-transform active:translate-y-0.5"
+          className="mt-3.5 bg-white border-2 border-[#141414] rounded-[26px] p-4 sm:p-5 shadow-[0_4px_0_#141414] cursor-pointer text-right group transition-all"
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="w-7 h-7 rounded-full bg-[#F5F97A] border-2 border-[#141414] flex items-center justify-center text-[#141414] shrink-0">
-                <Sparkles className="w-3.5 h-3.5 stroke-[2.2]" />
+          {/* Header: Title strictly "سوال امروز" */}
+          <div className="flex items-center justify-between gap-2 pb-2.5 border-b-2 border-[#141414]/10">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-full bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] shrink-0">
+                <Sparkles className="w-4 h-4 stroke-[2.2]" />
               </span>
-              <span className="text-xs font-black text-[#141414] whitespace-nowrap">
+              <h4 className="text-sm sm:text-base font-black text-[#141414]">
                 سوال امروز
-              </span>
-              <span className="text-[10px] font-bold text-[#141414] bg-[#FBC2F3] border border-[#141414] px-2 py-0.5 rounded-full truncate">
-                {categoryMeta.label}
-              </span>
+              </h4>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleOpenHistory}
-                className="w-7 h-7 rounded-full bg-white hover:bg-[#F5F97A] border-2 border-[#141414] flex items-center justify-center text-[#141414] transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white hover:bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] transition-colors cursor-pointer active:translate-y-0.5"
                 title="تاریخچه سوال‌ها"
                 aria-label="تاریخچه سوال‌ها"
               >
-                <History className="w-3.5 h-3.5 stroke-[2.2]" />
+                <History className="w-4 h-4 stroke-[2.2]" />
               </button>
-
-              <span className="px-2.5 py-1 rounded-full bg-[#242424] text-white border-2 border-[#141414] text-[11px] font-black flex items-center gap-0.5 whitespace-nowrap">
-                {isRevealed ? (
-                  <span>مشاهده پاسخ‌ها</span>
-                ) : hasMyAnswer ? (
-                  <>
-                    <Clock className="w-3 h-3" />
-                    <span>منتظر {partnerName}</span>
-                  </>
-                ) : hasPartnerAnswer ? (
-                  <span>پارتنر جواب داده</span>
-                ) : (
-                  <span>پاسخ دادن</span>
-                )}
-                <ChevronLeft className="w-3 h-3" />
-              </span>
             </div>
           </div>
 
-          <p className="mt-2 text-xs sm:text-sm font-black text-[#141414] leading-relaxed line-clamp-2">
+          {/* Question Text */}
+          <p className="mt-3 text-xs sm:text-sm font-black text-[#141414] leading-relaxed line-clamp-2">
             «{question.text}»
           </p>
+
+          {/* BIG CALL TO ACTION BUTTON WITH 4 STATES & EYE-CATCHING IDLE ANIMATION */}
+          <div className="mt-3.5">
+            <motion.div
+              animate={ctaState.idleAnimation}
+              transition={{
+                repeat: Infinity,
+                duration: ctaState.idleDuration,
+                ease: "easeInOut"
+              }}
+              className={`w-full py-3.5 px-4 rounded-full border-2 border-[#141414] ${ctaState.bg} ${ctaState.textColor} shadow-[0_4px_0_#141414] active:shadow-[0_1px_0_#141414] active:translate-y-1 transition-colors flex items-center justify-between gap-3 cursor-pointer group`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-white/90 border-2 border-[#141414] shadow-[0_1.5px_0_#141414] flex items-center justify-center shrink-0">
+                  <ctaState.Icon className="w-5 h-5 text-[#141414] stroke-[2.2]" />
+                </div>
+                <div className="text-right min-w-0">
+                  <span className="text-xs sm:text-sm font-black block leading-tight truncate">
+                    {ctaState.title}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-bold opacity-85 block leading-tight truncate mt-0.5">
+                    {ctaState.subtitle}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className={`hidden sm:inline-block text-[10px] font-black px-2 py-0.5 rounded-full border border-[#141414] ${ctaState.badgeBg}`}>
+                  {ctaState.badge}
+                </span>
+                <div className="w-7 h-7 rounded-full bg-[#141414] text-white flex items-center justify-center group-hover:-translate-x-1 transition-transform">
+                  <ChevronLeft className="w-4 h-4 stroke-[2.6]" />
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       ) : (
         /* Standalone Neobrutalist Card */
@@ -150,39 +267,69 @@ export default function DailyQuestionCard({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           onClick={onOpenModal}
-          className="bg-white border-2 border-[#141414] rounded-[26px] p-4 shadow-[0_3px_0_#141414] cursor-pointer text-right group"
+          className="bg-white border-2 border-[#141414] rounded-[26px] p-4 sm:p-5 shadow-[0_4px_0_#141414] cursor-pointer text-right group"
         >
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 pb-2.5 border-b-2 border-[#141414]/10">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-8 h-8 rounded-full bg-[#F5F97A] border-2 border-[#141414] flex items-center justify-center text-[#141414] shrink-0">
+              <span className="w-8 h-8 rounded-full bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] shrink-0">
                 <Sparkles className="w-4 h-4 stroke-[2.2]" />
               </span>
-              <span className="text-xs font-black text-[#141414] whitespace-nowrap">سوال امروز</span>
-              <span className="text-[10px] font-bold bg-[#FBC2F3] border border-[#141414] px-2 py-0.5 rounded-full text-[#141414] truncate">
-                {categoryMeta.label}
-              </span>
+              <h4 className="text-sm sm:text-base font-black text-[#141414] whitespace-nowrap">
+                سوال امروز
+              </h4>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleOpenHistory}
-                className="w-8 h-8 rounded-full bg-white border-2 border-[#141414] flex items-center justify-center text-[#141414] cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white hover:bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] cursor-pointer active:translate-y-0.5"
                 title="تاریخچه سوال‌ها"
                 aria-label="تاریخچه سوال‌ها"
               >
-                <History className="w-3.5 h-3.5 stroke-[2.2]" />
+                <History className="w-4 h-4 stroke-[2.2]" />
               </button>
-              <span className="px-3 py-1 rounded-full bg-[#242424] text-white border-2 border-[#141414] text-[11px] font-black flex items-center gap-0.5 whitespace-nowrap">
-                <span>{isRevealed ? "مشاهده پاسخ‌ها" : hasMyAnswer ? `منتظر ${partnerName}` : hasPartnerAnswer ? "پارتنر جواب داده" : "پاسخ دادن"}</span>
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </span>
             </div>
           </div>
 
-          <p className="mt-2.5 text-xs sm:text-sm font-black text-[#141414] leading-relaxed line-clamp-2">
-            {question.text}
+          <p className="mt-3 text-xs sm:text-sm font-black text-[#141414] leading-relaxed line-clamp-2">
+            «{question.text}»
           </p>
+
+          <div className="mt-3.5">
+            <motion.div
+              animate={ctaState.idleAnimation}
+              transition={{
+                repeat: Infinity,
+                duration: ctaState.idleDuration,
+                ease: "easeInOut"
+              }}
+              className={`w-full py-3.5 px-4 rounded-full border-2 border-[#141414] ${ctaState.bg} ${ctaState.textColor} shadow-[0_4px_0_#141414] active:shadow-[0_1px_0_#141414] active:translate-y-1 transition-colors flex items-center justify-between gap-3 cursor-pointer group`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-white/90 border-2 border-[#141414] shadow-[0_1.5px_0_#141414] flex items-center justify-center shrink-0">
+                  <ctaState.Icon className="w-5 h-5 text-[#141414] stroke-[2.2]" />
+                </div>
+                <div className="text-right min-w-0">
+                  <span className="text-xs sm:text-sm font-black block leading-tight truncate">
+                    {ctaState.title}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-bold opacity-85 block leading-tight truncate mt-0.5">
+                    {ctaState.subtitle}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className={`hidden sm:inline-block text-[10px] font-black px-2 py-0.5 rounded-full border border-[#141414] ${ctaState.badgeBg}`}>
+                  {ctaState.badge}
+                </span>
+                <div className="w-7 h-7 rounded-full bg-[#141414] text-white flex items-center justify-center group-hover:-translate-x-1 transition-transform">
+                  <ChevronLeft className="w-4 h-4 stroke-[2.6]" />
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
       )}
 
