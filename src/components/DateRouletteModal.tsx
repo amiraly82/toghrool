@@ -65,7 +65,7 @@ export default function DateRouletteModal({
           particleCount: 80,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ["#FBC2F3", "#F5F97A", "#FF8B6A", "#B5F285"]
+          colors: ["#EBA2F8", "#FFFF66", "#F29B47", "#5ED46A"]
         });
       }
     };
@@ -76,51 +76,51 @@ export default function DateRouletteModal({
   const getBudgetBadge = (budget?: string) => {
     switch (budget) {
       case 'economy':
-        return { label: 'اقتصادی و کم‌خرج', bg: 'bg-[#B5F285]', text: 'text-[#141414]', emoji: '🟢' };
+        return { label: 'اقتصادی و کم‌خرج', bg: 'bg-[#5ED46A]', text: 'text-[#1C1C1C]', emoji: '🟢' };
       case 'luxury':
-        return { label: 'لاکچری و خاص', bg: 'bg-[#FBC2F3]', text: 'text-[#141414]', emoji: '🟣' };
+        return { label: 'لاکچری و خاص', bg: 'bg-[#EBA2F8]', text: 'text-[#1C1C1C]', emoji: '🟣' };
       case 'medium':
       default:
-        return { label: 'میان‌رده و معمول', bg: 'bg-[#F5F97A]', text: 'text-[#141414]', emoji: '🟡' };
+        return { label: 'میان‌رده و معمول', bg: 'bg-[#FFFF66]', text: 'text-[#1C1C1C]', emoji: '🟡' };
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#141414]/65 backdrop-blur-[3px] flex items-center justify-center p-4 z-[90]" dir="rtl" onClick={onClose}>
+    <div className="fixed inset-0 bg-[#1C1C1C]/65 backdrop-blur-[3px] flex items-center justify-center p-4 z-[90]" dir="rtl" onClick={onClose}>
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 15 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#FAD074] border-2 border-[#141414] rounded-[34px] w-full max-w-md p-6 relative text-right shadow-[0_6px_0_#141414] overflow-hidden"
+        className="bg-[#F6F4F0] border-[1.5px] border-[#1C1C1C] rounded-[28px] w-full max-w-md p-6 relative text-right shadow-[0_24px_60px_-28px_rgba(0,0,0,0.45)] overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3.5 border-b-2 border-[#141414]/20 mb-4">
+        <div className="flex items-center justify-between pb-3.5 border-b-[1.5px] border-[#1C1C1C]/20 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-11 h-11 rounded-full bg-[#B5F285] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414]">
-              <Sparkles className="w-5 h-5 stroke-[2.3]" />
+            <div className="w-11 h-11 rounded-full bg-[#5ED46A] border-[1.5px] border-[#1C1C1C] flex items-center justify-center text-[#1C1C1C]">
+              <Sparkles className="w-5 h-5 stroke-[1.9]" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-[#141414]">گردونه شانس دیت دونفره 🎰</h3>
-              <p className="text-[11px] text-[#141414]/80 font-extrabold">نمی‌دونید کجا برید؟ انتخاب رو بسپارید به شانس!</p>
+              <h3 className="text-base sm:text-lg font-black text-[#1C1C1C]">گردونه شانس دیت دونفره 🎰</h3>
+              <p className="text-[11px] text-[#1C1C1C]/80 font-bold">نمی‌دونید کجا برید؟ انتخاب رو بسپارید به شانس!</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-[#FF8B6A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] transition-transform active:translate-y-0.5 cursor-pointer"
+            className="w-10 h-10 rounded-full bg-[#F29B47] border-[1.5px] border-[#1C1C1C] flex items-center justify-center text-[#1C1C1C] transition-transform active:translate-y-0.5 cursor-pointer"
             title="بستن"
           >
-            <X className="w-4 h-4 stroke-[2.5]" />
+            <X className="w-4 h-4 stroke-[1.9]" />
           </button>
         </div>
 
         {/* Budget Filter Buttons */}
         <div className="space-y-2 mb-4">
-          <label className="text-xs font-black text-[#141414] block">فیلتر بودجه دیت:</label>
-          <div className="grid grid-cols-4 gap-1.5 text-[11px] font-black">
+          <label className="text-xs font-bold text-[#1C1C1C] block">فیلتر بودجه دیت:</label>
+          <div className="grid grid-cols-4 gap-1.5 text-[11px] font-bold">
             {[
               { id: 'all', label: 'همه' },
               { id: 'economy', label: '🟢 اقتصادی' },
@@ -131,10 +131,10 @@ export default function DateRouletteModal({
                 key={b.id}
                 type="button"
                 onClick={() => setBudgetFilter(b.id as any)}
-                className={`py-2 rounded-full border-2 border-[#141414] transition-all cursor-pointer ${
+                className={`py-2 rounded-full border-[1.5px] border-[#1C1C1C] transition-all cursor-pointer ${
                   budgetFilter === b.id
-                    ? 'bg-[#B5F285] text-[#141414] shadow-[0_2px_0_#141414]'
-                    : 'bg-white text-[#141414]'
+                    ? 'bg-[#5ED46A] text-[#1C1C1C]'
+                    : 'bg-white text-[#1C1C1C]'
                 }`}
               >
                 {b.label}
@@ -145,17 +145,17 @@ export default function DateRouletteModal({
 
         {/* Roulette Display Area */}
         {eligibleItems.length === 0 ? (
-          <div className="py-10 px-4 text-center bg-white rounded-[26px] border-2 border-[#141414] shadow-[0_3px_0_#141414] my-4">
-            <p className="text-sm font-black text-[#141414] mb-1">هیچ آرزویی با این فیلتر پیدا نشد! 🤷‍♂️</p>
-            <p className="text-xs text-[#141414]/75 font-bold">ابتدا چند ایده کافه، تفریح یا دیت در ویش‌لیست ثبت کنید.</p>
+          <div className="py-10 px-4 text-center bg-white rounded-[24px] border-[1.5px] border-[#1C1C1C] my-4">
+            <p className="text-sm font-bold text-[#1C1C1C] mb-1">هیچ آرزویی با این فیلتر پیدا نشد! 🤷‍♂️</p>
+            <p className="text-xs text-[#1C1C1C]/75 font-medium">ابتدا چند ایده کافه، تفریح یا دیت در ویش‌لیست ثبت کنید.</p>
           </div>
         ) : (
           <div className="relative my-4">
-            <div className={`p-6 rounded-[28px] border-2 border-[#141414] shadow-[0_4px_0_#141414] text-center transition-all ${
+            <div className={`p-6 rounded-[28px] border-[1.5px] border-[#1C1C1C] text-center transition-all ${
               selectedItem
-                ? 'bg-[#B5F285]'
+                ? 'bg-[#5ED46A]'
                 : isSpinning
-                ? 'bg-[#FBC2F3]'
+                ? 'bg-[#EBA2F8]'
                 : 'bg-white'
             }`}>
               {selectedItem ? (
@@ -164,20 +164,20 @@ export default function DateRouletteModal({
                   animate={{ scale: 1, opacity: 1 }}
                   className="space-y-3"
                 >
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-white border-2 border-[#141414] text-[#141414]">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border-[1.5px] border-[#1C1C1C] text-[#1C1C1C]">
                     <span>🎉 برنده قرعه‌کشی امروز:</span>
                   </div>
-                  <h4 className="text-lg sm:text-xl font-black text-[#141414] leading-snug">
+                  <h4 className="text-lg sm:text-xl font-bold text-[#1C1C1C] leading-snug">
                     {selectedItem.title}
                   </h4>
                   {selectedItem.description && (
-                    <p className="text-xs text-[#141414]/80 line-clamp-2 font-bold">
+                    <p className="text-xs text-[#1C1C1C]/80 line-clamp-2 font-medium">
                       {selectedItem.description}
                     </p>
                   )}
                   <div className="flex items-center justify-center gap-2 pt-1">
                     {selectedItem.budget && (
-                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border-2 border-[#141414] ${getBudgetBadge(selectedItem.budget).bg} ${getBudgetBadge(selectedItem.budget).text}`}>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border-[1.5px] border-[#1C1C1C] ${getBudgetBadge(selectedItem.budget).bg} ${getBudgetBadge(selectedItem.budget).text}`}>
                         {getBudgetBadge(selectedItem.budget).emoji} {getBudgetBadge(selectedItem.budget).label}
                       </span>
                     )}
@@ -185,23 +185,23 @@ export default function DateRouletteModal({
                 </motion.div>
               ) : isSpinning ? (
                 <div className="py-5 space-y-2">
-                  <div className="w-12 h-12 rounded-full bg-white border-2 border-[#141414] mx-auto flex items-center justify-center animate-spin text-[#141414]">
-                    <RotateCw className="w-6 h-6 stroke-[2.3]" />
+                  <div className="w-12 h-12 rounded-full bg-white border-[1.5px] border-[#1C1C1C] mx-auto flex items-center justify-center animate-spin text-[#1C1C1C]">
+                    <RotateCw className="w-6 h-6 stroke-[1.9]" />
                   </div>
-                  <h4 className="text-base font-black text-[#141414] animate-bounce">
+                  <h4 className="text-base font-bold text-[#1C1C1C] animate-bounce">
                     {eligibleItems[displayIndex]?.title || "در حال چرخش..."}
                   </h4>
-                  <p className="text-xs text-[#141414] font-black">گردونه در حال چرخشه... 🎲</p>
+                  <p className="text-xs text-[#1C1C1C] font-bold">گردونه در حال چرخشه... 🎲</p>
                 </div>
               ) : (
                 <div className="py-6 space-y-2">
-                  <div className="w-12 h-12 rounded-full bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] mx-auto flex items-center justify-center text-[#141414]">
-                    <Shuffle className="w-6 h-6 stroke-[2.2]" />
+                  <div className="w-12 h-12 rounded-full bg-[#FFFF66] border-[1.5px] border-[#1C1C1C] mx-auto flex items-center justify-center text-[#1C1C1C]">
+                    <Shuffle className="w-6 h-6 stroke-[1.9]" />
                   </div>
-                  <h4 className="text-sm font-black text-[#141414]">
+                  <h4 className="text-sm font-bold text-[#1C1C1C]">
                     {toPersianDigits(eligibleItems.length)} ایده آماده برای دیت دونفره
                   </h4>
-                  <p className="text-xs text-[#141414]/75 font-bold">روی دکمه زیر بزنید تا گردونه بچرخه!</p>
+                  <p className="text-xs text-[#1C1C1C]/75 font-medium">روی دکمه زیر بزنید تا گردونه بچرخه!</p>
                 </div>
               )}
             </div>
@@ -215,9 +215,9 @@ export default function DateRouletteModal({
               <button
                 type="button"
                 onClick={handleSpin}
-                className="flex-1 py-3 px-4 bg-white hover:bg-[#F5F97A] text-[#141414] border-2 border-[#141414] shadow-[0_3px_0_#141414] font-black text-xs rounded-full transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                className="flex-1 py-3 px-4 bg-white hover:bg-[#FFFF66] text-[#1C1C1C] border-[1.5px] border-[#1C1C1C] font-bold text-xs rounded-full transition-colors cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <RotateCw className="w-3.5 h-3.5 stroke-[2.3]" />
+                <RotateCw className="w-3.5 h-3.5 stroke-[1.9]" />
                 <span>دوباره بچرخون</span>
               </button>
               <button
@@ -226,9 +226,9 @@ export default function DateRouletteModal({
                   if (onSelectWish) onSelectWish(selectedItem);
                   onClose();
                 }}
-                className="flex-[1.5] py-3 px-4 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] font-black text-xs rounded-full transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                className="flex-[1.5] py-3 px-4 bg-[#1C1C1C] hover:bg-[#1C1C1C] text-white border-[1.5px] border-[#1C1C1C] font-bold text-xs rounded-full transition-colors cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <Check className="w-4 h-4 stroke-[2.5] text-[#B5F285]" />
+                <Check className="w-4 h-4 stroke-[1.9] text-[#5ED46A]" />
                 <span>عالیه، برنامه‌ش رو بریزیم! 💖</span>
               </button>
             </div>
@@ -237,9 +237,9 @@ export default function DateRouletteModal({
               type="button"
               disabled={isSpinning || eligibleItems.length === 0}
               onClick={handleSpin}
-              className="w-full py-3.5 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] font-black text-xs sm:text-sm rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-0.5"
+              className="w-full py-3.5 bg-[#1C1C1C] hover:bg-[#1C1C1C] text-white border-[1.5px] border-[#1C1C1C] font-bold text-xs sm:text-sm rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-0.5"
             >
-              <Sparkles className="w-4 h-4 text-[#F5F97A] stroke-[2.3]" />
+              <Sparkles className="w-4 h-4 text-[#FFFF66] stroke-[1.9]" />
               <span>{isSpinning ? "در حال چرخش گردونه..." : "بچرخون و انتخاب کن! 🎲"}</span>
             </button>
           )}

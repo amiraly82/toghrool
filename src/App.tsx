@@ -340,7 +340,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#141414] font-sans selection:bg-[#FBC2F3] selection:text-[#141414] overflow-x-hidden">
+    <div className="min-h-screen bg-[#F5F3EF] text-[#1C1C1C] font-sans selection:bg-[#EBA2F8] selection:text-[#1C1C1C] overflow-x-hidden">
       <AnimatePresence mode="wait">
         {loading ? (
           /* Neobrutalist Pastel Loader */
@@ -349,18 +349,18 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-[#FAF8F5]"
+            className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-[#F5F3EF]"
           >
             <div className="relative">
-              <div className="w-20 h-20 bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-full flex items-center justify-center text-[#141414]">
-                <Heart className="w-9 h-9 stroke-[2.2] animate-heart text-[#141414]" />
+              <div className="w-20 h-20 bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] rounded-full flex items-center justify-center text-[#1C1C1C]">
+                <Heart className="w-9 h-9 stroke-[1.9] animate-heart text-[#1C1C1C]" />
               </div>
-              <div className="absolute -top-1 -right-1 w-7 h-7 bg-[#F5F97A] rounded-full border-2 border-[#141414] flex items-center justify-center text-[11px] font-black text-[#141414]">
+              <div className="absolute -top-1 -right-1 w-7 h-7 bg-[#FFFF66] rounded-full border-[1.5px] border-[#1C1C1C] flex items-center justify-center text-[11px] font-bold text-[#1C1C1C]">
                 ✦
               </div>
             </div>
-            <p className="mt-5 text-xs font-black text-[#141414] flex items-center gap-2 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] px-4 py-1.5 rounded-full">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#141414] stroke-[2.3]" />
+            <p className="mt-5 text-xs font-bold text-[#1C1C1C] flex items-center gap-2 bg-white border-[1.5px] border-[#1C1C1C] px-4 py-1.5 rounded-full">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#1C1C1C] stroke-[1.9]" />
               در حال آماده‌سازی فضای طغرل...
             </p>
           </motion.div>
@@ -368,16 +368,16 @@ export default function App() {
           /* Neobrutalist Error Page */
           <motion.div
             key="error"
-            className="fixed inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#FAD074]"
+            className="fixed inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#F6F4F0]"
           >
-            <div className="w-16 h-16 bg-[#FF8B6A] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full flex items-center justify-center text-[#141414] mb-4">
-              <Heart className="w-7 h-7 stroke-[2.2]" />
+            <div className="w-16 h-16 bg-[#F29B47] border-[1.5px] border-[#1C1C1C] rounded-full flex items-center justify-center text-[#1C1C1C] mb-4">
+              <Heart className="w-7 h-7 stroke-[1.9]" />
             </div>
-            <h3 className="text-lg font-black text-[#141414]">خطایی رخ داد</h3>
-            <p className="text-[#141414]/80 font-bold text-sm mt-1.5 max-w-xs leading-relaxed">{error}</p>
+            <h3 className="text-lg font-black text-[#1C1C1C]">خطایی رخ داد</h3>
+            <p className="text-[#1C1C1C]/80 font-medium text-sm mt-1.5 max-w-xs leading-relaxed">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-6 py-3 px-7 bg-[#242424] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] font-black rounded-full text-xs cursor-pointer transition-colors"
+              className="mt-6 py-3 px-7 bg-[#1C1C1C] text-white border-[1.5px] border-[#1C1C1C] font-bold rounded-full text-xs cursor-pointer transition-colors"
             >
               تلاش دوباره
             </button>
@@ -461,7 +461,7 @@ export default function App() {
             {/* Interactive Pairing Modal when clicked from header/status */}
             <AnimatePresence>
               {showPairingModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1B1B1A]/40 backdrop-blur-xs">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C1C1C]/40 backdrop-blur-xs">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}

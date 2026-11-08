@@ -53,7 +53,7 @@ export const WhiteFlagReceivedModal: React.FC<WhiteFlagReceivedModalProps> = ({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 bg-[#141414]/70 backdrop-blur-sm flex items-center justify-center p-4 z-[100] text-center"
+        className="fixed inset-0 bg-[#1C1C1C]/70 backdrop-blur-sm flex items-center justify-center p-4 z-[100] text-center"
         dir="rtl"
         onClick={onClose}
       >
@@ -63,23 +63,23 @@ export const WhiteFlagReceivedModal: React.FC<WhiteFlagReceivedModalProps> = ({
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#FAD074] border-2 border-[#141414] rounded-[34px] w-full max-w-sm p-6 sm:p-7 shadow-[0_6px_0_#141414] relative overflow-hidden text-center"
+          className="bg-[#F6F4F0] border-[1.5px] border-[#1C1C1C] rounded-[28px] w-full max-w-sm p-6 sm:p-7 shadow-[0_24px_60px_-28px_rgba(0,0,0,0.45)] relative overflow-hidden text-center"
         >
           {/* Dove Icon */}
-          <div className="relative mx-auto mb-3.5 w-16 h-16 rounded-full bg-[#7FD1F7] border-2 border-[#141414] shadow-[0_3px_0_#141414] flex items-center justify-center">
+          <div className="relative mx-auto mb-3.5 w-16 h-16 rounded-full bg-[#6BCFEA] border-[1.5px] border-[#1C1C1C] flex items-center justify-center">
             <span className="text-4xl animate-bounce">🕊️</span>
           </div>
 
-          <span className="text-[11px] font-black text-[#141414] bg-white px-3.5 py-1 rounded-full border-2 border-[#141414] inline-block mb-2 shadow-[0_2px_0_#141414]">
+          <span className="text-[11px] font-bold text-[#1C1C1C] bg-white px-3.5 py-1 rounded-full border-[1.5px] border-[#1C1C1C] inline-block mb-2">
             🏳️ سیگنال پرچم سفید و آشتی
           </span>
 
-          <h3 className="text-base sm:text-lg font-black text-[#141414] mb-2 leading-relaxed">
+          <h3 className="text-base sm:text-lg font-black text-[#1C1C1C] mb-2 leading-relaxed">
             {poke.senderName || "پارتنرت"} برای آشتی قدم پیش گذاشته است
           </h3>
 
-          <div className="bg-white border-2 border-[#141414] rounded-[24px] p-4 mb-5 text-center shadow-[0_3px_0_#141414]">
-            <p className="text-xs sm:text-sm font-black text-[#141414] leading-relaxed whitespace-pre-line">
+          <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[24px] p-4 mb-5 text-center">
+            <p className="text-xs sm:text-sm font-bold text-[#1C1C1C] leading-relaxed whitespace-pre-line">
               «{poke.message}»
             </p>
           </div>
@@ -89,18 +89,18 @@ export const WhiteFlagReceivedModal: React.FC<WhiteFlagReceivedModalProps> = ({
               type="button"
               onClick={handleAccept}
               disabled={accepting || acceptedSuccess}
-              className="w-full py-3.5 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50"
+              className="w-full py-3.5 bg-[#1C1C1C] hover:bg-[#1C1C1C] text-white border-[1.5px] border-[#1C1C1C] rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50"
             >
               {acceptedSuccess ? (
                 <>
-                  <Check className="w-4 h-4 text-[#B5F285] stroke-[2.5]" />
+                  <Check className="w-4 h-4 text-[#5ED46A] stroke-[1.9]" />
                   <span>آشتی ثبت شد! 💖</span>
                 </>
               ) : accepting ? (
                 <span>در حال ارسال آغوش...</span>
               ) : (
                 <>
-                  <Heart className="w-4 h-4 text-[#FBC2F3] fill-current" />
+                  <Heart className="w-4 h-4 text-[#EBA2F8] fill-current" />
                   <span>پذیرش آتش‌بس و ارسال آغوش 🫂💖</span>
                 </>
               )}
@@ -109,7 +109,7 @@ export const WhiteFlagReceivedModal: React.FC<WhiteFlagReceivedModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-3 bg-white hover:bg-[#F5F97A] text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full text-xs font-black transition-colors cursor-pointer"
+              className="w-full py-3 bg-white hover:bg-[#FFFF66] text-[#1C1C1C] border-[1.5px] border-[#1C1C1C] rounded-full text-xs font-bold transition-colors cursor-pointer"
             >
               کمی زمان نیاز دارم، اما متشکرم 🌱
             </button>

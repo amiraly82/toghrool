@@ -56,7 +56,7 @@ export const AnniversaryModal: React.FC<AnniversaryModalProps> = ({
           particleCount: 35,
           spread: 60,
           origin: { y: 0.7 },
-          colors: ["#FBC2F3", "#B5F285", "#F5F97A"]
+          colors: ["#EBA2F8", "#5ED46A", "#FFFF66"]
         });
         setSavedSuccess(true);
         onSaved(relDate, marrDate);
@@ -75,7 +75,7 @@ export const AnniversaryModal: React.FC<AnniversaryModalProps> = ({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 bg-[#141414]/65 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 text-right"
+        className="fixed inset-0 bg-[#1C1C1C]/65 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 text-right"
         dir="rtl"
         onClick={onClose}
       >
@@ -85,41 +85,41 @@ export const AnniversaryModal: React.FC<AnniversaryModalProps> = ({
           exit={{ opacity: 0, y: 40, scale: 0.96 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#FAD074] border-t-2 sm:border-2 border-[#141414] rounded-t-[34px] sm:rounded-[34px] w-full max-w-md shadow-[0_6px_0_#141414] overflow-hidden p-6"
+          className="bg-[#F6F4F0] border-t-[1.5px] sm:border-[1.5px] border-[#1C1C1C] rounded-t-[28px] sm:rounded-[28px] w-full max-w-md shadow-[0_24px_60px_-28px_rgba(0,0,0,0.45)] overflow-hidden p-6"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-3.5 border-b-2 border-[#141414]/20 mb-4">
+          <div className="flex items-center justify-between pb-3.5 border-b-[1.5px] border-[#1C1C1C]/20 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-11 h-11 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414]">
-                <Heart className="w-5 h-5 text-[#141414] fill-[#FF8B6A] stroke-[2.2]" />
+              <div className="w-11 h-11 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] flex items-center justify-center text-[#1C1C1C]">
+                <Heart className="w-5 h-5 text-[#1C1C1C] fill-[#F29B47] stroke-[1.9]" />
               </div>
               <div>
-                <h3 className="text-sm sm:text-base font-black text-[#141414]">روزشمار عشق و سالگردها 💍✨</h3>
-                <p className="text-[11px] text-[#141414]/80 font-extrabold">ثبت تاریخ‌های ماندگار زندگی دونفره</p>
+                <h3 className="text-sm sm:text-base font-black text-[#1C1C1C]">روزشمار عشق و سالگردها 💍✨</h3>
+                <p className="text-[11px] text-[#1C1C1C]/80 font-bold">ثبت تاریخ‌های ماندگار زندگی دونفره</p>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="w-10 h-10 rounded-full bg-[#FF8B6A] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] flex items-center justify-center transition-transform active:translate-y-0.5 cursor-pointer"
+              className="w-10 h-10 rounded-full bg-[#F29B47] border-[1.5px] border-[#1C1C1C] text-[#1C1C1C] flex items-center justify-center transition-transform active:translate-y-0.5 cursor-pointer"
             >
-              <X className="w-4 h-4 stroke-[2.5]" />
+              <X className="w-4 h-4 stroke-[1.9]" />
             </button>
           </div>
 
           {/* Days Together Counter Card */}
           {daysTogether !== null && daysTogether > 0 && (
-            <div className="mb-5 bg-[#A594F9] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[26px] p-4 text-center relative overflow-hidden">
-              <span className="text-[10px] font-black text-[#141414] bg-[#F5F97A] px-3 py-0.5 rounded-full border-2 border-[#141414] inline-block mb-1.5">
+            <div className="mb-5 bg-[#A9ABEE] border-[1.5px] border-[#1C1C1C] rounded-[24px] p-4 text-center relative overflow-hidden">
+              <span className="text-[10px] font-bold text-[#1C1C1C] bg-[#FFFF66] px-3 py-0.5 rounded-full border-[1.5px] border-[#1C1C1C] inline-block mb-1.5">
                 تعداد روزهای عاشقی ✦
               </span>
               <div className="flex items-baseline justify-center gap-1.5 my-1">
-                <span className="text-3xl font-black text-[#141414] tracking-tight">
+                <span className="text-3xl font-bold text-[#1C1C1C] tracking-tight">
                   {toPersianDigits(daysTogether)}
                 </span>
-                <span className="text-xs font-black text-[#141414]">روز در کنار هم ❤️</span>
+                <span className="text-xs font-bold text-[#1C1C1C]">روز در کنار هم ❤️</span>
               </div>
-              <p className="text-[11px] text-[#141414]/85 font-extrabold">
+              <p className="text-[11px] text-[#1C1C1C]/85 font-bold">
                 شروع از {toPersianDigits(formatPersianDate(relDate))}
               </p>
             </div>
@@ -127,9 +127,9 @@ export const AnniversaryModal: React.FC<AnniversaryModalProps> = ({
 
           {/* Form */}
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[22px] p-3.5">
-              <label className="block text-xs font-black text-[#141414] mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-[#141414] stroke-[2.2]" />
+            <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[22px] p-3.5">
+              <label className="block text-xs font-bold text-[#1C1C1C] mb-1.5 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-[#1C1C1C] stroke-[1.9]" />
                 <span>تاریخ شروع رابطه / آشنایی</span>
               </label>
               <JalaliDatePicker
@@ -139,9 +139,9 @@ export const AnniversaryModal: React.FC<AnniversaryModalProps> = ({
               />
             </div>
 
-            <div className="bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[22px] p-3.5">
-              <label className="block text-xs font-black text-[#141414] mb-1.5 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-[#141414] stroke-[2.2]" />
+            <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[22px] p-3.5">
+              <label className="block text-xs font-bold text-[#1C1C1C] mb-1.5 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-[#1C1C1C] stroke-[1.9]" />
                 <span>تاریخ عقد یا ازدواج (اختیاری)</span>
               </label>
               <JalaliDatePicker
@@ -155,18 +155,18 @@ export const AnniversaryModal: React.FC<AnniversaryModalProps> = ({
               <button
                 type="submit"
                 disabled={saving || !relDate}
-                className="flex-1 py-3.5 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50"
+                className="flex-1 py-3.5 bg-[#1C1C1C] hover:bg-[#1C1C1C] text-white border-[1.5px] border-[#1C1C1C] rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50"
               >
                 {savedSuccess ? (
                   <>
-                    <Check className="w-4 h-4 text-[#B5F285] stroke-[2.5]" />
+                    <Check className="w-4 h-4 text-[#5ED46A] stroke-[1.9]" />
                     <span>با موفقیت ذخیره شد! 🎉</span>
                   </>
                 ) : saving ? (
                   <span>در حال ذخیره...</span>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 text-[#F5F97A] stroke-[2.2]" />
+                    <Save className="w-4 h-4 text-[#FFFF66] stroke-[1.9]" />
                     <span>ذخیره تاریخ‌های عاشقی</span>
                   </>
                 )}
@@ -175,7 +175,7 @@ export const AnniversaryModal: React.FC<AnniversaryModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-3.5 bg-white hover:bg-[#F5F97A] text-[#141414] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black transition-colors cursor-pointer"
+                className="px-5 py-3.5 bg-white hover:bg-[#FFFF66] text-[#1C1C1C] border-[1.5px] border-[#1C1C1C] rounded-full text-xs font-bold transition-colors cursor-pointer"
               >
                 بستن
               </button>

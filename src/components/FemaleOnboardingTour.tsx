@@ -109,10 +109,10 @@ function VerticalWheelPicker({
     <div className="relative w-full max-w-[260px] mx-auto h-[230px] select-none flex items-center justify-center">
       {/* Center Highlight Slot with Neobrutalist border */}
       <div 
-        className="absolute inset-x-0 top-[92px] h-[46px] rounded-2xl bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] pointer-events-none flex items-center justify-between px-5 z-0"
+        className="absolute inset-x-0 top-[92px] h-[46px] rounded-2xl bg-[#FFFF66] border-[1.5px] border-[#1C1C1C] pointer-events-none flex items-center justify-between px-5 z-0"
       >
-        <span className="text-xs font-black text-[#141414] tracking-wider">{unit}</span>
-        <div className="w-2.5 h-2.5 rounded-full bg-[#FF8B6A] border border-[#141414]" />
+        <span className="text-xs font-bold text-[#1C1C1C] tracking-wider">{unit}</span>
+        <div className="w-2.5 h-2.5 rounded-full bg-[#F29B47] border border-[#1C1C1C]" />
       </div>
 
       {/* Top and Bottom Gradient Masks for optical 3D roll effect */}
@@ -136,10 +136,10 @@ function VerticalWheelPicker({
               onClick={() => handleItemClick(item, index)}
               className={`h-[46px] snap-center flex items-center justify-center cursor-pointer transition-all duration-200 ${
                 isSelected
-                  ? "text-2xl font-black text-[#141414] scale-110"
+                  ? "text-2xl font-bold text-[#1C1C1C] scale-110"
                   : distance === 1
-                  ? "text-lg font-bold text-[#141414]/60 scale-95"
-                  : "text-sm font-bold text-[#141414]/35 scale-85"
+                  ? "text-lg font-medium text-[#1C1C1C]/60 scale-95"
+                  : "text-sm font-medium text-[#1C1C1C]/35 scale-85"
               }`}
             >
               <span className="tabular-nums font-mono">
@@ -222,10 +222,10 @@ export default function FemaleOnboardingTour({
   }, [heightCm, weightKg]);
 
   const bmiCategory = useMemo(() => {
-    if (calculatedBmi < 18.5) return { text: "کم‌وزن", color: "#B8CEF4" };
+    if (calculatedBmi < 18.5) return { text: "کم‌وزن", color: "#A9ABEE" };
     if (calculatedBmi < 25) return { text: "وزن نرمال و ایده‌آل ✨", color: "#A7B86C" };
-    if (calculatedBmi < 30) return { text: "اضافه وزن ملایم", color: "#F6DC6B" };
-    return { text: "نیاز به توجه بیشتر", color: "#F6C3E5" };
+    if (calculatedBmi < 30) return { text: "اضافه وزن ملایم", color: "#FFFF66" };
+    return { text: "نیاز به توجه بیشتر", color: "#EBA2F8" };
   }, [calculatedBmi]);
 
   // Set of consecutive period days for Jalali calendar highlight in Step 10
@@ -312,44 +312,44 @@ export default function FemaleOnboardingTour({
   };
 
   return (
-    <div className="min-h-screen bg-[#D5F379] text-[#141414] flex flex-col justify-between" dir="rtl">
+    <div className="min-h-screen bg-[#5ED46A] text-[#1C1C1C] flex flex-col justify-between" dir="rtl">
       {/* ----------------- TOP CURVED HEADER & ARC PROGRESS ----------------- */}
-      <header className="relative bg-[#FAD074] pt-6 pb-4 overflow-hidden border-b-2 border-[#141414] shadow-[0_3px_0_#141414]">
+      <header className="relative bg-[#F6F4F0] pt-6 pb-4 overflow-hidden border-b-[1.5px] border-[#1C1C1C]">
         {/* Top Control Bar: Back button, Logo Badge, Step Indicator */}
         <div className="relative max-w-lg mx-auto px-5 flex items-center justify-between z-10">
           {/* Circular Back Button */}
           <button
             type="button"
             onClick={handlePrev}
-            className="w-10 h-10 rounded-full bg-[#FF8B6A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414] hover:brightness-95 active:translate-y-0.5 transition-all cursor-pointer"
+            className="w-10 h-10 rounded-full bg-[#F29B47] border-[1.5px] border-[#1C1C1C] flex items-center justify-center text-[#1C1C1C] hover:brightness-95 active:translate-y-0.5 transition-all cursor-pointer"
             title="مرحله قبل"
           >
-            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            <ArrowRight className="w-4 h-4 stroke-[1.9]" />
           </button>
 
           {/* Center Brand Emblem */}
           <div className="flex flex-col items-center">
-            <div className="w-11 h-11 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414]">
-              <Sparkles className="w-5 h-5 stroke-[2.2]" />
+            <div className="w-11 h-11 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] flex items-center justify-center text-[#1C1C1C]">
+              <Sparkles className="w-5 h-5 stroke-[1.9]" />
             </div>
-            <span className="text-[11px] font-black text-[#141414] mt-1 tracking-wide">
+            <span className="text-[11px] font-bold text-[#1C1C1C] mt-1 tracking-wide">
               تور سلامت و چرخه طغرل
             </span>
           </div>
 
           {/* Step Counter Pill */}
-          <div className="px-3 py-1 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full text-xs font-black text-[#141414]">
+          <div className="px-3 py-1 bg-white border-[1.5px] border-[#1C1C1C] rounded-full text-xs font-bold text-[#1C1C1C]">
             <span>مرحله {toPersianDigits(stepIndex + 1)}</span>
-            <span className="text-[#141414]/50 mx-1">/</span>
+            <span className="text-[#1C1C1C]/50 mx-1">/</span>
             <span>{toPersianDigits(totalSteps)}</span>
           </div>
         </div>
 
         {/* Neobrutalist Progress Track */}
         <div className="max-w-lg mx-auto px-5 mt-4">
-          <div className="w-full h-3.5 bg-white border-2 border-[#141414] rounded-full overflow-hidden p-0.5">
+          <div className="w-full h-3.5 bg-white border-[1.5px] border-[#1C1C1C] rounded-full overflow-hidden p-0.5">
             <motion.div
-              className="h-full bg-[#A594F9] rounded-full border border-[#141414]"
+              className="h-full bg-[#A9ABEE] rounded-full border border-[#1C1C1C]"
               initial={{ width: 0 }}
               animate={{ width: `${Math.round(progressFraction * 100)}%` }}
               transition={{ duration: 0.4, ease: "easeOut" }}
@@ -372,11 +372,11 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-6">
-                <span className="inline-block px-3 py-1 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">قدم اول: شناخت بدن شما</span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">قدم اول: شناخت بدن شما</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   حالا بهمون بگو که معمولا پریودت منظمه یا نامنظم؟
                 </h2>
-                <p className="text-xs font-bold text-[#141414]/75">
+                <p className="text-xs font-medium text-[#1C1C1C]/75">
                   این سوال به پیش‌بینی دقیق‌تر فازهای باروری و دوره‌های بعدی کمک می‌کنه
                 </p>
               </div>
@@ -405,20 +405,20 @@ export default function FemaleOnboardingTour({
                       layout
                       key={opt.key}
                       onClick={() => setCycleRegularity(opt.key as any)}
-                      className={`p-4 rounded-[26px] border-2 border-[#141414] transition-all cursor-pointer ${
+                      className={`p-4 rounded-[24px] border-[1.5px] border-[#1C1C1C] transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#FAD074] shadow-[0_4px_0_#141414]"
-                          : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFFDF8]"
+                          ? "bg-[#F6F4F0]"
+                          : "bg-white hover:bg-[#FFFFFF]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-black text-[#141414] leading-relaxed">
+                        <span className="text-sm font-bold text-[#1C1C1C] leading-relaxed">
                           {opt.label}
                         </span>
                         <div
-                          className={`w-6 h-6 rounded-full border-2 border-[#141414] flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-6 h-6 rounded-full border-[1.5px] border-[#1C1C1C] flex items-center justify-center shrink-0 transition-colors ${
                             isSelected
-                              ? "bg-[#242424] text-white"
+                              ? "bg-[#1C1C1C] text-white"
                               : "bg-white"
                           }`}
                         >
@@ -431,9 +431,9 @@ export default function FemaleOnboardingTour({
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="mt-3 pt-3 border-t-2 border-[#141414]/20 text-xs font-bold text-[#141414] leading-relaxed flex items-start gap-2"
+                          className="mt-3 pt-3 border-t-[1.5px] border-[#1C1C1C]/20 text-xs font-medium text-[#1C1C1C] leading-relaxed flex items-start gap-2"
                         >
-                          <Info className="w-4 h-4 text-[#141414] shrink-0 mt-0.5" />
+                          <Info className="w-4 h-4 text-[#1C1C1C] shrink-0 mt-0.5" />
                           <span>{opt.subtext}</span>
                         </motion.div>
                       )}
@@ -455,11 +455,11 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-6">
-                <span className="inline-block px-3 py-1 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">هدف شما از ترکر</span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">هدف شما از ترکر</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   {userName} جان، آیا قصد پیشگیری از بارداری داری؟
                 </h2>
-                <p className="text-xs font-bold text-[#141414]/75">
+                <p className="text-xs font-medium text-[#1C1C1C]/75">
                   تنظیمات روزهای امن و یادآوری‌ها متناسب با این انتخاب سفارشی می‌شود
                 </p>
               </div>
@@ -482,21 +482,21 @@ export default function FemaleOnboardingTour({
                     <div
                       key={opt.key}
                       onClick={() => setContraceptionIntent(opt.key as any)}
-                      className={`p-4 rounded-[26px] border-2 border-[#141414] transition-all cursor-pointer ${
+                      className={`p-4 rounded-[24px] border-[1.5px] border-[#1C1C1C] transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#FAD074] shadow-[0_4px_0_#141414]"
-                          : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFFDF8]"
+                          ? "bg-[#F6F4F0]"
+                          : "bg-white hover:bg-[#FFFFFF]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <div className="text-sm font-black text-[#141414]">{opt.label}</div>
-                          <div className="text-xs font-bold text-[#141414]/70 mt-0.5">{opt.sub}</div>
+                          <div className="text-sm font-bold text-[#1C1C1C]">{opt.label}</div>
+                          <div className="text-xs font-medium text-[#1C1C1C]/70 mt-0.5">{opt.sub}</div>
                         </div>
                         <div
-                          className={`w-6 h-6 rounded-full border-2 border-[#141414] flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-6 h-6 rounded-full border-[1.5px] border-[#1C1C1C] flex items-center justify-center shrink-0 transition-colors ${
                             isSelected
-                              ? "bg-[#242424] text-white"
+                              ? "bg-[#1C1C1C] text-white"
                               : "bg-white"
                           }`}
                         >
@@ -521,8 +521,8 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-5">
-                <span className="inline-block px-3 py-1 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">روش‌های محافظتی</span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">روش‌های محافظتی</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   {userName} جان از چه روش پیشگیری از بارداری استفاده میکنی؟
                 </h2>
               </div>
@@ -566,18 +566,18 @@ export default function FemaleOnboardingTour({
                       layout
                       key={opt.key}
                       onClick={() => setContraceptionMethod(opt.key as any)}
-                      className={`p-3.5 rounded-[22px] border-2 border-[#141414] transition-all cursor-pointer ${
+                      className={`p-3.5 rounded-[22px] border-[1.5px] border-[#1C1C1C] transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#FAD074] shadow-[0_3px_0_#141414]"
-                          : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFFDF8]"
+                          ? "bg-[#F6F4F0]"
+                          : "bg-white hover:bg-[#FFFFFF]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-black text-[#141414]">{opt.label}</span>
+                        <span className="text-sm font-bold text-[#1C1C1C]">{opt.label}</span>
                         <div
-                          className={`w-5 h-5 rounded-full border-2 border-[#141414] flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-5 h-5 rounded-full border-[1.5px] border-[#1C1C1C] flex items-center justify-center shrink-0 transition-colors ${
                             isSelected
-                              ? "bg-[#242424] text-white"
+                              ? "bg-[#1C1C1C] text-white"
                               : "bg-white"
                           }`}
                         >
@@ -590,9 +590,9 @@ export default function FemaleOnboardingTour({
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="mt-2.5 pt-2.5 border-t-2 border-[#141414]/20 text-xs font-bold text-[#141414] leading-relaxed flex items-start gap-2"
+                          className="mt-2.5 pt-2.5 border-t-[1.5px] border-[#1C1C1C]/20 text-xs font-medium text-[#1C1C1C] leading-relaxed flex items-start gap-2"
                         >
-                          <Info className="w-3.5 h-3.5 text-[#141414] shrink-0 mt-0.5" />
+                          <Info className="w-3.5 h-3.5 text-[#1C1C1C] shrink-0 mt-0.5" />
                           <span>{opt.subtext}</span>
                         </motion.div>
                       )}
@@ -614,8 +614,8 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-6">
-                <span className="inline-block px-3 py-1 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">آگاهی از روزهای امن</span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">آگاهی از روزهای امن</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   آیا تا به حال تو روزهایی که احتمال بارداری در اون نزدیک به صفره رابطه جنسی داشتی؟
                 </h2>
               </div>
@@ -644,20 +644,20 @@ export default function FemaleOnboardingTour({
                       layout
                       key={opt.key}
                       onClick={() => setFertilityAwareness(opt.key as any)}
-                      className={`p-4 rounded-[26px] border-2 border-[#141414] transition-all cursor-pointer ${
+                      className={`p-4 rounded-[24px] border-[1.5px] border-[#1C1C1C] transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#FAD074] shadow-[0_4px_0_#141414]"
-                          : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFFDF8]"
+                          ? "bg-[#F6F4F0]"
+                          : "bg-white hover:bg-[#FFFFFF]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-black text-[#141414] leading-relaxed">
+                        <span className="text-sm font-bold text-[#1C1C1C] leading-relaxed">
                           {opt.label}
                         </span>
                         <div
-                          className={`w-6 h-6 rounded-full border-2 border-[#141414] flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-6 h-6 rounded-full border-[1.5px] border-[#1C1C1C] flex items-center justify-center shrink-0 transition-colors ${
                             isSelected
-                              ? "bg-[#242424] text-white"
+                              ? "bg-[#1C1C1C] text-white"
                               : "bg-white"
                           }`}
                         >
@@ -670,9 +670,9 @@ export default function FemaleOnboardingTour({
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="mt-3 pt-3 border-t-2 border-[#141414]/20 text-xs font-bold text-[#141414] leading-relaxed flex items-start gap-2"
+                          className="mt-3 pt-3 border-t-[1.5px] border-[#1C1C1C]/20 text-xs font-medium text-[#1C1C1C] leading-relaxed flex items-start gap-2"
                         >
-                          <Info className="w-4 h-4 text-[#141414] shrink-0 mt-0.5" />
+                          <Info className="w-4 h-4 text-[#1C1C1C] shrink-0 mt-0.5" />
                           <span>{opt.subtext}</span>
                         </motion.div>
                       )}
@@ -694,11 +694,11 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-5">
-                <span className="inline-block px-3 py-1 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">سوابق و وضعیت سلامت</span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">سوابق و وضعیت سلامت</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   کدوم مشکل یا بیماری رو داری که احتمالا روی چرخه قاعدگیت تاثیرگذار باشه؟
                 </h2>
-                <p className="text-xs font-bold text-[#141414]/75">امکان انتخاب چند گزینه وجود دارد</p>
+                <p className="text-xs font-medium text-[#1C1C1C]/75">امکان انتخاب چند گزینه وجود دارد</p>
               </div>
 
               <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
@@ -721,18 +721,18 @@ export default function FemaleOnboardingTour({
                       layout
                       key={opt.key}
                       onClick={() => toggleHealthCondition(opt.key)}
-                      className={`p-3.5 rounded-[22px] border-2 border-[#141414] transition-all cursor-pointer ${
+                      className={`p-3.5 rounded-[22px] border-[1.5px] border-[#1C1C1C] transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#FAD074] shadow-[0_3px_0_#141414]"
-                          : "bg-white shadow-[0_2px_0_#141414] hover:bg-[#FFFDF8]"
+                          ? "bg-[#F6F4F0]"
+                          : "bg-white hover:bg-[#FFFFFF]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-black text-[#141414]">{opt.label}</span>
+                        <span className="text-sm font-bold text-[#1C1C1C]">{opt.label}</span>
                         <div
-                          className={`w-5 h-5 rounded-lg border-2 border-[#141414] flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-5 h-5 rounded-lg border-[1.5px] border-[#1C1C1C] flex items-center justify-center shrink-0 transition-colors ${
                             isSelected
-                              ? "bg-[#242424] text-white"
+                              ? "bg-[#1C1C1C] text-white"
                               : "bg-white"
                           }`}
                         >
@@ -745,9 +745,9 @@ export default function FemaleOnboardingTour({
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="mt-2.5 pt-2.5 border-t-2 border-[#141414]/20 text-xs font-bold text-[#141414] leading-relaxed flex items-start gap-2"
+                          className="mt-2.5 pt-2.5 border-t-[1.5px] border-[#1C1C1C]/20 text-xs font-medium text-[#1C1C1C] leading-relaxed flex items-start gap-2"
                         >
-                          <Info className="w-3.5 h-3.5 text-[#141414] shrink-0 mt-0.5" />
+                          <Info className="w-3.5 h-3.5 text-[#1C1C1C] shrink-0 mt-0.5" />
                           <span>{opt.subtext}</span>
                         </motion.div>
                       )}
@@ -769,16 +769,16 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-6">
-                <span className="inline-block px-3 py-1 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">
+                <span className="inline-block px-3 py-1 rounded-full bg-white border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">
                   برای اینکه برنامه تخصصی مناسبت رو بهت بدیم لازمه بدونیم:
                 </span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   در حال حاضر قدت چقدره؟
                 </h2>
               </div>
 
               {/* Vertical Wheel Picker for Height (120 - 210 cm) */}
-              <div className="bg-white border-2 border-[#141414] rounded-[28px] p-6 shadow-[0_4px_0_#141414]">
+              <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[28px] p-6">
                 <VerticalWheelPicker
                   min={120}
                   max={210}
@@ -801,16 +801,16 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-6">
-                <span className="inline-block px-3 py-1 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">
+                <span className="inline-block px-3 py-1 rounded-full bg-white border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">
                   برای اینکه برنامه تخصصی مناسبت رو بهت بدیم لازمه بدونیم:
                 </span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   در حال حاضر وزنت چقدره؟
                 </h2>
               </div>
 
               {/* Vertical Wheel Picker for Weight (35 - 150 kg) */}
-              <div className="bg-white border-2 border-[#141414] rounded-[28px] p-6 shadow-[0_4px_0_#141414] space-y-4">
+              <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[28px] p-6 space-y-4">
                 <VerticalWheelPicker
                   min={35}
                   max={150}
@@ -820,13 +820,13 @@ export default function FemaleOnboardingTour({
                 />
 
                 {/* Real-time Dynamic BMI calculation preview badge */}
-                <div className="pt-3 border-t-2 border-[#141414]/15 flex items-center justify-between text-xs font-black px-2">
-                  <span className="text-[#141414]/75">شاخص توده بدنی (BMI):</span>
+                <div className="pt-3 border-t-[1.5px] border-[#1C1C1C]/15 flex items-center justify-between text-xs font-bold px-2">
+                  <span className="text-[#1C1C1C]/75">شاخص توده بدنی (BMI):</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-sm text-[#141414]">
+                    <span className="font-mono text-sm text-[#1C1C1C]">
                       {toPersianDigits(calculatedBmi)}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] bg-[#FAD074] border-2 border-[#141414] text-[#141414] font-black">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] bg-[#F6F4F0] border-[1.5px] border-[#1C1C1C] text-[#1C1C1C] font-bold">
                       {bmiCategory.text}
                     </span>
                   </div>
@@ -846,15 +846,15 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-6">
-                <span className="inline-block px-3 py-1 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">برای پیش‌بینی دقیق‌تر بهمون بگو</span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-white border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">برای پیش‌بینی دقیق‌تر بهمون بگو</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   معمولا پریودت چند روز طول میکشه؟
                 </h2>
-                <p className="text-xs font-bold text-[#141414]/75">مدت خونریزی در هر چرخه (معمولاً بین ۳ تا ۷ روز)</p>
+                <p className="text-xs font-medium text-[#1C1C1C]/75">مدت خونریزی در هر چرخه (معمولاً بین ۳ تا ۷ روز)</p>
               </div>
 
               {/* Vertical Wheel Picker for Period Length (2 - 10 days) */}
-              <div className="bg-white border-2 border-[#141414] rounded-[28px] p-6 shadow-[0_4px_0_#141414]">
+              <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[28px] p-6">
                 <VerticalWheelPicker
                   min={2}
                   max={10}
@@ -877,17 +877,17 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1.5 mb-5">
-                <span className="inline-block px-3 py-1 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">محاسبه فاصله شروع دوره‌ها</span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">محاسبه فاصله شروع دوره‌ها</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   فاصله بین شروع دو پریودت چقدره؟
                 </h2>
-                <p className="text-xs font-bold text-[#141414] leading-relaxed max-w-sm mx-auto bg-white p-3 rounded-2xl border-2 border-[#141414] shadow-[0_2px_0_#141414]">
+                <p className="text-xs font-medium text-[#1C1C1C] leading-relaxed max-w-sm mx-auto bg-white p-3 rounded-2xl border-[1.5px] border-[#1C1C1C]">
                   (یه مثال ساده: فرض کن ۱ مهر پریود شدی. اگه پریود بعدیت ۲۹ مهر شروع بشه، یعنی طول دوره تو ۲۸ روز هست.)
                 </p>
               </div>
 
               {/* Vertical Wheel Picker for Cycle Length (21 - 45 days) */}
-              <div className="bg-white border-2 border-[#141414] rounded-[28px] p-6 shadow-[0_4px_0_#141414]">
+              <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[28px] p-6">
                 <VerticalWheelPicker
                   min={21}
                   max={45}
@@ -910,17 +910,17 @@ export default function FemaleOnboardingTour({
               className="space-y-4"
             >
               <div className="text-center space-y-1 mb-4">
-                <span className="inline-block px-3 py-1 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]">مرحله نهایی</span>
-                <h2 className="text-xl sm:text-2xl font-black text-[#141414] leading-snug pt-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] text-xs font-bold text-[#1C1C1C]">مرحله نهایی</span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#1C1C1C] leading-snug pt-1">
                   تاریخ شروع آخرین باری که پریود شدی رو بهمون بگو
                 </h2>
-                <p className="text-xs font-bold text-[#141414]/75">
+                <p className="text-xs font-medium text-[#1C1C1C]/75">
                   برای محاسبه و پیش‌بینی تاریخ پریودهای بعدیت لازمه که تاریخ شروع آخرین پریودت رو بدونیم
                 </p>
               </div>
 
               {/* Jalali Calendar View */}
-              <div className="bg-white border-2 border-[#141414] rounded-[28px] p-4 sm:p-5 shadow-[0_4px_0_#141414] space-y-4">
+              <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[28px] p-4 sm:p-5 space-y-4">
                 {/* Calendar Header with Navigation */}
                 <div className="flex items-center justify-between px-1">
                   <button
@@ -933,13 +933,13 @@ export default function FemaleOnboardingTour({
                         setCalendarMonth((m) => m - 1);
                       }
                     }}
-                    className="w-9 h-9 rounded-full bg-[#FAD074] border-2 border-[#141414] shadow-[0_2px_0_#141414] hover:brightness-95 flex items-center justify-center text-[#141414] cursor-pointer"
+                    className="w-9 h-9 rounded-full bg-[#F6F4F0] border-[1.5px] border-[#1C1C1C] hover:brightness-95 flex items-center justify-center text-[#1C1C1C] cursor-pointer"
                     title="ماه قبل"
                   >
-                    <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+                    <ChevronRight className="w-4 h-4 stroke-[1.9]" />
                   </button>
 
-                  <h3 className="text-base font-black text-[#141414]">
+                  <h3 className="text-base font-black text-[#1C1C1C]">
                     {JALALI_MONTHS[calendarMonth - 1]} {toPersianDigits(calendarYear)}
                   </h3>
 
@@ -953,15 +953,15 @@ export default function FemaleOnboardingTour({
                         setCalendarMonth((m) => m + 1);
                       }
                     }}
-                    className="w-9 h-9 rounded-full bg-[#FAD074] border-2 border-[#141414] shadow-[0_2px_0_#141414] hover:brightness-95 flex items-center justify-center text-[#141414] cursor-pointer"
+                    className="w-9 h-9 rounded-full bg-[#F6F4F0] border-[1.5px] border-[#1C1C1C] hover:brightness-95 flex items-center justify-center text-[#1C1C1C] cursor-pointer"
                     title="ماه بعد"
                   >
-                    <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+                    <ChevronLeft className="w-4 h-4 stroke-[1.9]" />
                   </button>
                 </div>
 
                 {/* Weekday Names Header */}
-                <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-black text-[#141414]/70">
+                <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-[#1C1C1C]/70">
                   {JALALI_WEEKDAYS.map((w) => (
                     <span key={w}>{w}</span>
                   ))}
@@ -1001,12 +1001,12 @@ export default function FemaleOnboardingTour({
                             onClick={() => setSelectedStartDate(formattedSelected)}
                             className={`h-10 sm:h-11 rounded-2xl flex flex-col items-center justify-center relative transition-all cursor-pointer ${
                               isStartDay
-                                ? "bg-[#FF8B6A] text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] scale-105 font-black z-1"
+                                ? "bg-[#F29B47] text-[#1C1C1C] border-[1.5px] border-[#1C1C1C] scale-105 font-bold z-1"
                                 : isConsecutivePeriod
-                                ? "bg-[#FBC2F3] text-[#141414] border-2 border-[#141414] font-black"
+                                ? "bg-[#EBA2F8] text-[#1C1C1C] border-[1.5px] border-[#1C1C1C] font-bold"
                                 : isToday
-                                ? "bg-[#F5F97A] border-2 border-[#141414] text-[#141414] font-black"
-                                : "hover:bg-[#FAD074]/40 text-[#141414] font-bold"
+                                ? "bg-[#FFFF66] border-[1.5px] border-[#1C1C1C] text-[#1C1C1C] font-bold"
+                                : "hover:bg-[#F6F4F0]/40 text-[#1C1C1C] font-medium"
                             }`}
                           >
                             <span className="text-xs sm:text-sm font-mono">
@@ -1015,13 +1015,13 @@ export default function FemaleOnboardingTour({
 
                             {/* Indicator underneath number: Checkmark for period days */}
                             {isStartDay ? (
-                              <span className="text-[9px] leading-none mt-0.5 font-black">شروع</span>
+                              <span className="text-[9px] leading-none mt-0.5 font-bold">شروع</span>
                             ) : isConsecutivePeriod ? (
-                              <Check className="w-3 h-3 stroke-[3] text-[#141414]" />
+                              <Check className="w-3 h-3 stroke-[3] text-[#1C1C1C]" />
                             ) : isToday ? (
-                              <span className="text-[8px] text-[#141414] leading-none font-black">امروز</span>
+                              <span className="text-[8px] text-[#1C1C1C] leading-none font-bold">امروز</span>
                             ) : (
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#141414]/20 mt-0.5" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#1C1C1C]/20 mt-0.5" />
                             )}
                           </button>
                         );
@@ -1031,21 +1031,21 @@ export default function FemaleOnboardingTour({
                 })()}
 
                 {/* Jump to Today circular button & period summary notice */}
-                <div className="pt-2 border-t-2 border-[#141414]/15 flex items-center justify-between text-xs">
+                <div className="pt-2 border-t-[1.5px] border-[#1C1C1C]/15 flex items-center justify-between text-xs">
                   <button
                     type="button"
                     onClick={() => {
                       setCalendarYear(todayJy);
                       setCalendarMonth(todayJm);
                     }}
-                    className="px-3 py-1.5 rounded-full bg-[#FAD074] hover:brightness-95 border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] flex items-center gap-1.5 cursor-pointer transition-all"
+                    className="px-3 py-1.5 rounded-full bg-[#F6F4F0] hover:brightness-95 border-[1.5px] border-[#1C1C1C] text-[#1C1C1C] flex items-center gap-1.5 cursor-pointer transition-all"
                     title="بازگشت به ماه جاری"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span className="font-black text-[11px]">امروز</span>
+                    <RotateCcw className="w-3.5 h-3.5 stroke-[1.9]" />
+                    <span className="font-bold text-[11px]">امروز</span>
                   </button>
 
-                  <div className="text-[11px] font-black text-[#141414] bg-[#FBC2F3] px-3 py-1 rounded-full border-2 border-[#141414]">
+                  <div className="text-[11px] font-bold text-[#1C1C1C] bg-[#EBA2F8] px-3 py-1 rounded-full border-[1.5px] border-[#1C1C1C]">
                     <span>طول پریود انتخابی: {toPersianDigits(periodLength)} روز متوالی</span>
                   </div>
                 </div>
@@ -1056,27 +1056,27 @@ export default function FemaleOnboardingTour({
       </main>
 
       {/* ----------------- BOTTOM CTA BUTTON BAR ----------------- */}
-      <footer className="w-full max-w-lg mx-auto px-5 py-4 bg-[#D5F379]">
+      <footer className="w-full max-w-lg mx-auto px-5 py-4 bg-[#5ED46A]">
         <button
           type="button"
           disabled={isSubmitting}
           onClick={handleNext}
-          className="w-full py-4 px-6 rounded-full bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_4px_0_#141414] font-black text-sm sm:text-base active:translate-y-0.5 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+          className="w-full py-4 px-6 rounded-full bg-[#1C1C1C] hover:bg-[#1C1C1C] text-white border-[1.5px] border-[#1C1C1C] font-bold text-sm sm:text-base active:translate-y-0.5 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {isSubmitting ? (
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-[1.5px] border-white border-t-transparent rounded-full animate-spin" />
               <span>در حال ذخیره‌سازی و راه‌اندازی ترکر...</span>
             </div>
           ) : currentStepNumber === 10 ? (
             <div className="flex items-center gap-2">
               <span>ثبت نام و ورود به داشبورد</span>
-              <Sparkles className="w-4 h-4 stroke-[2.2] text-[#F5F97A]" />
+              <Sparkles className="w-4 h-4 stroke-[1.9] text-[#FFFF66]" />
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <span>ادامه</span>
-              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+              <ChevronLeft className="w-4 h-4 stroke-[1.9]" />
             </div>
           )}
         </button>

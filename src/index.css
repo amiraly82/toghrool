@@ -57,7 +57,7 @@
 }
 
 :root {
-  --neo-ink: #141414;
+  --neo-ink: #1C1C1C;
   --neo-apricot: #FAD074;
   --neo-lime: #D5F379;
   --neo-pink: #FBC2F3;
@@ -70,17 +70,17 @@
   --neo-charcoal: #262626;
 
   /* Lex Colorful Design Tokens */
-  --lex-canvas: #FAF8F5;
-  --lex-male-blue: #38BDF8;
-  --lex-male-dark: #0284C7;
-  --lex-male-soft: #F0F9FF;
-  --lex-female-pink: #FB7185;
-  --lex-female-dark: #E11D48;
-  --lex-female-soft: #FFF1F2;
-  --lex-yellow: #FFEE55;
-  --lex-mint: #4ADE80;
-  --lex-purple: #C084FC;
-  --lex-orange: #FB923C;
+  --lex-canvas: #F5F3EF;
+  --lex-male-blue: #4FA9F6;
+  --lex-male-dark: #1C6FB8;
+  --lex-male-soft: #E8F3FE;
+  --lex-female-pink: #FF7EB6;
+  --lex-female-dark: #C2306F;
+  --lex-female-soft: #FFEAF3;
+  --lex-yellow: #FFFF66;
+  --lex-mint: #5ED46A;
+  --lex-purple: #EBA2F8;
+  --lex-orange: #F29B47;
 }
 
 @theme {
@@ -100,7 +100,7 @@ body {
   direction: rtl;
   text-align: right;
   background-color: #FAF8F5;
-  color: #141414;
+  color: #1C1C1C;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -115,28 +115,26 @@ body {
   width: 100%;
   height: 6px;
   overflow: hidden;
-  border-bottom: 2px solid #141414;
+  border-bottom: 2px solid #1C1C1C;
 }
 
-.lex-rainbow-strip > div:nth-child(1) { background-color: #F472B6; flex: 1; }
-.lex-rainbow-strip > div:nth-child(2) { background-color: #FB923C; flex: 1; }
-.lex-rainbow-strip > div:nth-child(3) { background-color: #FFEE55; flex: 1; }
-.lex-rainbow-strip > div:nth-child(4) { background-color: #4ADE80; flex: 1; }
-.lex-rainbow-strip > div:nth-child(5) { background-color: #38BDF8; flex: 1; }
-.lex-rainbow-strip > div:nth-child(6) { background-color: #C084FC; flex: 1; }
+.lex-rainbow-strip > div:nth-child(1) { background-color: #EBA2F8; flex: 1; }
+.lex-rainbow-strip > div:nth-child(2) { background-color: #F29B47; flex: 1; }
+.lex-rainbow-strip > div:nth-child(3) { background-color: #FFFF66; flex: 1; }
+.lex-rainbow-strip > div:nth-child(4) { background-color: #5ED46A; flex: 1; }
+.lex-rainbow-strip > div:nth-child(5) { background-color: #4FA9F6; flex: 1; }
+.lex-rainbow-strip > div:nth-child(6) { background-color: #A9ABEE; flex: 1; }
 
 .lex-card {
   background-color: #FFFFFF;
-  border: 2px solid #141414;
-  box-shadow: 0 3px 0 #141414;
+  border: 1.5px solid #1C1C1C;
   border-radius: 20px;
 }
 
 .lex-card-lg {
   background-color: #FFFFFF;
-  border: 2px solid #141414;
-  box-shadow: 0 4px 0 #141414;
-  border-radius: 26px;
+  border: 1.5px solid #1C1C1C;
+  border-radius: 24px;
 }
 
 /* ==========================================================================
@@ -144,18 +142,18 @@ body {
    ========================================================================== */
 
 .neo-card {
-  border: 2px solid #141414;
-  box-shadow: 0 3px 0 #141414;
+  border: 2px solid #1C1C1C;
+  box-shadow: 0 3px 0 #1C1C1C;
 }
 
 .neo-card-lg {
-  border: 2.2px solid #141414;
-  box-shadow: 0 4px 0 #141414;
+  border: 2.2px solid #1C1C1C;
+  box-shadow: 0 4px 0 #1C1C1C;
 }
 
 .neo-pill {
-  border: 2px solid #141414;
-  box-shadow: 0 2px 0 #141414;
+  border: 2px solid #1C1C1C;
+  box-shadow: 0 2px 0 #1C1C1C;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
 }
 
@@ -163,56 +161,56 @@ body {
 .neo-circle-btn:active,
 .neo-cta-dark:active {
   transform: translateY(2px);
-  box-shadow: 0 0 0 #141414;
+  box-shadow: 0 0 0 #1C1C1C;
 }
 
 .neo-circle-btn {
-  border: 2px solid #141414;
-  box-shadow: 0 2px 0 #141414;
+  border: 2px solid #1C1C1C;
+  box-shadow: 0 2px 0 #1C1C1C;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
 }
 
 .neo-cta-dark {
   background-color: #242424;
   color: #FFFFFF;
-  border: 2px solid #141414;
-  box-shadow: 0 3px 0 #141414;
+  border: 2px solid #1C1C1C;
+  box-shadow: 0 3px 0 #1C1C1C;
   transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
 }
 .neo-cta-dark:hover {
-  background-color: #141414;
+  background-color: #1C1C1C;
 }
 
 .neo-dock {
   background-color: #2B2B2B;
-  border: 2.2px solid #141414;
-  box-shadow: 0 4px 0 #141414;
+  border: 2.2px solid #1C1C1C;
+  box-shadow: 0 4px 0 #1C1C1C;
 }
 
 /* Upgraded Legacy Classes -> Neobrutalist Equivalents */
 .glass-card {
   background-color: #FFFFFF;
-  border: 2px solid #141414;
-  box-shadow: 0 3px 0 #141414;
+  border: 2px solid #1C1C1C;
+  box-shadow: 0 3px 0 #1C1C1C;
 }
 
 .hero-ink-surface {
   background-color: #A594F9;
-  color: #141414;
-  border: 2.2px solid #141414;
-  box-shadow: 0 4px 0 #141414;
+  color: #1C1C1C;
+  border: 2.2px solid #1C1C1C;
+  box-shadow: 0 4px 0 #1C1C1C;
 }
 
 .segmented-track {
   background-color: rgba(255, 255, 255, 0.55);
-  border: 2px solid #141414;
+  border: 2px solid #1C1C1C;
 }
 
 .segmented-pill-active {
   background-color: #B5F285;
-  color: #141414;
-  border: 2px solid #141414;
-  box-shadow: 0 2px 0 #141414;
+  color: #1C1C1C;
+  border: 2px solid #1C1C1C;
+  box-shadow: 0 2px 0 #1C1C1C;
 }
 
 .glass-card-hover {
@@ -225,8 +223,8 @@ body {
 .glass-input,
 .neo-input {
   background-color: #FFFFFF;
-  border: 2px solid #141414 !important;
-  color: #141414;
+  border: 2px solid #1C1C1C !important;
+  color: #1C1C1C;
   transition: all 0.15s ease-in-out;
 }
 .glass-input::placeholder,
@@ -236,16 +234,16 @@ body {
 .glass-input:focus,
 .neo-input:focus {
   background-color: #FFFDF7;
-  border-color: #141414 !important;
+  border-color: #1C1C1C !important;
   outline: none;
-  box-shadow: 0 3px 0 #141414;
+  box-shadow: 0 3px 0 #1C1C1C;
 }
 
 .glass-nav-active {
   background-color: #B5F285;
-  color: #141414;
-  border: 2px solid #141414;
-  box-shadow: 0 2px 0 #141414;
+  color: #1C1C1C;
+  border: 2px solid #1C1C1C;
+  box-shadow: 0 2px 0 #1C1C1C;
 }
 
 html {
@@ -267,7 +265,7 @@ html {
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #141414;
+    background: #1C1C1C;
     border-radius: 9999px;
   }
 }
@@ -294,14 +292,14 @@ html {
 
 .gold-gradient {
   background-color: #F5F97A;
-  color: #141414;
-  border: 2px solid #141414;
+  color: #1C1C1C;
+  border: 2px solid #1C1C1C;
 }
 
 .fame-card {
   background-color: #FFFFFF;
-  border: 2px solid #141414;
-  box-shadow: 0 3px 0 #141414;
+  border: 2px solid #1C1C1C;
+  box-shadow: 0 3px 0 #1C1C1C;
 }
 
 .no-scrollbar::-webkit-scrollbar {

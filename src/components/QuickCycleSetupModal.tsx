@@ -33,7 +33,7 @@ export const QuickCycleSetupModal: React.FC<QuickCycleSetupModalProps> = ({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 bg-[#141414]/65 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 text-right"
+        className="fixed inset-0 bg-[#1C1C1C]/65 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 text-right"
         dir="rtl"
         onClick={onClose}
       >
@@ -43,37 +43,37 @@ export const QuickCycleSetupModal: React.FC<QuickCycleSetupModalProps> = ({
           exit={{ opacity: 0, y: 40, scale: 0.96 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#D5F379] border-t-2 sm:border-2 border-[#141414] rounded-t-[34px] sm:rounded-[34px] w-full max-w-md shadow-[0_6px_0_#141414] overflow-hidden p-6"
+          className="bg-[#5ED46A] border-t-[1.5px] sm:border-[1.5px] border-[#1C1C1C] rounded-t-[28px] sm:rounded-[28px] w-full max-w-md shadow-[0_24px_60px_-28px_rgba(0,0,0,0.45)] overflow-hidden p-6"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-3.5 border-b-2 border-[#141414]/20 mb-4">
+          <div className="flex items-center justify-between pb-3.5 border-b-[1.5px] border-[#1C1C1C]/20 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-11 h-11 rounded-full bg-[#FF8B6A] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center text-[#141414]">
-                <Droplet className="w-5 h-5 text-[#141414] fill-current stroke-[2.2]" />
+              <div className="w-11 h-11 rounded-full bg-[#F29B47] border-[1.5px] border-[#1C1C1C] flex items-center justify-center text-[#1C1C1C]">
+                <Droplet className="w-5 h-5 text-[#1C1C1C] fill-current stroke-[1.9]" />
               </div>
               <div>
-                <h3 className="text-sm sm:text-base font-black text-[#141414]">راه‌اندازی چرخه سلامت بانوان 🩸✨</h3>
-                <p className="text-[11px] text-[#141414]/80 font-extrabold">تنظیم سریع برای پیش‌بینی هوشمند و همراهی پارتنر</p>
+                <h3 className="text-sm sm:text-base font-black text-[#1C1C1C]">راه‌اندازی چرخه سلامت بانوان 🩸✨</h3>
+                <p className="text-[11px] text-[#1C1C1C]/80 font-bold">تنظیم سریع برای پیش‌بینی هوشمند و همراهی پارتنر</p>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="w-10 h-10 rounded-full bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] flex items-center justify-center transition-transform active:translate-y-0.5 cursor-pointer"
+              className="w-10 h-10 rounded-full bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] text-[#1C1C1C] flex items-center justify-center transition-transform active:translate-y-0.5 cursor-pointer"
             >
-              <X className="w-4 h-4 stroke-[2.5]" />
+              <X className="w-4 h-4 stroke-[1.9]" />
             </button>
           </div>
 
-          <p className="text-xs text-[#141414]/85 font-bold leading-relaxed mb-4">
+          <p className="text-xs text-[#1C1C1C]/85 font-medium leading-relaxed mb-4">
             برای فعال‌سازی چرخه بیولوژیک، پیش‌بینی روزهای تخمک‌گذاری، PMS و پیام‌های خودکار همراهی برای پارتنرتان، لطفاً ۳ سوال کوتاه زیر را مشخص کنید:
           </p>
 
           <form onSubmit={handleStart} className="space-y-4">
             {/* Last Period Start Date */}
-            <div className="bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[22px] p-3.5">
-              <label className="block text-xs font-black text-[#141414] mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-[#141414] stroke-[2.2]" />
+            <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[22px] p-3.5">
+              <label className="block text-xs font-bold text-[#1C1C1C] mb-1.5 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-[#1C1C1C] stroke-[1.9]" />
                 <span>تاریخ شروع آخرین پریود</span>
               </label>
               <JalaliDatePicker
@@ -84,13 +84,13 @@ export const QuickCycleSetupModal: React.FC<QuickCycleSetupModalProps> = ({
             </div>
 
             {/* Cycle Length */}
-            <div className="bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[22px] p-3.5">
+            <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[22px] p-3.5">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-black text-[#141414] flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-[#141414] stroke-[2.2]" />
+                <label className="text-xs font-bold text-[#1C1C1C] flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#1C1C1C] stroke-[1.9]" />
                   <span>طول معمول چرخه (فاصله دو پریود)</span>
                 </label>
-                <span className="text-xs font-black text-[#141414] bg-[#B5F285] px-2.5 py-0.5 rounded-full border-2 border-[#141414]">
+                <span className="text-xs font-bold text-[#1C1C1C] bg-[#5ED46A] px-2.5 py-0.5 rounded-full border-[1.5px] border-[#1C1C1C]">
                   {toPersianDigits(cycleLength)} روز
                 </span>
               </div>
@@ -100,10 +100,10 @@ export const QuickCycleSetupModal: React.FC<QuickCycleSetupModalProps> = ({
                     key={d}
                     type="button"
                     onClick={() => setCycleLength(d)}
-                    className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer border-2 border-[#141414] ${
+                    className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border-[1.5px] border-[#1C1C1C] ${
                       cycleLength === d
-                        ? "bg-[#242424] text-white"
-                        : "bg-white text-[#141414] hover:bg-[#F5F97A]"
+                        ? "bg-[#1C1C1C] text-white"
+                        : "bg-white text-[#1C1C1C] hover:bg-[#FFFF66]"
                     }`}
                   >
                     {toPersianDigits(d)} روز
@@ -116,18 +116,18 @@ export const QuickCycleSetupModal: React.FC<QuickCycleSetupModalProps> = ({
                 max="45"
                 value={cycleLength}
                 onChange={(e) => setCycleLength(parseInt(e.target.value, 10))}
-                className="w-full h-2.5 bg-[#F5F97A] border border-[#141414] rounded-full appearance-none cursor-pointer accent-[#141414]"
+                className="w-full h-2.5 bg-[#FFFF66] border border-[#1C1C1C] rounded-full appearance-none cursor-pointer accent-[#1C1C1C]"
               />
             </div>
 
             {/* Period Length */}
-            <div className="bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-[22px] p-3.5">
+            <div className="bg-white border-[1.5px] border-[#1C1C1C] rounded-[22px] p-3.5">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-black text-[#141414] flex items-center gap-1.5">
-                  <Droplet className="w-4 h-4 text-[#141414] stroke-[2.2]" />
+                <label className="text-xs font-bold text-[#1C1C1C] flex items-center gap-1.5">
+                  <Droplet className="w-4 h-4 text-[#1C1C1C] stroke-[1.9]" />
                   <span>طول مدت خونریزی</span>
                 </label>
-                <span className="text-xs font-black text-[#141414] bg-[#FF8B6A] px-2.5 py-0.5 rounded-full border-2 border-[#141414]">
+                <span className="text-xs font-bold text-[#1C1C1C] bg-[#F29B47] px-2.5 py-0.5 rounded-full border-[1.5px] border-[#1C1C1C]">
                   {toPersianDigits(periodLength)} روز
                 </span>
               </div>
@@ -137,10 +137,10 @@ export const QuickCycleSetupModal: React.FC<QuickCycleSetupModalProps> = ({
                     key={d}
                     type="button"
                     onClick={() => setPeriodLength(d)}
-                    className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer border-2 border-[#141414] ${
+                    className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border-[1.5px] border-[#1C1C1C] ${
                       periodLength === d
-                        ? "bg-[#242424] text-white"
-                        : "bg-white text-[#141414] hover:bg-[#F5F97A]"
+                        ? "bg-[#1C1C1C] text-white"
+                        : "bg-white text-[#1C1C1C] hover:bg-[#FFFF66]"
                     }`}
                   >
                     {toPersianDigits(d)} روز
@@ -154,16 +154,16 @@ export const QuickCycleSetupModal: React.FC<QuickCycleSetupModalProps> = ({
               <button
                 type="submit"
                 disabled={!startDate}
-                className="flex-1 py-3.5 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50"
+                className="flex-1 py-3.5 bg-[#1C1C1C] hover:bg-[#1C1C1C] text-white border-[1.5px] border-[#1C1C1C] rounded-full text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50"
               >
-                <Heart className="w-4 h-4 text-[#FBC2F3] fill-current" />
+                <Heart className="w-4 h-4 text-[#EBA2F8] fill-current" />
                 <span>شروع و فعال‌سازی هوشمند 💖</span>
               </button>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-3.5 bg-white hover:bg-[#F5F97A] text-[#141414] border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-full text-xs font-black transition-colors cursor-pointer"
+                className="px-4 py-3.5 bg-white hover:bg-[#FFFF66] text-[#1C1C1C] border-[1.5px] border-[#1C1C1C] rounded-full text-xs font-bold transition-colors cursor-pointer"
               >
                 بعداً
               </button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Sparkles, X, ChevronLeft, Lightbulb, Heart, Droplet, Camera, Calendar, Wallet } from "lucide-react";
+import { X } from "lucide-react";
 import { GenderThemeConfig } from "../utils/genderTheme";
 
 interface LexGuidanceCardProps {
@@ -9,171 +9,123 @@ interface LexGuidanceCardProps {
   onActionClick?: () => void;
 }
 
+/**
+ * "Lex Tip" card — solid pastel block, no border, tiny label, huge display title.
+ * One per section, dismissible. Tips can be brought back from the app-bar help (?) button,
+ * which fires the `lex-tips-reset` window event.
+ */
 export const LexGuidanceCard: React.FC<LexGuidanceCardProps> = ({
   activeTab,
   theme,
   partnerName = "پارتنر",
   onActionClick
 }) => {
+  const storageKey = `lex_tip_dismissed_${activeTab === "hall" ? "wishlist" : activeTab}`;
   const [isDismissed, setIsDismissed] = useState(false);
 
-  // Sync dismiss state with localStorage
   useEffect(() => {
     try {
-      const dismissed = localStorage.getItem(`lex_guide_dismissed_${activeTab}`);
-      setIsDismissed(dismissed === "true");
+      setIsDismissed(localStorage.getItem(storageKey) === "true");
     } catch {
       setIsDismissed(false);
     }
-  }, [activeTab]);
+  }, [storageKey]);
 
-  const handleDismiss = () => {
+  useEffect(() => {
+    const onReset = () => setIsDismissed(false);
+    window.addEventListener("lex-tips-reset", onReset);
+    return () => window.removeEventListener("lex-tips-reset", onReset);
+  }, []);
+
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsDismissed(true);
     try {
-      localStorage.setItem(`lex_guide_dismissed_${activeTab}`, "true");
+      localStorage.setItem(storageKey, "true");
     } catch {}
   };
 
-  const handleResetDismiss = () => {
-    setIsDismissed(false);
-    try {
-      localStorage.removeItem(`lex_guide_dismissed_${activeTab}`);
-    } catch {}
-  };
+  if (isDismissed) return null;
 
-  if (isDismissed) {
-    // Minimized guidance pill so user can bring it back easily
-    return (
-      <div className="flex justify-end mb-3" dir="rtl">
-        <button
-          type="button"
-          onClick={handleResetDismiss}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#141414] shadow-[0_1px_0_#141414] text-[11px] font-black text-[#141414]/80 hover:text-[#141414] hover:bg-neutral-50 transition-all cursor-pointer"
-          title="نمایش مجدد راهنمای این صفحه"
-        >
-          <Lightbulb className="w-3.5 h-3.5 text-[#EAB308] stroke-[2.4]" />
-          <span>راهنمای صفحه</span>
-        </button>
-      </div>
-    );
-  }
-
-  // Define tab guidance metadata
-  const getTabContent = () => {
+  const content = (() => {
     switch (activeTab) {
       case "wishlist":
       case "hall":
         return {
-          icon: <Heart className="w-4 h-4 stroke-[2.4]" />,
-          tag: "راهنمای آرزوها",
-          title: "آرزوها و برنامه‌های مشترک",
-          desc: "اینجا آرزوهای دو نفره، خریدهای دلخواه و مقصدهای سفرتون قرار می‌گیرند. هر پارتنر می‌تونه درصد مشارکتش رو ثبت کنه تا با هم به ۱۰۰٪ برسید! ✨",
-          ctaText: "افزودن آرزوی جدید"
+          bg: theme.guidanceBg,
+          title: "آرزوهاتون، یکی‌یکی 🎯",
+          desc: "هر آرزو یه کارته. هر وقت یه قدم جلو رفتید، «+۲۵٪» رو بزنید تا با هم به ۱۰۰٪ برسید.",
+          cta: "افزودن آرزو"
         };
       case "period":
-        if (theme.isMale) {
-          return {
-            icon: <Droplet className="w-4 h-4 stroke-[2.4]" />,
-            tag: "همراهی عاشقانه آقایان",
-            title: `راهنمای هوای ${partnerName} رو داشتن`,
-            desc: "تغییرات چرخه بدنی خانم‌ها روی مود و انرژی‌شون اثر مستقیم داره. وضعیت امروز پارتنرت رو ببین تا بدونی چه موقع به آرامش، توجه یا یک نوشیدنی گرم نیاز داره 💙",
-            ctaText: "مشاهده چرخه سلامت"
-          };
-        } else {
-          return {
-            icon: <Droplet className="w-4 h-4 stroke-[2.4]" />,
-            tag: "تقویم سلامت بانوان",
-            title: "پیش‌بینی هوشمند چرخه و حال دل",
-            desc: "پیش‌بینی دقیق زمان پریود، پنجره باروری و روزهای حساس PMS. حال و احوال روزانه‌ت رو ثبت کن تا پارتنرت هم همیشه همراهت باشه 💖",
-            ctaText: "ثبت روزانه حال من"
-          };
-        }
+        return theme.isMale
+          ? {
+              bg: "bg-[#FFC6DF]",
+              title: `هوای ${partnerName} رو داشته باش 💙`,
+              desc: "اینجا می‌بینی امروز تو کدوم فاز چرخه‌ست و چه کاری حالش رو بهتر می‌کنه.",
+              cta: undefined
+            }
+          : {
+              bg: "bg-[#FFC6DF]",
+              title: "حالت رو ثبت کن 💖",
+              desc: "با ثبت روزانه، پیش‌بینی پریود و روزهای حساس دقیق‌تر می‌شه و پارتنرت هم در جریان می‌مونه.",
+              cta: "ثبت امروز"
+            };
       case "memories":
         return {
-          icon: <Camera className="w-4 h-4 stroke-[2.4]" />,
-          tag: "دفترچه خاطرات",
-          title: "ثبت قشنگ‌ترین لحظه‌های دونفره",
-          desc: "عکس‌های سفر، یادداشت‌های یهویی و لحظاتی که دلتون می‌خواد همیشه زنده بمونن. می‌تونید تب‌های اختصاصی موضوعی هم بسازید!",
-          ctaText: "ثبت خاطره جدید"
+          bg: "bg-[#F4C6FA]",
+          title: "لحظه‌ها رو نگه دارید 📸",
+          desc: "عکس، متن یا کپسول زمان — خاطره‌هایی که بعداً با هم مرورشون می‌کنید.",
+          cta: "ثبت خاطره"
         };
       case "calendar":
         return {
-          icon: <Calendar className="w-4 h-4 stroke-[2.4]" />,
-          tag: "گاه‌شمار عشق",
-          title: "روزهای مهم و سالگردها",
-          desc: "شمارش معکوس روزهای با هم بودن، تاریخ آشنایی و ازدواج، و برنامه‌ریزی قرارهای آینده تا هیچ روز خاصی فراموش نشه 💍",
-          ctaText: "تنظیم تاریخ سالگرد"
+          bg: "bg-[#FFF7A8]",
+          title: "هیچ روز مهمی یادتون نره 💍",
+          desc: "سالگردها و برنامه‌های آینده رو اینجا ببینید و با شمارش معکوس منتظرشون باشید.",
+          cta: "تنظیم سالگرد"
         };
       case "finance":
         return {
-          icon: <Wallet className="w-4 h-4 stroke-[2.4]" />,
-          tag: "مدیریت مالی",
-          title: "حساب‌وکتاب شفاف و بی‌دغدغه",
-          desc: "هزینه‌های دونفره، پس‌انداز برای اهداف مشترک و محاسبه دنگی دونفره با شفافیت کامل و احترام متقابل 💳",
-          ctaText: "ثبت هزینه یا پس‌انداز"
+          bg: "bg-[#BDEFC2]",
+          title: "حساب‌وکتاب بی‌دردسر 💳",
+          desc: "هزینه‌ها و پس‌اندازهای مشترک رو ثبت کنید تا همیشه بدونید کجای هدفتون هستید.",
+          cta: "ثبت تراکنش"
         };
       default:
-        return {
-          icon: <Sparkles className="w-4 h-4 stroke-[2.4]" />,
-          tag: "راهنمای طغرل",
-          title: "فضای امن و اختصاصی شما دو نفر",
-          desc: "هر بخش برای ساده‌تر و شیرین‌تر شدن رابطه دونفره شما طراحی شده است.",
-          ctaText: "شروع"
-        };
+        return null;
     }
-  };
+  })();
 
-  const content = getTabContent();
+  if (!content) return null;
 
   return (
     <div
-      className={`mb-4.5 rounded-[22px] border-2 border-[#141414] shadow-[0_3px_0_#141414] p-3.5 sm:p-4 text-[#141414] relative transition-all ${theme.guidanceBg}`}
+      className={`relative rounded-[22px] px-5 pt-4 pb-5 mb-4 text-[#1C1C1C] ${content.bg}`}
       dir="rtl"
     >
-      {/* Top Tag & Close Button */}
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`w-6 h-6 rounded-full border border-[#141414] shadow-[0_1px_0_#141414] flex items-center justify-center text-[#141414] ${theme.guidanceIconBg}`}
-          >
-            {content.icon}
-          </span>
-          <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-white border border-[#141414] shadow-[0_1px_0_#141414] text-[#141414]">
-            {content.tag}
-          </span>
-        </div>
-
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[13px] text-[#1C1C1C]/80">نکته طغرل</span>
         <button
           type="button"
           onClick={handleDismiss}
-          className="w-6 h-6 rounded-full bg-white hover:bg-neutral-100 border border-[#141414] shadow-[0_1px_0_#141414] flex items-center justify-center text-[#141414]/70 hover:text-[#141414] transition-all cursor-pointer"
-          title="بستن راهنما"
-          aria-label="بستن راهنما"
+          className="w-7 h-7 -ml-1.5 flex items-center justify-center text-[#1C1C1C]/70 hover:text-[#1C1C1C] cursor-pointer"
+          title="بستن نکته"
+          aria-label="بستن نکته"
         >
-          <X className="w-3.5 h-3.5 stroke-[2.5]" />
+          <X className="w-5 h-5 stroke-[1.8]" />
         </button>
       </div>
-
-      {/* Title & Description */}
-      <h3 className="text-sm sm:text-base font-black text-[#141414] mb-1">
-        {content.title}
-      </h3>
-      <p className="text-xs sm:text-[13px] font-bold text-[#141414]/80 leading-relaxed">
-        {content.desc}
-      </p>
-
-      {/* Action CTA if provided */}
-      {onActionClick && (
-        <div className="mt-3 pt-2.5 border-t border-[#141414]/15 flex items-center justify-end">
-          <button
-            type="button"
-            onClick={onActionClick}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-50 active:translate-y-0.5 border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414] transition-all cursor-pointer"
-          >
-            <span>{content.ctaText}</span>
-            <ChevronLeft className="w-3.5 h-3.5 stroke-[2.5]" />
-          </button>
-        </div>
+      <h3 className="text-[24px] font-black leading-[1.35] text-[#1C1C1C]">{content.title}</h3>
+      <p className="text-[15px] leading-[1.8] text-[#1C1C1C]/90 mt-2">{content.desc}</p>
+      {onActionClick && content.cta && (
+        <button
+          type="button"
+          onClick={onActionClick}
+          className="mt-4 px-4 py-2 rounded-[10px] bg-white/70 hover:bg-white border-[1.5px] border-[#1C1C1C] text-[14px] font-bold cursor-pointer transition-colors"
+        >
+          {content.cta}
+        </button>
       )}
     </div>
   );
