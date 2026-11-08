@@ -22,6 +22,8 @@ import WhiteFlagModal from "./WhiteFlagModal";
 import WhiteFlagReceivedModal from "./WhiteFlagReceivedModal";
 import AnniversaryModal, { calculateDaysBetween } from "./AnniversaryModal";
 import PartnerHubSheet from "./PartnerHubSheet";
+import { LexGuidanceCard } from "./LexGuidanceCard";
+import { getGenderTheme } from "../utils/genderTheme";
 import { NeoWishSticker, NeoCoolHeartMascot, NeoSparkle } from "./NeoBrutalStickers";
 import { getTehranDateString } from "../utils/dailyQuestions";
 import {
@@ -196,10 +198,10 @@ const DEFAULT_CATEGORIES = [
 ];
 
 // Helper to render Neobrutalist user avatars with crisp 2px solid #141414 border & lip shadow
-const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", sizeClasses = "w-10 h-10") => {
+const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", sizeClasses = "w-10 h-10", ringClasses = "") => {
   if (!profile) {
     return (
-      <div className={`${sizeClasses} bg-[#A594F9] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]`}>
+      <div className={`${sizeClasses} ${ringClasses} bg-[#A594F9] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414]`}>
         {fallbackLetter}
       </div>
     );
@@ -210,7 +212,7 @@ const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", si
       <img
         src={profile.photoURL}
         alt={profile.displayName}
-        className={`${sizeClasses} rounded-full object-cover border-2 border-[#141414] shadow-[0_2px_0_#141414] bg-[#A594F9]`}
+        className={`${sizeClasses} ${ringClasses} rounded-full object-cover border-2 border-[#141414] shadow-[0_2px_0_#141414] bg-[#A594F9]`}
         referrerPolicy="no-referrer"
         onError={(e) => {
           (e.target as any).src = "https://api.dicebear.com/7.x/adventurer/svg?seed=" + profile.uid;
@@ -219,14 +221,14 @@ const renderAvatar = (profile: UserProfile | null, fallbackLetter = "❤️", si
     );
   } else if (profile.photoURL && isEmoji) {
     return (
-      <div className={`${sizeClasses} bg-[#A594F9] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] text-lg`}>
+      <div className={`${sizeClasses} ${ringClasses} bg-[#A594F9] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] text-lg`}>
         {profile.photoURL}
       </div>
     );
   } else {
     const initial = profile.displayName ? profile.displayName.charAt(0) : "💕";
     return (
-      <div className={`${sizeClasses} bg-[#FBC2F3] text-[#141414] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black text-sm`}>
+      <div className={`${sizeClasses} ${ringClasses} bg-[#FBC2F3] text-[#141414] rounded-full flex items-center justify-center border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black text-sm`}>
         {initial}
       </div>
     );
@@ -241,6 +243,35 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [periodLogTrigger, setPeriodLogTrigger] = useState<number>(0);
+
+  // Dynamic Gender Theme (Male: Sky Blue #38BDF8 | Female: Blossom Pink #FB7185)
+  const [currentGender, setCurrentGender] = useState<"female" | "male">(
+    () => userProfile?.gender || "male"
+  );
+
+  useEffect(() => {
+    if (userProfile?.gender) {
+      setCurrentGender(userProfile.gender);
+    }
+  }, [userProfile?.gender]);
+
+  const theme = getGenderTheme(currentGender);
+
+  const handleToggleGender = async () => {
+    const nextGender = currentGender === "male" ? "female" : "male";
+    setCurrentGender(nextGender);
+    if (onUpdateUserProfile) {
+      onUpdateUserProfile({
+        ...userProfile,
+        gender: nextGender
+      });
+    }
+    try {
+      await fetchFromPhpApi("updateProfile", { gender: nextGender });
+    } catch (err) {
+      console.warn("Could not persist gender update:", err);
+    }
+  };
 
   // Memories states
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -2034,24 +2065,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
     ? calculateDaysBetween(userProfile.coupleInfo.relationshipStartDate)
     : null;
 
-  // Dynamic Neobrutalist Canvas Color Worlds matching the 3 Reference Screens:
-  // Screen 1 (Home / Hall / Calendar) -> Warm Apricot (#FAD074)
-  // Screen 2 (Health / Finance)       -> Fresh Lime-Pistachio (#D5F379)
-  // Screen 3 (Memories / Custom Tabs) -> Bubblegum Pink (#FBC2F3)
-  const canvasBgClass =
-    activeTab === "period" || activeTab === "finance"
-      ? "bg-[#D5F379]"
-      : activeTab === "memories" || activeTab.startsWith("tab-")
-      ? "bg-[#FBC2F3]"
-      : "bg-[#FAD074]";
+  // Lex Colorful Design Canvas: Calm warm porcelain (#FAF8F5)
+  const canvasBgClass = "bg-[#FAF8F5]";
 
   return (
-    <div className={`min-h-screen pb-28 ${canvasBgClass} text-[#141414] relative transition-colors duration-300`} dir="rtl">
-      {/* Neobrutalist Top Header — Bold Display Title + Circular Bordered Avatar & Action Buttons */}
-      <header className="sticky top-0 z-30 pt-2 pb-1.5 backdrop-blur-sm bg-black/[0.01]" dir="rtl">
-        <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
+    <div className={`min-h-screen pb-28 ${canvasBgClass} text-[#141414] relative`} dir="rtl">
+      {/* Lex Colorful Design Top Header with Dynamic Gender Theme (Blue for Male, Pink for Female) */}
+      <header className={`sticky top-0 z-30 ${theme.headerBg} border-b-2 border-[#141414] shadow-[0_2px_0_#141414] transition-colors duration-300`} dir="rtl">
+        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
-            {/* Couple avatars with directly connected battery indicators */}
+            {/* Couple avatars with directly connected battery indicators & gender rings */}
             <div className="flex items-center shrink-0">
               {/* My Avatar & Attached Battery */}
               <button
@@ -2061,7 +2084,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 title="حال دل و باتری من — کلیک برای مشاهده و ویرایش"
                 aria-label="پروفایل و باتری من"
               >
-                {renderAvatar(userProfile, "❤️", "w-11 h-11")}
+                {renderAvatar(userProfile, "❤️", "w-11 h-11", theme.myAvatarRing)}
                 {/* Battery Pill attached directly to the profile photo */}
                 <span
                   className={`absolute -bottom-1 -left-1 px-1.5 py-0.2 rounded-full border-2 border-[#141414] shadow-[0_1px_0_#141414] text-[9px] font-black flex items-center gap-0.5 whitespace-nowrap ${
@@ -2086,7 +2109,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   title="حال دل و باتری پارتنر — کلیک برای جزئیات"
                   aria-label="فضای پارتنر و باتری"
                 >
-                  {renderAvatar(partnerProfile, "💖", "w-11 h-11")}
+                  {renderAvatar(partnerProfile, "💖", "w-11 h-11", theme.partnerAvatarRing)}
                   <span
                     className={`absolute -top-0.5 -left-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#141414] ${
                       isPartnerOnline ? "bg-[#B5F285]" : "bg-white"
@@ -2136,7 +2159,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 <button
                   type="button"
                   onClick={() => setShowEmotionalStatusSheet(true)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 hover:bg-white border border-[#141414] shadow-[0_1px_0_#141414] text-[10px] font-black text-[#141414] cursor-pointer active:translate-y-0.5 transition-all"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 hover:bg-white border border-[#141414] shadow-[0_1px_0_#141414] text-[10px] font-black text-[#141414] cursor-pointer active:translate-y-0.5 transition-all"
                   title="حال دل من — کلیک برای تغییر"
                 >
                   <span>{getNeedStatusOption(myNeedStatus).emoji}</span>
@@ -2149,7 +2172,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <button
                     type="button"
                     onClick={() => setShowPartnerHub(true)}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FBC2F3] hover:brightness-95 border border-[#141414] shadow-[0_1px_0_#141414] text-[10px] font-black text-[#141414] cursor-pointer active:translate-y-0.5 transition-all"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 hover:bg-white border border-[#141414] shadow-[0_1px_0_#141414] text-[10px] font-black text-[#141414] cursor-pointer active:translate-y-0.5 transition-all"
                     title="حال دل پارتنر — کلیک برای جزئیات"
                   >
                     <span>{getNeedStatusOption(partnerProfile?.needStatus || "calm").emoji}</span>
@@ -2163,32 +2186,48 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <button
                     type="button"
                     onClick={() => setShowAnniversaryModal(true)}
-                    className="text-[10px] text-[#141414]/75 font-bold hover:underline cursor-pointer hidden sm:inline-block"
+                    className="text-[10px] text-[#141414] font-black hover:underline cursor-pointer hidden sm:inline-block bg-white/80 px-2 py-0.5 rounded-full border border-[#141414]/20"
                   >
-                    • {toPersianDigits(daysTogether)} روز با هم ✦
+                    {toPersianDigits(daysTogether)} روز با هم ✦
                   </button>
                 ) : null}
               </div>
             </div>
           </div>
 
-          {/* Left Controls: Solo Pair Pill (if unpaired) + Circular Neobrutalist Menu Button */}
+          {/* Left Controls: Quick Gender Theme Switcher + Menu Button */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Quick 1-click Gender/Side Theme Switcher (Blue for Male, Pink for Female) */}
+            <button
+              type="button"
+              onClick={handleToggleGender}
+              className="px-2.5 py-1.5 rounded-full bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black text-[#141414] flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+              title="تغییر تم بین ساید مرد (آبی) و ساید زن (صورتی)"
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-full border border-[#141414]"
+                style={{ backgroundColor: theme.primaryColor }}
+              />
+              <span className="hidden sm:inline">{theme.isMale ? "ساید مرد (آبی) 👨" : "ساید زن (صورتی) 👩"}</span>
+              <span className="sm:hidden">{theme.isMale ? "مرد 💙" : "زن 💖"}</span>
+            </button>
+
             {!userProfile.partnerUid && !userProfile.coupleId && (
               <button
                 type="button"
                 onClick={onOpenPairingModal}
-                className="px-3.5 py-2 rounded-full bg-[#242424] text-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all"
+                className="px-3 py-1.5 rounded-full bg-[#242424] text-white border-2 border-[#141414] shadow-[0_2px_0_#141414] text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all"
               >
                 <Key className="w-3.5 h-3.5 text-[#F5F97A]" />
-                <span>اتصال پارتنر</span>
+                <span className="hidden sm:inline">اتصال پارتنر</span>
               </button>
             )}
+
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowHeaderMenu((v) => !v)}
-                className="relative w-11 h-11 rounded-full bg-[#FBC2F3] hover:bg-[#f7aee9] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] flex items-center justify-center transition-all cursor-pointer active:translate-y-0.5"
+                className="relative w-10 h-10 rounded-full bg-white hover:bg-neutral-50 border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] flex items-center justify-center transition-all cursor-pointer active:translate-y-0.5"
                 aria-label="منو"
               >
                 <MoreHorizontal className="w-5 h-5 stroke-[2.4]" />
@@ -2272,6 +2311,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         </div>
       </header>
 
+      {/* Signature Lex Colorful Segmented Rainbow Stripe */}
+      <div className="lex-rainbow-strip">
+        <div />
+        <div />
+        <div />
+        <div />
+        <div />
+        <div />
+      </div>
+
       {/* Real-time Poke Notification Alert Toaster */}
       <AnimatePresence>
         {pokes.length > 0 && (
@@ -2338,7 +2387,24 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         )}
       </AnimatePresence>
 
-      <main className="max-w-5xl mx-auto px-4 mt-2 sm:mt-4">
+      <main className="max-w-5xl mx-auto px-4 mt-3 sm:mt-5">
+        {/* Lex-style Smart Guidance Card for Wayfinding & Uncluttered Experience */}
+        <LexGuidanceCard
+          activeTab={activeTab}
+          theme={theme}
+          partnerName={partnerProfile?.displayName || "پارتنرت"}
+          onActionClick={() => {
+            if (activeTab === "wishlist") setShowAddModal(true);
+            else if (activeTab === "period") setPeriodLogTrigger((prev) => prev + 1);
+            else if (activeTab === "memories") setShowAddMemoryModal(true);
+            else if (activeTab === "calendar") setShowAnniversaryModal(true);
+            else if (activeTab === "finance") {
+              const el = document.getElementById("finance-transaction-form");
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }}
+        />
+
         {/* --- DAILY QUESTION HERO CARD (HOME TAB) --- */}
         {activeTab === "wishlist" && (
           <div className="mb-4" dir="rtl">
@@ -2376,15 +2442,15 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         )}
 
-        {/* Desktop Navigation Bar (Neobrutalist Pill Bar) */}
+        {/* Desktop Navigation Bar (Lex Colorful Design Pill Bar) */}
         <div className="hidden md:block w-full mb-7" dir="rtl">
           <div className="flex items-center justify-center w-full">
-            <div className="inline-flex flex-wrap segmented-track p-1.5 rounded-full gap-1.5">
+            <div className="inline-flex flex-wrap bg-white/80 border-2 border-[#141414] shadow-[0_3px_0_#141414] p-1.5 rounded-full gap-1.5">
               <button
                 onClick={() => setActiveTab("wishlist")}
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "wishlist" || activeTab === "hall"
-                    ? "segmented-pill-active font-black"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black`
                     : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
@@ -2396,7 +2462,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 onClick={() => setActiveTab("calendar")}
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "calendar"
-                    ? "segmented-pill-active font-black"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black`
                     : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
@@ -2408,7 +2474,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 onClick={() => setActiveTab("period")}
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "period"
-                    ? "segmented-pill-active font-black"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black`
                     : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
@@ -2420,7 +2486,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 onClick={() => setActiveTab("memories")}
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "memories" || activeTab.startsWith("tab-")
-                    ? "segmented-pill-active font-black"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black`
                     : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
@@ -2432,7 +2498,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 onClick={() => setActiveTab("finance")}
                 className={`px-5 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "finance"
-                    ? "segmented-pill-active font-black"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] font-black`
                     : "font-bold text-[#141414]/75 hover:text-[#141414]"
                 }`}
               >
@@ -2443,7 +2509,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
           </div>
         </div>
 
-        {/* Neobrutalist Pill Sub-Switch (Screen 1 & Screen 3 style: Mint Green active pill + White inactive pills with 2px black border) */}
+        {/* Lex-Style Pill Sub-Switch (Gender-Themed active pill + Crisp White inactive pills) */}
         {(activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar") && (
           <div className="flex items-center gap-2 mb-3.5 overflow-x-auto no-scrollbar pb-0.5" dir="rtl">
             <button
@@ -2451,7 +2517,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               onClick={() => setActiveTab("wishlist")}
               className={`px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 activeTab === "wishlist"
-                  ? "bg-[#B5F285] text-[#141414] font-black"
+                  ? `${theme.activePillBg} ${theme.activePillText} font-black`
                   : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
               }`}
             >
@@ -2463,7 +2529,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               onClick={() => setActiveTab("hall")}
               className={`px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 activeTab === "hall"
-                  ? "bg-[#B5F285] text-[#141414] font-black"
+                  ? `${theme.activePillBg} ${theme.activePillText} font-black`
                   : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
               }`}
             >
@@ -2475,7 +2541,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               onClick={() => setActiveTab("calendar")}
               className={`md:hidden px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 activeTab === "calendar"
-                  ? "bg-[#B5F285] text-[#141414] font-black"
+                  ? `${theme.activePillBg} ${theme.activePillText} font-black`
                   : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
               }`}
             >
@@ -2582,8 +2648,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   onClick={() => setCategoryFilter("all")}
                   className={`px-4 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                     categoryFilter === "all"
-                      ? "bg-[#242424] text-white font-black"
-                      : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
+                      ? `${theme.activePillBg} ${theme.activePillText} font-black`
+                      : "bg-white text-[#141414] font-bold hover:bg-[#FFEE55]"
                   }`}
                 >
                   همه ({toPersianDigits(items.filter((i) => !i.isCompleted).length)})
@@ -2594,6 +2660,16 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   const isCustom = customCategories.some((c) => c.id === cat.id);
                   const isSelected = categoryFilter === cat.id;
                   const catCount = items.filter((i) => !i.isCompleted && i.category === cat.id).length;
+                  const catInactiveBg =
+                    cat.id === "trip" || cat.id === "place"
+                      ? "bg-[#DCFCE7] hover:bg-[#bbf7d0]"
+                      : cat.id === "buy"
+                      ? "bg-[#E0F2FE] hover:bg-[#bae6fd]"
+                      : cat.id === "book"
+                      ? "bg-[#F3E8FF] hover:bg-[#e9d5ff]"
+                      : cat.id === "movie"
+                      ? "bg-[#FFEDD5] hover:bg-[#fed7aa]"
+                      : "bg-white hover:bg-[#FFEE55]";
                   return (
                     <div key={cat.id} className="relative group/cat flex items-center shrink-0">
                       <button
@@ -2601,8 +2677,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                         onClick={() => setCategoryFilter(cat.id)}
                         className={`px-3.5 py-2 rounded-full text-xs border-2 border-[#141414] shadow-[0_2px_0_#141414] transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                           isSelected
-                            ? "bg-[#242424] text-white font-black"
-                            : "bg-white text-[#141414] font-bold hover:bg-[#F5F97A]"
+                            ? `${theme.activePillBg} ${theme.activePillText} font-black`
+                            : `${catInactiveBg} text-[#141414] font-bold`
                         }`}
                       >
                         {typeof cat.iconName === "string" && !PRESET_ICONS[cat.iconName] ? (
@@ -2748,19 +2824,17 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       : "";
                   const isMenuOpen = openWishMenuId === item.id;
 
-                  // Exact Screen 1 Color-Blocked Card Palette:
-                  // Card 1 / trip / place -> Mint Green (#B5F285)
-                  // Card 2 / buy          -> Coral Orange (#FF8B6A)
-                  // Card 3 / movie / book -> Candy Pink (#FBC2F3) or Sky Blue (#7FD1F7)
-                  const cardPalette = ["bg-[#B5F285]", "bg-[#FF8B6A]", "bg-[#FBC2F3]", "bg-[#7FD1F7]"];
-                  const cardBgClass =
+                  // Lex-Style Clean White Card with Colorful Pastel Tag Pill
+                  const catTagBg =
                     item.category === "trip" || item.category === "place"
-                      ? idx % 2 === 0
-                        ? "bg-[#B5F285]"
-                        : "bg-[#7FD1F7]"
+                      ? "bg-[#DCFCE7]"
                       : item.category === "buy"
-                      ? "bg-[#FF8B6A]"
-                      : cardPalette[idx % cardPalette.length];
+                      ? "bg-[#E0F2FE]"
+                      : item.category === "book"
+                      ? "bg-[#F3E8FF]"
+                      : item.category === "movie"
+                      ? "bg-[#FFEDD5]"
+                      : "bg-[#FEF08A]";
 
                   return (
                     <motion.div
@@ -2768,11 +2842,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                       layout
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`${cardBgClass} border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-[30px] p-5 flex flex-col justify-between relative text-[#141414] overflow-hidden`}
+                      className="bg-white border-2 border-[#141414] shadow-[0_3px_0_#141414] rounded-[24px] p-5 flex flex-col justify-between relative text-[#141414] overflow-hidden"
                     >
                       {/* Top Pill Metadata + Circular Action Buttons */}
                       <div className="flex items-center justify-between gap-2 mb-2 relative z-10">
-                        <div className="inline-flex items-center gap-1.5 bg-white border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-3 py-1 text-[11px] font-black text-[#141414] truncate">
+                        <div className={`inline-flex items-center gap-1.5 ${catTagBg} border-2 border-[#141414] shadow-[0_1.5px_0_#141414] rounded-full px-3 py-1 text-[11px] font-black text-[#141414] truncate`}>
                           {typeof catConfig.iconName === "string" && !PRESET_ICONS[catConfig.iconName] ? (
                             <span>{catConfig.iconName}</span>
                           ) : (
@@ -2890,11 +2964,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
 
                       {/* Framed Neobrutalist Progress Bar + Crisp Pill Controls */}
                       <div className="mt-3.5 pt-3 border-t-2 border-[#141414]/20 relative z-10">
-                        <div className="w-full bg-white border-2 border-[#141414] h-3 rounded-full overflow-hidden mb-3 p-0.5">
+                        <div className="w-full bg-[#141414]/10 border-2 border-[#141414] h-3.5 rounded-full overflow-hidden mb-3 p-0.5">
                           <div
-                            className="h-full rounded-full transition-all duration-300 bg-[#141414]"
+                            className="h-full rounded-full transition-all duration-300"
                             style={{
-                              width: `${Math.max(item.progress, item.progress > 0 ? 8 : 0)}%`
+                              width: `${Math.max(item.progress, item.progress > 0 ? 8 : 0)}%`,
+                              backgroundColor: theme.primaryColor
                             }}
                           />
                         </div>
@@ -2916,7 +2991,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                               <button
                                 type="button"
                                 onClick={() => handleUpdateProgress(item.id, item.progress, 25)}
-                                className="px-3.5 py-1.5 bg-[#F5F97A] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] rounded-full text-xs font-black cursor-pointer active:translate-y-0.5"
+                                className="px-3.5 py-1.5 bg-[#FFEE55] hover:bg-[#FDE047] border-2 border-[#141414] shadow-[0_2px_0_#141414] text-[#141414] rounded-full text-xs font-black cursor-pointer active:translate-y-0.5"
                               >
                                 +۲۵٪ پیشرفت
                               </button>
@@ -3750,7 +3825,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
-              className="bg-[#FAD074] border-2 border-[#141414] shadow-[0_6px_0_#141414] rounded-[34px] w-full max-w-md p-6 sm:p-7 overflow-y-auto max-h-[90vh] text-[#141414]"
+              className="bg-white border-2 border-[#141414] shadow-[0_6px_0_#141414] rounded-[34px] w-full max-w-md p-6 sm:p-7 overflow-y-auto max-h-[90vh] text-[#141414]"
             >
               <div className="flex items-center justify-between mb-5 pb-3 border-b-2 border-[#141414]/15">
                 <div className="flex items-center gap-2.5">
@@ -4075,7 +4150,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
-              className="bg-[#FAD074] border-2 border-[#141414] shadow-[0_6px_0_#141414] rounded-[34px] w-full max-w-md p-6 sm:p-7 overflow-y-auto max-h-[90vh] text-[#141414]"
+              className="bg-white border-2 border-[#141414] shadow-[0_6px_0_#141414] rounded-[34px] w-full max-w-md p-6 sm:p-7 overflow-y-auto max-h-[90vh] text-[#141414]"
             >
               <div className="flex items-center justify-between mb-5 pb-3 border-b-2 border-[#141414]/15">
                 <div className="flex items-center gap-2.5">
@@ -4248,35 +4323,35 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-black text-[#141414] block">نقش شما در طغرل</label>
+                    <label className="text-xs font-black text-[#141414] block">نقش و تم شما در طغرل</label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setEditGender("female")}
                         className={`py-2.5 px-3 rounded-full text-xs font-black border-2 border-[#141414] transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                           editGender === "female"
-                            ? "bg-[#B5F285] text-[#141414] shadow-[0_2px_0_#141414]"
-                            : "bg-white text-[#141414]/70 hover:bg-[#FFFDF8]"
+                            ? "bg-[#FB7185] text-white shadow-[0_2px_0_#141414]"
+                            : "bg-white text-[#141414]/70 hover:bg-[#FFF1F2]"
                         }`}
                       >
-                        <span>خانم</span>
+                        <span>خانم (تم صورتی 💖)</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditGender("male")}
                         className={`py-2.5 px-3 rounded-full text-xs font-black border-2 border-[#141414] transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                           editGender === "male"
-                            ? "bg-[#B5F285] text-[#141414] shadow-[0_2px_0_#141414]"
-                            : "bg-white text-[#141414]/70 hover:bg-[#FFFDF8]"
+                            ? "bg-[#38BDF8] text-[#141414] shadow-[0_2px_0_#141414]"
+                            : "bg-white text-[#141414]/70 hover:bg-[#F0F9FF]"
                         }`}
                       >
-                        <span>آقا</span>
+                        <span>آقا (تم آبی 💙)</span>
                       </button>
                     </div>
                     <p className="text-[11px] text-[#141414]/75 font-bold text-right px-1">
                       {editGender === "female"
-                        ? "حالت تقویم سلامت و ثبت چرخه قاعدگی برای شما فعال است."
-                        : "حالت راهنمای همراهی و مراقبت عاشقانه از پارتنر برای شما فعال است."}
+                        ? "ساید صورتی: تقویم سلامت و ثبت چرخه قاعدگی، پیش‌بینی روزهای حساس و احوالات روزانه."
+                        : "ساید آبی: راهنمای همراهی عاشقانه، هوای پارتنر رو داشتن و هشدارهای همدلی."}
                     </p>
                   </div>
 
@@ -4303,7 +4378,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   <button
                     type="submit"
                     disabled={isSavingProfile}
-                    className={`w-full py-3.5 mt-2 bg-[#242424] hover:bg-[#141414] text-white border-2 border-[#141414] shadow-[0_3px_0_#141414] font-black rounded-full text-sm transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    className={`w-full py-3.5 mt-2 bg-[#FFEE55] hover:bg-[#FDE047] text-[#141414] border-2 border-[#141414] shadow-[0_3px_0_#141414] font-black rounded-full text-sm transition-all cursor-pointer flex items-center justify-center gap-2 ${
                       isSavingProfile ? "opacity-75 cursor-wait" : ""
                     }`}
                   >
@@ -5759,9 +5834,9 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         onOpenDateRoulette={() => setShowDateRoulette(true)}
       />
 
-      {/* --- NEOBRUTALIST FLOATING DARK DOCK WITH EXPANDING WHITE ACTIVE PILL (EXACT SCREENS 1 & 2 OF REFERENCE) --- */}
+      {/* --- LEX-STYLE FLOATING DARK DOCK WITH EXPANDING GENDER-THEMED ACTIVE PILL --- */}
       <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 max-w-md mx-auto" dir="rtl">
-        <div className="bg-[#2B2B2B] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-full p-1.5 flex items-center justify-between gap-1.5">
+        <div className="bg-[#242424] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-full p-1.5 flex items-center justify-between gap-1.5">
           {/* Tab 1: آرزوها */}
           {(() => {
             const isHomeActive = activeTab === "wishlist" || activeTab === "hall" || activeTab === "calendar";
@@ -5772,11 +5847,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 aria-label="آرزوها"
                 className={
                   isHomeActive
-                    ? "bg-white text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0"
-                    : "w-11 h-11 rounded-full bg-[#4F4F4F] hover:bg-[#616161] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0`
+                    : "w-11 h-11 rounded-full bg-[#383838] hover:bg-[#4a4a4a] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
                 }
               >
-                <Heart className={`w-4 h-4 ${isHomeActive ? "fill-[#141414] text-[#141414] stroke-[2.2]" : "stroke-[2]"}`} />
+                <Heart className={`w-4 h-4 ${isHomeActive ? "fill-current stroke-[2.2]" : "stroke-[2]"}`} />
                 <span className={isHomeActive ? "inline" : "sr-only"}>آرزوها</span>
               </button>
             );
@@ -5792,11 +5867,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 aria-label="سلامت"
                 className={
                   isPeriodActive
-                    ? "bg-white text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0"
-                    : "w-11 h-11 rounded-full bg-[#4F4F4F] hover:bg-[#616161] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0`
+                    : "w-11 h-11 rounded-full bg-[#383838] hover:bg-[#4a4a4a] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
                 }
               >
-                <Droplet className={`w-4 h-4 ${isPeriodActive ? "fill-[#141414] text-[#141414] stroke-[2.2]" : "stroke-[2]"}`} />
+                <Droplet className={`w-4 h-4 ${isPeriodActive ? "fill-current stroke-[2.2]" : "stroke-[2]"}`} />
                 <span className={isPeriodActive ? "inline" : "sr-only"}>سلامت</span>
               </button>
             );
@@ -5812,11 +5887,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 aria-label="خاطرات"
                 className={
                   isMemoriesActive
-                    ? "bg-white text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0"
-                    : "w-11 h-11 rounded-full bg-[#4F4F4F] hover:bg-[#616161] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0`
+                    : "w-11 h-11 rounded-full bg-[#383838] hover:bg-[#4a4a4a] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
                 }
               >
-                <Camera className={`w-4 h-4 ${isMemoriesActive ? "text-[#141414] stroke-[2.4]" : "stroke-[2]"}`} />
+                <Camera className={`w-4 h-4 ${isMemoriesActive ? "stroke-[2.4]" : "stroke-[2]"}`} />
                 <span className={isMemoriesActive ? "inline" : "sr-only"}>خاطرات</span>
               </button>
             );
@@ -5832,17 +5907,17 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 aria-label="مالی"
                 className={
                   isFinanceActive
-                    ? "bg-white text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0"
-                    : "w-11 h-11 rounded-full bg-[#4F4F4F] hover:bg-[#616161] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
+                    ? `${theme.activePillBg} ${theme.activePillText} border-2 border-[#141414] shadow-[0_2px_0_#141414] rounded-full px-4 py-2.5 flex items-center justify-center gap-1.5 font-black text-xs cursor-pointer transition-all shrink-0`
+                    : "w-11 h-11 rounded-full bg-[#383838] hover:bg-[#4a4a4a] text-white flex items-center justify-center cursor-pointer transition-all shrink-0"
                 }
               >
-                <Wallet className={`w-4 h-4 ${isFinanceActive ? "fill-[#141414] text-[#141414] stroke-[2.2]" : "stroke-[2]"}`} />
+                <Wallet className={`w-4 h-4 ${isFinanceActive ? "fill-current stroke-[2.2]" : "stroke-[2]"}`} />
                 <span className={isFinanceActive ? "inline" : "sr-only"}>مالی</span>
               </button>
             );
           })()}
 
-          {/* Circular Neobrutalist '+' Quick Action Button */}
+          {/* Circular Lex Yellow '+' Quick Action Button (FAB) */}
           <button
             type="button"
             onClick={() => {
@@ -5867,7 +5942,7 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 setShowAddModal(true);
               }
             }}
-            className="w-11 h-11 rounded-full bg-[#FF8B6A] hover:bg-[#ff7954] active:translate-y-0.5 text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center transition-all cursor-pointer shrink-0"
+            className="w-11 h-11 rounded-full bg-[#FFEE55] hover:bg-[#FDE047] active:translate-y-0.5 text-[#141414] border-2 border-[#141414] shadow-[0_2px_0_#141414] flex items-center justify-center transition-all cursor-pointer shrink-0"
             title="ثبت سریع"
             aria-label="ثبت سریع"
           >

@@ -68,6 +68,19 @@
   --neo-yellow: #F5F97A;
   --neo-white: #FFFFFF;
   --neo-charcoal: #262626;
+
+  /* Lex Colorful Design Tokens */
+  --lex-canvas: #FAF8F5;
+  --lex-male-blue: #38BDF8;
+  --lex-male-dark: #0284C7;
+  --lex-male-soft: #F0F9FF;
+  --lex-female-pink: #FB7185;
+  --lex-female-dark: #E11D48;
+  --lex-female-soft: #FFF1F2;
+  --lex-yellow: #FFEE55;
+  --lex-mint: #4ADE80;
+  --lex-purple: #C084FC;
+  --lex-orange: #FB923C;
 }
 
 @theme {
@@ -86,11 +99,44 @@ textarea {
 body {
   direction: rtl;
   text-align: right;
-  background-color: #FAD074;
+  background-color: #FAF8F5;
   color: #141414;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   LEX COLORFUL DESIGN SYSTEM SURFACES & ACCENTS
+   ========================================================================== */
+
+.lex-rainbow-strip {
+  display: flex;
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-bottom: 2px solid #141414;
+}
+
+.lex-rainbow-strip > div:nth-child(1) { background-color: #F472B6; flex: 1; }
+.lex-rainbow-strip > div:nth-child(2) { background-color: #FB923C; flex: 1; }
+.lex-rainbow-strip > div:nth-child(3) { background-color: #FFEE55; flex: 1; }
+.lex-rainbow-strip > div:nth-child(4) { background-color: #4ADE80; flex: 1; }
+.lex-rainbow-strip > div:nth-child(5) { background-color: #38BDF8; flex: 1; }
+.lex-rainbow-strip > div:nth-child(6) { background-color: #C084FC; flex: 1; }
+
+.lex-card {
+  background-color: #FFFFFF;
+  border: 2px solid #141414;
+  box-shadow: 0 3px 0 #141414;
+  border-radius: 20px;
+}
+
+.lex-card-lg {
+  background-color: #FFFFFF;
+  border: 2px solid #141414;
+  box-shadow: 0 4px 0 #141414;
+  border-radius: 26px;
 }
 
 /* ==========================================================================

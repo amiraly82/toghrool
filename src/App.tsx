@@ -340,7 +340,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAD074] text-[#141414] font-sans selection:bg-[#FBC2F3] selection:text-[#141414] overflow-x-hidden">
+    <div className="min-h-screen bg-[#FAF8F5] text-[#141414] font-sans selection:bg-[#FBC2F3] selection:text-[#141414] overflow-x-hidden">
       <AnimatePresence mode="wait">
         {loading ? (
           /* Neobrutalist Pastel Loader */
@@ -349,7 +349,7 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-[#FAD074]"
+            className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-[#FAF8F5]"
           >
             <div className="relative">
               <div className="w-20 h-20 bg-[#FBC2F3] border-2 border-[#141414] shadow-[0_4px_0_#141414] rounded-full flex items-center justify-center text-[#141414]">
