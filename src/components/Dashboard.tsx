@@ -2119,37 +2119,65 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
       : "آرزوی جدید";
 
   return (
-    <div className="min-h-screen pb-32 md:pb-16 bg-[#F5F3EF] text-[#1C1C1C] relative" dir="rtl">
+    <div className="min-h-screen pb-40 md:pb-24 bg-[#F5F3EF] text-[#1C1C1C] relative" dir="rtl">
       {/* ===== Lex App Bar: flat, edge-to-edge, gender colored (blue = him, pink = her) ===== */}
       <header className={`sticky top-0 z-30 ${theme.headerBg} transition-colors duration-300`} dir="rtl">
-        <div className="max-w-5xl mx-auto pr-4 pl-2 h-[60px] flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => (userProfile.partnerUid ? setShowPartnerHub(true) : onOpenPairingModal?.())}
-            className="flex items-center gap-2 min-w-0 cursor-pointer text-right"
-            title="فضای دونفره"
-          >
-            <svg viewBox="0 0 32 32" className="w-7 h-7 shrink-0" aria-hidden="true">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <line
-                  key={i}
-                  x1="16"
-                  y1="16"
-                  x2={16 + 13 * Math.cos((i * Math.PI) / 6)}
-                  y2={16 + 13 * Math.sin((i * Math.PI) / 6)}
-                  stroke="#1C1C1C"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              ))}
-              <circle cx="16" cy="16" r="7" fill="#FFFF66" stroke="#1C1C1C" strokeWidth="1.6" />
-            </svg>
-            <span className="text-[19px] font-bold text-[#1C1C1C] truncate">
-              {userProfile.partnerUid
-                ? `${userProfile.displayName} و ${partnerProfile?.displayName || "پارتنر"}`
-                : userProfile.displayName}
-            </span>
-          </button>
+        <div className="max-w-5xl mx-auto pr-3 pl-2 sm:px-4 h-[60px] flex items-center justify-between gap-2">
+          {/* Right side (RTL start): Couple avatars with battery pills + Couple names */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Couple avatars with attached miniature battery badges */}
+            <div className="flex items-center shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowEmotionalStatusSheet(true)}
+                className="relative z-10 rounded-full cursor-pointer active:scale-95 transition-transform"
+                title="حال دل و باتری من"
+                aria-label="پروفایل و باتری من"
+              >
+                {renderAvatar(userProfile, "❤️", "w-[36px] h-[36px] sm:w-[38px] sm:h-[38px]", theme.myAvatarRing)}
+                <span
+                  className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-1 rounded-full border border-[#1C1C1C] text-[9px] leading-[13px] font-bold whitespace-nowrap shadow-xs ${batteryTone(myBatteryLevel)}`}
+                >
+                  {toPersianDigits(myBatteryLevel)}٪
+                </span>
+              </button>
+              {userProfile.partnerUid && (
+                <button
+                  type="button"
+                  onClick={() => setShowPartnerHub(true)}
+                  className="relative z-0 -mr-2.5 rounded-full cursor-pointer active:scale-95 transition-transform"
+                  title="حال دل و باتری پارتنر"
+                  aria-label="فضای پارتنر و باتری"
+                >
+                  {renderAvatar(partnerProfile, "💖", "w-[36px] h-[36px] sm:w-[38px] sm:h-[38px]", theme.partnerAvatarRing)}
+                  <span
+                    className={`absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-white ${
+                      isPartnerOnline ? "bg-[#5ED46A]" : "bg-[#C9C5BD]"
+                    }`}
+                  />
+                  <span
+                    className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-1 rounded-full border border-[#1C1C1C] text-[9px] leading-[13px] font-bold whitespace-nowrap shadow-xs ${batteryTone(partnerBattery)}`}
+                  >
+                    {toPersianDigits(partnerBattery)}٪
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {/* Couple names (clickable for partner space or pairing) */}
+            <button
+              type="button"
+              onClick={() => (userProfile.partnerUid ? setShowPartnerHub(true) : onOpenPairingModal?.())}
+              className="flex items-center gap-1.5 min-w-0 cursor-pointer text-right hover:opacity-90 transition-opacity"
+              title="فضای دونفره"
+            >
+              <span className="text-[16px] sm:text-[18px] font-bold text-[#1C1C1C] truncate">
+                {userProfile.partnerUid
+                  ? `${userProfile.displayName} و ${partnerProfile?.displayName || "پارتنر"}`
+                  : userProfile.displayName}
+              </span>
+            </button>
+          </div>
 
           {/* Desktop text navigation */}
           <nav className="hidden md:flex items-center gap-1 mx-auto">
@@ -2167,29 +2195,30 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
             ))}
           </nav>
 
-          <div className="flex items-center shrink-0">
+          {/* Left side (RTL end): Clean utilities (Pairing key, Notifications bell, Menu) */}
+          <div className="flex items-center shrink-0 gap-0.5">
             {!userProfile.partnerUid && !userProfile.coupleId && (
               <button
                 type="button"
                 onClick={onOpenPairingModal}
-                className="w-11 h-11 flex items-center justify-center text-[#1C1C1C] cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center text-[#1C1C1C] cursor-pointer hover:bg-white/40 rounded-full transition-colors"
                 aria-label="اتصال پارتنر"
                 title="اتصال پارتنر"
               >
-                <Key className="w-[26px] h-[26px] stroke-[1.6]" />
+                <Key className="w-[22px] h-[22px] stroke-[1.6]" />
               </button>
             )}
 
             <button
               type="button"
               onClick={requestNotificationPermission}
-              className="relative w-11 h-11 flex items-center justify-center text-[#1C1C1C] cursor-pointer"
+              className="relative w-10 h-10 flex items-center justify-center text-[#1C1C1C] cursor-pointer hover:bg-white/40 rounded-full transition-colors"
               aria-label="اعلان‌ها"
               title={notificationsEnabled ? "اعلان‌ها فعال است" : "فعال‌سازی اعلان‌ها"}
             >
-              <Bell className="w-[26px] h-[26px] stroke-[1.6]" />
+              <Bell className="w-[24px] h-[24px] stroke-[1.6]" />
               {!notificationsEnabled && (
-                <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#F0626A] text-white text-[11px] font-bold flex items-center justify-center">
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[#F0626A] text-white text-[10px] font-bold flex items-center justify-center">
                   ۱
                 </span>
               )}
@@ -2199,11 +2228,11 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
               <button
                 type="button"
                 onClick={() => setShowHeaderMenu((v) => !v)}
-                className="w-11 h-11 flex items-center justify-center text-[#1C1C1C] cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center text-[#1C1C1C] cursor-pointer hover:bg-white/40 rounded-full transition-colors"
                 aria-label="منو"
                 title="منو و تنظیمات"
               >
-                <SlidersHorizontal className="w-[26px] h-[26px] stroke-[1.6]" />
+                <SlidersHorizontal className="w-[24px] h-[24px] stroke-[1.6]" />
               </button>
 
               <AnimatePresence>
@@ -2288,45 +2317,6 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                   </>
                 )}
               </AnimatePresence>
-            </div>
-
-            {/* Couple avatars with tiny battery badges */}
-            <div className="flex items-center mr-1 pl-1">
-              <button
-                type="button"
-                onClick={() => setShowEmotionalStatusSheet(true)}
-                className="relative z-10 rounded-full cursor-pointer active:scale-95 transition-transform"
-                title="حال دل و باتری من"
-                aria-label="پروفایل و باتری من"
-              >
-                {renderAvatar(userProfile, "❤️", "w-[38px] h-[38px]", theme.myAvatarRing)}
-                <span
-                  className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-1 rounded-full border border-[#1C1C1C] text-[9px] leading-[13px] font-bold whitespace-nowrap ${batteryTone(myBatteryLevel)}`}
-                >
-                  {toPersianDigits(myBatteryLevel)}٪
-                </span>
-              </button>
-              {userProfile.partnerUid && (
-                <button
-                  type="button"
-                  onClick={() => setShowPartnerHub(true)}
-                  className="relative z-0 -mr-3 rounded-full cursor-pointer active:scale-95 transition-transform"
-                  title="حال دل و باتری پارتنر"
-                  aria-label="فضای پارتنر و باتری"
-                >
-                  {renderAvatar(partnerProfile, "💖", "w-[38px] h-[38px]", theme.partnerAvatarRing)}
-                  <span
-                    className={`absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-white ${
-                      isPartnerOnline ? "bg-[#5ED46A]" : "bg-[#C9C5BD]"
-                    }`}
-                  />
-                  <span
-                    className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-1 rounded-full border border-[#1C1C1C] text-[9px] leading-[13px] font-bold whitespace-nowrap ${batteryTone(partnerBattery)}`}
-                  >
-                    {toPersianDigits(partnerBattery)}٪
-                  </span>
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -2415,8 +2405,8 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
         {/* Spacer for tabs without the home underline tabs */}
         {!(activeTab === "wishlist" || activeTab === "hall") && <div className="h-4" />}
 
-        {/* Lex Tip for every section except home (home shows it inline in the feed) */}
-        {activeTab !== "wishlist" && activeTab !== "hall" && !activeTab.startsWith("tab-") && (
+        {/* Lex Tip for sections with guidance (excluding home and period tracker which has direct instant focus) */}
+        {activeTab !== "wishlist" && activeTab !== "hall" && activeTab !== "period" && !activeTab.startsWith("tab-") && (
           <LexGuidanceCard
             activeTab={activeTab}
             theme={theme}
@@ -2704,7 +2694,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                 </div>
               </>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <>
+                {/* Lex Guidance Card placed cleanly before feed */}
+                <div className="mb-4">
+                  <LexGuidanceCard activeTab="wishlist" theme={theme} onActionClick={() => setShowAddModal(true)} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {wishlistItems.map((item, idx) => {
                   const catConfig = allCategories.find((c) => c.id === item.category) || allCategories[0];
                   const budgetText =
@@ -2887,18 +2882,12 @@ export default function Dashboard({ userProfile, onRefreshProfile, onUpdateUserP
                           </button>
                         </div>
                       </motion.article>
-
-                      {/* Lex Tip inline in the feed, right after the first post */}
-                      {idx === 0 && (
-                        <div className="md:col-span-2 -mb-4">
-                          <LexGuidanceCard activeTab="wishlist" theme={theme} onActionClick={() => setShowAddModal(true)} />
-                        </div>
-                      )}
                     </React.Fragment>
                   );
                 })}
               </div>
-            )}
+            </>
+          )}
           </div>
         )}
 

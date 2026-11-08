@@ -430,9 +430,9 @@ export default function ImpoPeriodTracker({
     return calculateBiorhythm(settings.birthDate);
   }, [settings.birthDate]);
 
-  // Quick 1-click role selection for first-time visitors
+  // Quick 1-click role selection for first-time visitors (if gender not already set)
   const [roleConfirmed, setRoleConfirmed] = useState<boolean>(() => {
-    return !!localStorage.getItem(`impo_partner_role_${userProfile.uid}`);
+    return !!localStorage.getItem(`impo_partner_role_${userProfile.uid}`) || !!userProfile.gender;
   });
 
   const handleSelectQuickRole = async (selectedGender: "female" | "male") => {
@@ -1158,19 +1158,19 @@ export default function ImpoPeriodTracker({
         </button>
       </div>
 
-      {/* Non-blocking Quick Setup Prompt if female user hasn't configured cycle yet */}
+      {/* Compact Quick Setup Prompt if female user hasn't configured cycle yet */}
       {!hasConfigured && partnerRole !== "male" && (
-        <div className="bg-[#EBA2F8] border-[1.5px] border-[#1C1C1C] rounded-[24px] p-3.5 px-4 flex items-center justify-between gap-3">
+        <div className="bg-[#FFEAF3] border border-[#1C1C1C]/20 rounded-[18px] px-4 py-2.5 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-bold text-[#1C1C1C] truncate">شخصی‌سازی دقیق چرخه سلامت</p>
-            <p className="text-[11px] text-[#1C1C1C]/80 font-medium truncate mt-0.5">تاریخ آخرین پریود و طول دوره را در ۳۰ ثانیه تنظیم کنید</p>
+            <p className="text-xs font-bold text-[#1C1C1C] truncate">شخصی‌سازی چرخه سلامت</p>
+            <p className="text-[11px] text-[#6E6B66] font-medium truncate">تنظیم تاریخ آخرین پریود در ۳۰ ثانیه</p>
           </div>
           <button
             type="button"
             onClick={() => setShowQuickSetupModal(true)}
-            className="px-3.5 py-2 bg-[#1C1C1C] text-white border-[1.5px] border-[#1C1C1C] rounded-full text-xs font-bold shrink-0 cursor-pointer"
+            className="px-3.5 py-1.5 bg-[#1C1C1C] text-white rounded-full text-xs font-bold shrink-0 cursor-pointer hover:bg-[#1C1C1C]/90"
           >
-            تنظیم سریع
+            تنظیم
           </button>
         </div>
       )}
